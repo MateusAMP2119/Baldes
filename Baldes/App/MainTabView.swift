@@ -11,7 +11,7 @@ struct MainTabView: View {
                 Tab(value: 0) {
                     DashboardView()
                 } label : {
-                    Label("Início", systemImage: "text.rectangle.page")
+                    Label("Actividades", systemImage: "text.rectangle.page")
                 }
                 
                 Tab(value: 1) {
@@ -26,6 +26,32 @@ struct MainTabView: View {
                 }
             }
             .tint(Color(red: 0.906, green: 0.365, blue: 0.227)) // #e75d3a
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Image("Logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 38, height: 38)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 8))
+                }.sharedBackgroundVisibility(.hidden)
+
+                ToolbarItem(placement: .principal) {
+                    Text(todayDate)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .glassEffect(.regular.interactive())
+                }
+                
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: {}) {
+                        Image(systemName: "person.crop.circle")
+                            .foregroundColor(Color.black)
+                    }
+                }
+            }
         }
         .onChange(of: selection) { oldValue, newValue in
             if newValue == 2 {
@@ -40,6 +66,13 @@ struct MainTabView: View {
             Text("TBD: New Entry Sheet")
                 .presentationDetents([.medium, .large])
         }
+    }
+    
+    private var todayDate: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE MMM d"
+        formatter.locale = Locale(identifier: "pt_PT")
+        return formatter.string(from: Date()).capitalized.replacingOccurrences(of: ".", with: "")
     }
 }
 

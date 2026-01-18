@@ -8,39 +8,13 @@ struct DashboardView: View {
             // Background color
             Color.white.ignoresSafeArea()
             
-            VStack(alignment: .leading, spacing: 0) {
-                // Header
-                headerView
-                    .padding(.horizontal)
-                    .padding(.top, 10)
-                
-                // Content
-                activitiesEmptyState
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
+            // Content
+            activitiesEmptyState
+                .padding(.bottom, 80)
         }
-        .toolbar(.hidden, for: .navigationBar) // Hide default nav bar
+        .navigationTitle("Activities")
         .sheet(isPresented: $showingNewActivitySheet) {
             NewActivityView()
-        }
-    }
-    
-    // MARK: - Views
-    
-    private var headerView: some View {
-        HStack {
-            Text("Activities")
-                .font(.system(size: 34, weight: .bold))
-                .foregroundStyle(.black)
-            
-            Spacer()
-            
-            Button(action: {}) {
-                Image(systemName: "person.circle.fill")
-                    .resizable()
-                    .frame(width: 40, height: 40)
-                    .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
-            }
         }
     }
     
@@ -54,7 +28,6 @@ struct DashboardView: View {
                 .scaledToFill()
                 .frame(width: 220, height: 220)
                 .clipped()
-                .cornerRadius(20)
             
             VStack(spacing: 8) {
                 Text("Sem Baldes criados!")
@@ -67,6 +40,7 @@ struct DashboardView: View {
                     .foregroundStyle(.secondary)
             }
             .padding(.bottom, 16)
+            .multilineTextAlignment(.center)
             
             // 3D Button "Add Activity"
             Button(action: { showingNewActivitySheet = true }) {
