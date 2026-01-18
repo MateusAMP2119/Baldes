@@ -1,100 +1,108 @@
 import SwiftUI
 
 struct DashboardView: View {
-    @State private var searchText = ""
-    
-    // Sample data for tiles
-    let buckets = ["Fitness", "Leitura", "Projectos", "Cozinha"]
-    
-    let columns = [
-        GridItem(.flexible()),
-        GridItem(.flexible())
-    ]
+    @State private var showingNewActivitySheet = false
     
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    
-                    Text("Actividade")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .padding(.horizontal)
-                    
-                    // Heatmap Section
-                    VStack(spacing: 12) {
-                        // Date Navigation Header
-                        HStack {
-                            Button(action: {
-                                // Previous month action
-                            }) {
-                                Image(systemName: "chevron.left")
-                                    .foregroundStyle(.gray)
-                            }
-                            
-                            Spacer()
-                            
-                            Text("18 Jan 2026") // Dynamic date placeholder
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundStyle(.secondary)
-                            
-                            Spacer()
-                            
-                            Button(action: {
-                                // Next month action
-                            }) {
-                                Image(systemName: "chevron.right")
-                                    .foregroundStyle(.gray)
-                                    .opacity(0) // Hidden for today
-                            }
-                            .disabled(true)
-                        }
-                        .padding(.horizontal)
-                        
-                        HeatmapView()
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 12)
-                            .background(Color.white) // Inner heatmap background
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .strokeBorder(Color.gray.opacity(0.1), lineWidth: 1)
-                            )
-                            .cornerRadius(12)
-                    }
+        ZStack {
+            // Background color
+            Color.white.ignoresSafeArea()
+            
+            VStack(alignment: .leading, spacing: 0) {
+                // Header
+                headerView
                     .padding(.horizontal)
-
-                    // Search Bar
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundStyle(.secondary)
-                        TextField("Search", text: $searchText)
-                    }
-                    .padding(12)
-                    .background(Color(red: 0.98, green: 0.97, blue: 0.95)) // Warmer whitish
-                    .cornerRadius(10)
-                    .padding(.horizontal)
-                    
-                    // Tiles Grid
-                    LazyVGrid(columns: columns, spacing: 15) {
-                        // "Create New" Tile
-                        BucketTile(title: "Criar novo balde", isCreateNew: true)
-                            .onTapGesture {
-                                // Action to create new bucket
-                            }
-                        
-                        // Existing Buckets
-                        ForEach(buckets, id: \.self) { bucket in
-                            BucketTile(title: bucket)
-                        }
-                    }
-                    .padding()
-                }
-                .padding(.top)
+                    .padding(.top, 10)
+                
+                // Content
+                activitiesEmptyState
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .background(Color(red: 0.99, green: 0.98, blue: 0.97).ignoresSafeArea()) // Overall warmer background
-
+        }
+        .toolbar(.hidden, for: .navigationBar) // Hide default nav bar
+        .sheet(isPresented: $showingNewActivitySheet) {
+            NewActivityView()
+        }
+    }
+    
+    // MARK: - Views
+    
+    private var headerView: some View {
+        HStack {
+            Text("Activities")
+                .font(.system(size: 34, weight: .bold))
+                .foregroundStyle(.black)
+            
+            Spacer()
+            
+            Button(action: {}) {
+                Image(systemName: "person.circle.fill")
+                    .resizable()
+                    .frame(width: 40, height: 40)
+                    .foregroundStyle(Color(red: 0.2, green: 0.2, blue: 0.2))
+            }
+        }
+    }
+    
+    private var activitiesEmptyState: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            
+            // Empty State Image
+            Image("Empty")
+                .resizable()
+                .scaledToFill()
+                .frame(width: 220, height: 220)
+                .clipped()
+                .cornerRadius(20)
+            
+            VStack(spacing: 8) {
+                Text("Sem Baldes criados!")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.black)
+                
+                Text("Vamos criar um novo Balde para começar.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.bottom, 16)
+            
+            // 3D Button "Add Activity"
+            Button(action: { showingNewActivitySheet = true }) {
+                Text("Novo Balde")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(.black)
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 16)
+                    .background(
+                        ZStack {
+                            // Shadow/Depth layer
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color(red: 0.906, green: 0.365, blue: 0.227)) // #e75d3a
+                                .offset(y: 4)
+                            
+                            // Top layer
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.white)
+                                .stroke(Color.black, lineWidth: 1)
+                        }
+                    )
+            }
+            .buttonStyle(PlainButtonStyle()) // Prevent default opacity effect on press if desired
+            
+            // Demo Link
+            Button(action: {}) {
+                HStack(spacing: 4) {
+                    Image(systemName: "sparkles")
+                    Text("Ver exemplos")
+                }
+                .font(.subheadline)
+                .foregroundStyle(.gray)
+                .padding(.top, 8)
+            }
+            
+            Spacer()
         }
     }
 }
