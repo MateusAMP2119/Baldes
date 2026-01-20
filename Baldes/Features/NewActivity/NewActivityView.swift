@@ -12,7 +12,7 @@ struct NewActivityView: View {
             color: Color(red: 0.8, green: 0.2, blue: 0.8),
             imageName: "Think",
             imagePosition: .bottomRight,
-            imageHeight: 120,
+            imageHeight: 130,
             types: [
                 ActivityType(
                     title: "Objetivos por tempo",
@@ -53,10 +53,10 @@ struct NewActivityView: View {
             color: Color(red: 0.9, green: 0.6, blue: 0.2),
             imageName: "Plan",
             imagePosition: .bottomLeft,
-            imageHeight: 220,
+            imageHeight: 180,
             types: [
                 ActivityType(
-                    title: "Lista de Verificação",
+                    title: "Listas Generalistas",
                     description: "Aponta tudo para não te esqueceres de nada.",
                     examples: [
                         ActivityExample(emoji: "🛒", text: "Lista de Compras", detail: "5/12 itens"),
@@ -66,7 +66,7 @@ struct NewActivityView: View {
                     shadowColor: Color(red: 0.9, green: 0.6, blue: 0.2)
                 ),
                 ActivityType(
-                    title: "Itinerário",
+                    title: "Itinerários",
                     description: "Organiza os teus passeios e o que queres visitar.",
                     examples: [
                         ActivityExample(emoji: "🗼", text: "Viagem a Tóquio", detail: "Out 2026"),
@@ -74,6 +74,16 @@ struct NewActivityView: View {
                         ActivityExample(emoji: "📍", text: "Locais a Visitar", detail: "12 locais"),
                     ],
                     shadowColor: Color(red: 0.2, green: 0.6, blue: 0.6)
+                ),
+                ActivityType(
+                    title: "Orçamentos",
+                    description: "Define limites e controla os teus gastos.",
+                    examples: [
+                        ActivityExample(emoji: "💰", text: "Gastos Gerais", detail: "Dia"),
+                        ActivityExample(emoji: "🛒", text: "Budget Supermercado", detail: "Semanal"),
+                        ActivityExample(emoji: "🏠", text: "Obras", detail: "Sala"),
+                    ],
+                    shadowColor: Color(red: 0.9, green: 0.5, blue: 0.3)
                 ),
             ]
         ),
@@ -83,7 +93,7 @@ struct NewActivityView: View {
             color: Color(red: 0.3, green: 0.7, blue: 0.4),
             imageName: "Write",
             imagePosition: .bottomRight,
-            imageHeight: 220,
+            imageHeight: 170,
             types: [
                 ActivityType(
                     title: "Diário",
@@ -100,10 +110,20 @@ struct NewActivityView: View {
                     description: "Bloco de notas para tudo o que te vier à cabeça.",
                     examples: [
                         ActivityExample(emoji: "📝", text: "Notas Rápidas", detail: ""),
-                        ActivityExample(emoji: "💡", text: "Ideias", detail: "Projeto A"),
-                        ActivityExample(emoji: "🏗️", text: "Notas de Reunião", detail: "Semanal"),
+                        ActivityExample(emoji: "💡", text: "Ideias", detail: "Projeto X"),
+                        ActivityExample(emoji: "🏗️", text: "Notas de Reuniões", detail: "Semanal"),
                     ],
                     shadowColor: Color(red: 0.5, green: 0.5, blue: 0.5)
+                ),
+                ActivityType(
+                    title: "Registo de Sentimentos",
+                    description: "Controlo sobre o que sentes.",
+                    examples: [
+                        ActivityExample(emoji: "🧘", text: "Stresse Diário", detail: ""),
+                        ActivityExample(emoji: "⚡", text: "Nível de Energia", detail: ""),
+                        ActivityExample(emoji: "😴", text: "Qualidade do Sono", detail: ""),
+                    ],
+                    shadowColor: Color(red: 0.2, green: 0.6, blue: 0.7)
                 ),
             ]
         ),
