@@ -17,9 +17,6 @@ struct ActivityConfigurationView: View {
                 UniversalStepView(viewModel: viewModel)
                     .tag(ActivityConfigurationViewModel.Step.universal)
 
-                ConfigStepView(viewModel: viewModel)
-                    .tag(ActivityConfigurationViewModel.Step.config)
-
                 CommitmentStepView(viewModel: viewModel)
                     .tag(ActivityConfigurationViewModel.Step.commitment)
             }
@@ -35,13 +32,7 @@ struct ActivityConfigurationView: View {
                                 if viewModel.currentStep
                                     == ActivityConfigurationViewModel.Step.commitment
                                 {
-                                    viewModel.currentStep =
-                                        ActivityConfigurationViewModel.Step.config
-                                } else if viewModel.currentStep
-                                    == ActivityConfigurationViewModel.Step.config
-                                {
-                                    viewModel.currentStep =
-                                        ActivityConfigurationViewModel.Step.universal
+                                    viewModel.currentStep = .universal
                                 }
                             }
                         }
@@ -57,7 +48,7 @@ struct ActivityConfigurationView: View {
                             viewModel.currentStep == ActivityConfigurationViewModel.Step.commitment
                                 || (!viewModel.needsCommitmentStep
                                     && viewModel.currentStep
-                                        == ActivityConfigurationViewModel.Step.config)
+                                        == ActivityConfigurationViewModel.Step.universal)
                                 ? "Criar" : "Próximo"
                         )
                         .bold()

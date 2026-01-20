@@ -9,14 +9,13 @@ class ActivityConfigurationViewModel {
     // Navigation
     enum Step {
         case universal
-        case config
         case commitment
     }
     var currentStep: Step = .universal
 
     // Universal Data
     var name: String = ""
-    var shortDescription: String = ""
+
     var symbol: String = "bucket.fill"
     var color: Color
 
@@ -84,8 +83,6 @@ class ActivityConfigurationViewModel {
         withAnimation {
             switch currentStep {
             case .universal:
-                currentStep = .config
-            case .config:
                 // Check if we need screen 3
                 if needsCommitmentStep {
                     currentStep = .commitment
@@ -112,13 +109,6 @@ class ActivityConfigurationViewModel {
     var stepTitle: String {
         switch currentStep {
         case .universal: return "Criar novo Balde"
-        case .config:
-            switch context.scope.title {
-            case "Acompanhar e Criar Hábitos": return "Define Duration/Success"
-            case "Planear e Organizar": return "Configuration"
-            case "Escrever e Refletir": return "Style & Setup"
-            default: return "Configuration"
-            }
         case .commitment:
             return "Schedule & Commit"
         }

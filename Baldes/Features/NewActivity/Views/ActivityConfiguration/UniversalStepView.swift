@@ -28,7 +28,7 @@ struct UniversalStepView: View {
                     HStack(spacing: 12) {
                         TextField("", text: $viewModel.name)
                             .padding()
-                            .background(Color.white)
+                            .background(Color.gray.opacity(0.1))
                             .clipShape(RoundedRectangle(cornerRadius: 16))
 
                         // Icon Picker
@@ -80,45 +80,28 @@ struct UniversalStepView: View {
                                         }
                                     }
                                 }
+                                .padding()
+                                .background(Color.gray.opacity(0.1))
+                                .clipShape(Circle())
                         }
                         .frame(width: 56, height: 56)
                         .background(Color.white)
-                        .clipShape(Circle())
                     }
                 }
 
-                // Description Section
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Curta descrição")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        let wordCount = viewModel.shortDescription.split { $0.isWhitespace }.count
-                        Text("\(wordCount)/200")
-                            .font(.caption)
-                            .foregroundStyle(wordCount > 200 ? .red : .secondary)
+                // Configuration Section (Merged)
+                VStack(spacing: 24) {
+                    if viewModel.context.scope.title == "Acompanhar e Criar Hábitos" {
+                        HabitsConfigView(viewModel: viewModel)
+                    } else if viewModel.context.scope.title == "Planear e Organizar" {
+                        PlanConfigView(viewModel: viewModel)
+                    } else if viewModel.context.scope.title == "Escrever e Refletir" {
+                        ReflectConfigView(viewModel: viewModel)
                     }
-
-                    TextField("", text: $viewModel.shortDescription, axis: .vertical)
-                        .padding()
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .lineLimit(3...6)
-                        .onChange(of: viewModel.shortDescription) { oldValue, newValue in
-                            let words = newValue.split { $0.isWhitespace }
-                            if words.count > 200 {
-                                viewModel.shortDescription = oldValue
-                            }
-                        }
                 }
-
-                // New Image Section
-                Image("New")
-                    .resizable()
-                    .scaledToFit()
             }
             .padding()
+            .padding(.bottom, 120)
         }
         .onAppear {
             let isSFSymbol: Bool = {
