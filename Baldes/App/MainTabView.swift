@@ -33,7 +33,6 @@ struct MainTabView: View {
                         .scaledToFit()
                         .frame(width: 38, height: 38)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 8))
                 }.sharedBackgroundVisibility(.hidden)
 
                 ToolbarItem(placement: .principal) {

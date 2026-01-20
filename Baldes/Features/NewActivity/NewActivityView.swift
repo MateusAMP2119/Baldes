@@ -3,141 +3,102 @@ import SwiftUI
 struct NewActivityView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var navigationPath = NavigationPath()
-    
-    // MARK: - Data Models
-    struct ActivityScope: Identifiable, Hashable {
-        let id = UUID()
-        let title: String
-        let description: String
-        let color: Color
-        let types: [ActivityType]
-        
-        static func == (lhs: ActivityScope, rhs: ActivityScope) -> Bool {
-            lhs.id == rhs.id
-        }
-        
-        func hash(into hasher: inout Hasher) {
-            hasher.combine(id)
-        }
-    }
-    
-    struct ActivityType: Identifiable, Hashable {
-        let id = UUID()
-        let title: String
-        let description: String
-        let examples: [ActivityExample]
-        let shadowColor: Color
-        
-        static func == (lhs: ActivityType, rhs: ActivityType) -> Bool {
-            lhs.id == rhs.id
-        }
-        
-        func hash(into hasher: inout Hasher) {
-            hasher.combine(id)
-        }
-    }
-    
-    struct ActivityExample: Hashable {
-        let emoji: String
-        let text: String
-        let detail: String
-    }
-    
+
     // MARK: - Data
     private let inputs: [ActivityScope] = [
         ActivityScope(
-            title: "Track & Build Habits",
-            description: "Log time, count reps, or measure progress.",
+            title: "Acompanhar e Criar Hábitos",
+            description: "Contabilizar tempo, repetições e medir progresso.",
             color: Color(red: 0.8, green: 0.2, blue: 0.8),
             types: [
                 ActivityType(
-                    title: "Timed Activity",
-                    description: "Unlimited sessions, unlimited possibilities.",
+                    title: "Atividade Temporizada",
+                    description: "Mede o tempo das tuas atividades e foca-te no essencial.",
                     examples: [
-                        ActivityExample(emoji: "📚", text: "Reading", detail: "45m Today"),
-                        ActivityExample(emoji: "🥊", text: "Muay Thai", detail: "75% W"),
-                        ActivityExample(emoji: "🥦", text: "Cooking", detail: "1h")
+                        ActivityExample(emoji: "📚", text: "Ler", detail: "45m Hoje"),
+                        ActivityExample(emoji: "🥊", text: "Muay Thai", detail: "75% V"),
+                        ActivityExample(emoji: "🥦", text: "Cozinhar", detail: "1h"),
                     ],
                     shadowColor: Color(red: 0.8, green: 0.2, blue: 0.8)
                 ),
                 ActivityType(
-                    title: "Simple Tally",
-                    description: "Great for habits or simple activities.",
+                    title: "Contagem Simples",
+                    description: "Marca as tuas conquistas, uma de cada vez.",
                     examples: [
-                        ActivityExample(emoji: "💪", text: "Pull-ups", detail: "25 Today"),
-                        ActivityExample(emoji: "🌅", text: "Alcohol-free Days", detail: ""),
-                        ActivityExample(emoji: "🪴", text: "Water Plants", detail: "")
+                        ActivityExample(emoji: "💪", text: "Elevações", detail: "25 Hoje"),
+                        ActivityExample(emoji: "🌅", text: "Dias sem Álcool", detail: ""),
+                        ActivityExample(emoji: "🪴", text: "Regar Plantas", detail: ""),
                     ],
                     shadowColor: Color(red: 0.9, green: 0.3, blue: 0.3)
                 ),
                 ActivityType(
-                    title: "Measured Tally",
-                    description: "For measurements beyond time.",
+                    title: "Contagem Medida",
+                    description: "Regista o progresso das tuas metas com precisão.",
                     examples: [
-                        ActivityExample(emoji: "🔻", text: "Weighted Pull-ups", detail: "5 × 30kg"),
-                        ActivityExample(emoji: "🏔️", text: "Hiking", detail: "9mi Today"),
-                        ActivityExample(emoji: "🏋️", text: "Clean & Jerk", detail: "3 × 10")
+                        ActivityExample(emoji: "🔻", text: "Elevações com Peso", detail: "5 × 30kg"),
+                        ActivityExample(emoji: "🏔️", text: "Caminhada", detail: "9km Hoje"),
+                        ActivityExample(emoji: "🏋️", text: "Clean & Jerk", detail: "3 × 10"),
                     ],
                     shadowColor: Color(red: 0.3, green: 0.3, blue: 0.9)
-                )
+                ),
             ]
         ),
         ActivityScope(
-            title: "Plan & Organize",
-            description: "Checklists for trips, errands, or projects.",
+            title: "Planear e Organizar",
+            description: "Planear viagens, listagem de tarefas e projetos ou orçamentos.",
             color: Color(red: 0.9, green: 0.6, blue: 0.2),
             types: [
                 ActivityType(
-                    title: "Checklist",
-                    description: "Keep track of tasks and to-dos.",
+                    title: "Lista de Verificação",
+                    description: "Aponta tudo para não te esqueceres de nada.",
                     examples: [
-                        ActivityExample(emoji: "🛒", text: "Grocery List", detail: "5/12 items"),
-                        ActivityExample(emoji: "🎒", text: "Packing List", detail: "Ready"),
-                        ActivityExample(emoji: "✅", text: "Daily Tasks", detail: "3 left")
+                        ActivityExample(emoji: "🛒", text: "Lista de Compras", detail: "5/12 itens"),
+                        ActivityExample(emoji: "🎒", text: "Lista de Viagem", detail: "Pronto"),
+                        ActivityExample(emoji: "✅", text: "Tarefas Diárias", detail: "3 restantes"),
                     ],
                     shadowColor: Color(red: 0.9, green: 0.6, blue: 0.2)
                 ),
                 ActivityType(
-                    title: "Itinerary",
-                    description: "Plan trips and sites to see.",
+                    title: "Itinerário",
+                    description: "Organiza os teus passeios e o que queres visitar.",
                     examples: [
-                        ActivityExample(emoji: "🗼", text: "Tokyo Trip", detail: "Oct 2026"),
-                        ActivityExample(emoji: "🏖️", text: "Summer Vacation", detail: "Booked"),
-                        ActivityExample(emoji: "📍", text: "Places to Visit", detail: "12 spots")
+                        ActivityExample(emoji: "🗼", text: "Viagem a Tóquio", detail: "Out 2026"),
+                        ActivityExample(emoji: "🏖️", text: "Férias de Verão", detail: "Marcado"),
+                        ActivityExample(emoji: "📍", text: "Locais a Visitar", detail: "12 locais"),
                     ],
                     shadowColor: Color(red: 0.2, green: 0.6, blue: 0.6)
-                )
+                ),
             ]
         ),
         ActivityScope(
-            title: "Write & Reflect",
-            description: "Journal entries or freeform notes.",
+            title: "Escrever e Refletir",
+            description: "Para registos diários e notas soltas.",
             color: Color(red: 0.3, green: 0.7, blue: 0.4),
             types: [
                 ActivityType(
-                    title: "Journal",
-                    description: "Write down your thoughts and memories.",
+                    title: "Diário",
+                    description: "Guarda as tuas histórias e reflexões do dia-a-dia.",
                     examples: [
-                        ActivityExample(emoji: "📓", text: "Daily Journal", detail: ""),
-                        ActivityExample(emoji: "💭", text: "Thoughts", detail: "Morning"),
-                        ActivityExample(emoji: "✨", text: "Gratitude", detail: "Evening")
+                        ActivityExample(emoji: "📓", text: "Diário Pessoal", detail: ""),
+                        ActivityExample(emoji: "💭", text: "Pensamentos", detail: "Manhã"),
+                        ActivityExample(emoji: "✨", text: "Gratidão", detail: "Noite"),
                     ],
                     shadowColor: Color(red: 0.3, green: 0.7, blue: 0.4)
                 ),
                 ActivityType(
-                    title: "Notes",
-                    description: "General note taking for anything.",
+                    title: "Notas",
+                    description: "Bloco de notas para tudo o que te vier à cabeça.",
                     examples: [
-                        ActivityExample(emoji: "📝", text: "Quick Notes", detail: ""),
-                        ActivityExample(emoji: "💡", text: "Ideas", detail: "Project A"),
-                        ActivityExample(emoji: "🏗️", text: "Meeting Notes", detail: "Weekly")
+                        ActivityExample(emoji: "📝", text: "Notas Rápidas", detail: ""),
+                        ActivityExample(emoji: "💡", text: "Ideias", detail: "Projeto A"),
+                        ActivityExample(emoji: "🏗️", text: "Notas de Reunião", detail: "Semanal"),
                     ],
                     shadowColor: Color(red: 0.5, green: 0.5, blue: 0.5)
-                )
+                ),
             ]
-        )
+        ),
     ]
-    
+
     var body: some View {
         NavigationStack(path: $navigationPath) {
             GoalSelectionView(scopes: inputs) { selectedScope in
@@ -160,6 +121,9 @@ struct NewActivityView: View {
             .navigationDestination(for: ActivityScope.self) { scope in
                 ActivityTypeSelectionView(scope: scope)
             }
+            .navigationDestination(for: ActivityType.self) { type in
+                ActivityConfigurationView(activityType: type)
+            }
         }
     }
 }
@@ -167,9 +131,9 @@ struct NewActivityView: View {
 // MARK: - Step 1: Goal Selection View
 
 struct GoalSelectionView: View {
-    let scopes: [NewActivityView.ActivityScope]
-    let onSelect: (NewActivityView.ActivityScope) -> Void
-    
+    let scopes: [ActivityScope]
+    let onSelect: (ActivityScope) -> Void
+
     var body: some View {
         ZStack(alignment: .bottom) {
             ScrollView {
@@ -179,7 +143,7 @@ struct GoalSelectionView: View {
                         .fontWeight(.bold)
                         .padding(.horizontal)
                         .padding(.top, 20)
-                    
+
                     VStack(spacing: 16) {
                         ForEach(scopes) { scope in
                             GoalCard(scope: scope) {
@@ -191,7 +155,7 @@ struct GoalSelectionView: View {
                 }
                 Color.clear.frame(height: 250)
             }
-            
+
             Image("Think")
                 .resizable()
                 .scaledToFit()
@@ -202,9 +166,9 @@ struct GoalSelectionView: View {
 }
 
 struct GoalCard: View {
-    let scope: NewActivityView.ActivityScope
+    let scope: ActivityScope
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 20) {
@@ -213,15 +177,15 @@ struct GoalCard: View {
                         .font(.title3)
                         .fontWeight(.bold)
                         .foregroundStyle(.primary)
-                    
+
                     Text(scope.description)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.leading)
                 }
-                
+
                 Spacer()
-                
+
                 Image(systemName: "chevron.right")
                     .foregroundStyle(.tertiary)
                     .fontWeight(.semibold)
@@ -246,8 +210,8 @@ struct GoalCard: View {
 // MARK: - Step 2: Activity Type Selection View
 
 struct ActivityTypeSelectionView: View {
-    let scope: NewActivityView.ActivityScope
-    
+    let scope: ActivityScope
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -255,26 +219,29 @@ struct ActivityTypeSelectionView: View {
                     Text(scope.title)
                         .font(.largeTitle)
                         .fontWeight(.bold)
-                    
-                    Text("Choose a template to get started")
+
+                    Text("Escolhe um modelo para começar")
                         .font(.body)
                         .foregroundStyle(.secondary)
                 }
                 .padding(.horizontal)
                 .padding(.top, 20)
-                
+
                 VStack(spacing: 16) {
                     ForEach(scope.types) { type in
-                        ActivityTypeCard(
-                            title: type.title,
-                            description: type.description,
-                            examples: type.examples,
-                            shadowColor: type.shadowColor
-                        )
+                        NavigationLink(value: type) {
+                            ActivityTypeCard(
+                                title: type.title,
+                                description: type.description,
+                                examples: type.examples,
+                                shadowColor: type.shadowColor
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
                 }
                 .padding(.horizontal)
-                
+
                 Color.clear.frame(height: 20)
             }
         }
@@ -286,9 +253,9 @@ struct ActivityTypeSelectionView: View {
 struct ActivityTypeCard: View {
     let title: String
     let description: String
-    let examples: [NewActivityView.ActivityExample]
+    let examples: [ActivityExample]
     let shadowColor: Color
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -302,11 +269,11 @@ struct ActivityTypeCard: View {
                     .background(Color.black.opacity(0.05))
                     .clipShape(Circle())
             }
-            
+
             Text(description)
                 .font(.subheadline)
                 .foregroundStyle(.primary)
-            
+
             // Examples Row
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
@@ -330,7 +297,7 @@ struct ActivityTypeCard: View {
                     }
                 }
             }
-            .scrollDisabled(true) // Just visual for now
+            .scrollDisabled(true)  // Just visual for now
         }
         .padding(20)
         .background(Color.white)
