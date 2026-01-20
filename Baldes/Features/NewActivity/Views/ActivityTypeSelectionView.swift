@@ -21,7 +21,9 @@ struct ActivityTypeSelectionView: View {
 
                     VStack(spacing: 16) {
                         ForEach(scope.types) { type in
-                            NavigationLink(value: type) {
+                            NavigationLink(
+                                value: ActivityConfigurationContext(scope: scope, type: type)
+                            ) {
                                 ActivityTypeCard(
                                     title: type.title,
                                     description: type.description,

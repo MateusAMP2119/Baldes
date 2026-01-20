@@ -10,7 +10,7 @@ struct NewActivityView: View {
             title: "Acompanhar e Criar Hábitos",
             description: "Contabilizar tempo, repetições e medir progresso.",
             color: Color(red: 0.8, green: 0.2, blue: 0.8),
-            imageName: "Think",
+            imageName: "Habbit",
             imagePosition: .bottomRight,
             imageHeight: 130,
             types: [
@@ -151,8 +151,8 @@ struct NewActivityView: View {
             .navigationDestination(for: ActivityScope.self) { scope in
                 ActivityTypeSelectionView(scope: scope)
             }
-            .navigationDestination(for: ActivityType.self) { type in
-                ActivityConfigurationView(activityType: type)
+            .navigationDestination(for: ActivityConfigurationContext.self) { context in
+                ActivityConfigurationView(context: context)
             }
         }
     }

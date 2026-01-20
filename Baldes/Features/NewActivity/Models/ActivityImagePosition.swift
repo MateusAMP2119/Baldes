@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum ActivityImagePosition {
+enum ActivityImagePosition: Hashable {
     case bottomLeft
     case bottomRight
 
