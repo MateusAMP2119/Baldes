@@ -10,34 +10,38 @@ struct NewActivityView: View {
             title: "Acompanhar e Criar Hábitos",
             description: "Contabilizar tempo, repetições e medir progresso.",
             color: Color(red: 0.8, green: 0.2, blue: 0.8),
+            imageName: "Think",
+            imagePosition: .bottomRight,
+            imageHeight: 120,
             types: [
                 ActivityType(
-                    title: "Atividade Temporizada",
-                    description: "Mede o tempo das tuas atividades e foca-te no essencial.",
+                    title: "Objetivos por tempo",
+                    description: "Para atingir metas temporais.",
                     examples: [
                         ActivityExample(emoji: "📚", text: "Ler", detail: "45m Hoje"),
-                        ActivityExample(emoji: "🥊", text: "Muay Thai", detail: "75% V"),
-                        ActivityExample(emoji: "🥦", text: "Cozinhar", detail: "1h"),
+                        ActivityExample(emoji: "🎨", text: "Pintura", detail: "1h Prática"),
+                        ActivityExample(emoji: "🏊", text: "Natação", detail: "45m Treino"),
                     ],
                     shadowColor: Color(red: 0.8, green: 0.2, blue: 0.8)
                 ),
                 ActivityType(
-                    title: "Contagem Simples",
-                    description: "Marca as tuas conquistas, uma de cada vez.",
+                    title: "Contagens Diárias",
+                    description: "Mantém a constância em hábitos diários.",
                     examples: [
-                        ActivityExample(emoji: "💪", text: "Elevações", detail: "25 Hoje"),
-                        ActivityExample(emoji: "🌅", text: "Dias sem Álcool", detail: ""),
-                        ActivityExample(emoji: "🪴", text: "Regar Plantas", detail: ""),
+                        ActivityExample(
+                            emoji: "☀️", text: "Acordar Cedo", detail: "5 Dias Seguidos"),
+                        ActivityExample(emoji: "📵", text: "Sem Redes Sociais", detail: "3 Dias"),
+                        ActivityExample(emoji: "🚭", text: "Não Fumar", detail: "2 Meses"),
                     ],
                     shadowColor: Color(red: 0.9, green: 0.3, blue: 0.3)
                 ),
                 ActivityType(
-                    title: "Contagem Medida",
+                    title: "Metas Numéricas",
                     description: "Regista o progresso das tuas metas com precisão.",
                     examples: [
-                        ActivityExample(emoji: "🔻", text: "Elevações com Peso", detail: "5 × 30kg"),
-                        ActivityExample(emoji: "🏔️", text: "Caminhada", detail: "9km Hoje"),
-                        ActivityExample(emoji: "🏋️", text: "Clean & Jerk", detail: "3 × 10"),
+                        ActivityExample(emoji: "✍️", text: "Escrita", detail: "500 Palavras"),
+                        ActivityExample(emoji: "💰", text: "Poupança", detail: "20€ Mealheiro"),
+                        ActivityExample(emoji: "🏋️", text: "Elevações", detail: "5 × 10kg"),
                     ],
                     shadowColor: Color(red: 0.3, green: 0.3, blue: 0.9)
                 ),
@@ -47,6 +51,9 @@ struct NewActivityView: View {
             title: "Planear e Organizar",
             description: "Planear viagens, listagem de tarefas e projetos ou orçamentos.",
             color: Color(red: 0.9, green: 0.6, blue: 0.2),
+            imageName: "Plan",
+            imagePosition: .bottomLeft,
+            imageHeight: 220,
             types: [
                 ActivityType(
                     title: "Lista de Verificação",
@@ -74,6 +81,9 @@ struct NewActivityView: View {
             title: "Escrever e Refletir",
             description: "Para registos diários e notas soltas.",
             color: Color(red: 0.3, green: 0.7, blue: 0.4),
+            imageName: "Write",
+            imagePosition: .bottomRight,
+            imageHeight: 220,
             types: [
                 ActivityType(
                     title: "Diário",
@@ -213,37 +223,45 @@ struct ActivityTypeSelectionView: View {
     let scope: ActivityScope
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(scope.title)
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
+        ZStack(alignment: scope.imagePosition.alignment) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(scope.title)
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
 
-                    Text("Escolhe um modelo para começar")
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal)
-                .padding(.top, 20)
-
-                VStack(spacing: 16) {
-                    ForEach(scope.types) { type in
-                        NavigationLink(value: type) {
-                            ActivityTypeCard(
-                                title: type.title,
-                                description: type.description,
-                                examples: type.examples,
-                                shadowColor: type.shadowColor
-                            )
-                        }
-                        .buttonStyle(PlainButtonStyle())
+                        Text("Escolhe um modelo para começar")
+                            .font(.body)
+                            .foregroundStyle(.secondary)
                     }
-                }
-                .padding(.horizontal)
+                    .padding(.horizontal)
+                    .padding(.top, 20)
 
-                Color.clear.frame(height: 20)
+                    VStack(spacing: 16) {
+                        ForEach(scope.types) { type in
+                            NavigationLink(value: type) {
+                                ActivityTypeCard(
+                                    title: type.title,
+                                    description: type.description,
+                                    examples: type.examples,
+                                    shadowColor: type.shadowColor
+                                )
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    }
+                    .padding(.horizontal)
+
+                    Color.clear.frame(height: scope.imageHeight)
+                }
             }
+
+            Image(scope.imageName)
+                .resizable()
+                .scaledToFit()
+                .frame(height: scope.imageHeight)
+                .ignoresSafeArea(edges: .bottom)
         }
     }
 }
@@ -257,7 +275,7 @@ struct ActivityTypeCard: View {
     let shadowColor: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(title)
                     .font(.title2)
@@ -273,6 +291,9 @@ struct ActivityTypeCard: View {
             Text(description)
                 .font(.subheadline)
                 .foregroundStyle(.primary)
+
+            Spacer()
+                .frame(height: 2)
 
             // Examples Row
             ScrollView(.horizontal, showsIndicators: false) {
@@ -297,7 +318,7 @@ struct ActivityTypeCard: View {
                     }
                 }
             }
-            .scrollDisabled(true)  // Just visual for now
+
         }
         .padding(20)
         .background(Color.white)
