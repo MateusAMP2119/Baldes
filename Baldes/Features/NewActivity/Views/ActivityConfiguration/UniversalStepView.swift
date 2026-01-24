@@ -2,8 +2,6 @@ import SwiftUI
 
 #if canImport(UIKit)
     import UIKit
-#elseif canImport(AppKit)
-    import AppKit
 #endif
 
 struct UniversalStepView: View {
@@ -11,116 +9,120 @@ struct UniversalStepView: View {
     @State private var emojiInput: String = ""
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                // Activity Type Title
-                Text(viewModel.context.type.title)
-                    .font(.largeTitle)
-                    .bold()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                // Name Section
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Nome")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-
-                    HStack(spacing: 12) {
-                        TextField("", text: $viewModel.name)
-                            .padding()
-                            .background(Color.gray.opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-
-                        // Icon Picker
-                        ZStack(alignment: .center) {
-                            let isSFSymbol: Bool = {
-                                #if canImport(UIKit)
-                                    return UIImage(systemName: viewModel.symbol) != nil
-                                #elseif canImport(AppKit)
-                                    return NSImage(
-                                        systemSymbolName: viewModel.symbol,
-                                        accessibilityDescription: nil) != nil
-                                #else
-                                    return false
-                                #endif
-                            }()
-
-                            if isSFSymbol {
-                                Image(systemName: viewModel.symbol)
-                                    .font(.title2)
-                                    .foregroundStyle(.secondary)
-                            } else if emojiInput.isEmpty && !viewModel.symbol.isEmpty {
-                                Text(viewModel.symbol)
-                                    .font(.title2)
-                            }
-
-                            TextField("", text: $emojiInput)
-                                .font(.title2)
-                                .multilineTextAlignment(.center)
-                                .onChange(of: emojiInput) { _, newValue in
-                                    // Use scalar properties to check for Emoji
-                                    let validEmojis = newValue.filter { char in
-                                        guard let scalar = char.unicodeScalars.first else {
-                                            return false
-                                        }
-                                        return scalar.properties.isEmoji
-                                            && !scalar.isASCII
-                                    }
-
-                                    if let lastEmoji = validEmojis.last {
-                                        let newString = String(lastEmoji)
-                                        if emojiInput != newString {
-                                            emojiInput = newString
-                                        }
-                                        viewModel.symbol = newString
-                                    } else {
-                                        // If valid emojis found is empty
-                                        if !newValue.isEmpty {
-                                            emojiInput = ""
-                                        }
-                                    }
-                                }
-                                .padding()
-                                .background(Color.gray.opacity(0.1))
-                                .clipShape(Circle())
+        Form {
+            // Name Section
+            HStack(spacing: 12) {
+                // Emoji Picker Circle
+                #if canImport(UIKit)
+                    EmojiTextField(text: $emojiInput)
+                        .frame(width: 48, height: 48)
+                        .background(Circle().fill(.background))
+                        .onChange(of: emojiInput) { _, newValue in
+                            handleEmojiInput(newValue)
                         }
-                        .frame(width: 56, height: 56)
-                        .background(Color.white)
-                    }
-                }
+                #else
+                    TextField("", text: $emojiInput)
+                        .font(.title)
+                        .multilineTextAlignment(.center)
+                        .frame(width: 48, height: 48)
+                        .background(Circle().fill(.background))
+                        .onChange(of: emojiInput) { _, newValue in
+                            handleEmojiInput(newValue)
+                        }
+                #endif
 
-                // Configuration Section (Merged)
-                VStack(spacing: 24) {
-                    if viewModel.context.scope.title == "Acompanhar e Criar Hábitos" {
-                        HabitsConfigView(viewModel: viewModel)
-                    } else if viewModel.context.scope.title == "Planear e Organizar" {
-                        PlanConfigView(viewModel: viewModel)
-                    } else if viewModel.context.scope.title == "Escrever e Refletir" {
-                        ReflectConfigView(viewModel: viewModel)
-                    }
-                }
-
-                // Commitment / Schedule Section
-                CommitmentConfigSection(viewModel: viewModel)
+                // Activity Name Field
+                TextField("Nome da Atividade", text: $viewModel.name)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(.background)
+                    )
             }
-            .padding()
-            .padding(.bottom, 120)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+
+            // Configuration Section (Merged)
+            if viewModel.context.scope.title == "Acompanhar e Criar Hábitos" {
+                HabitsConfigView(viewModel: viewModel)
+            } else if viewModel.context.scope.title == "Planear e Organizar" {
+                PlanConfigView(viewModel: viewModel)
+            } else if viewModel.context.scope.title == "Escrever e Refletir" {
+                ReflectConfigView(viewModel: viewModel)
+            }
+
+            // Commitment / Schedule Section
+            CommitmentConfigSection(viewModel: viewModel)
         }
         .onAppear {
-            let isSFSymbol: Bool = {
-                #if canImport(UIKit)
-                    return UIImage(systemName: viewModel.symbol) != nil
-                #elseif canImport(AppKit)
-                    return NSImage(
-                        systemSymbolName: viewModel.symbol, accessibilityDescription: nil) != nil
-                #else
-                    return false
-                #endif
-            }()
+            emojiInput = viewModel.symbol
+        }
+    }
 
-            if !isSFSymbol {
-                emojiInput = viewModel.symbol
-            }
+    private func handleEmojiInput(_ newValue: String) {
+        let emoji = newValue.last { char in
+            char.unicodeScalars.first.map {
+                $0.properties.isEmoji && !$0.isASCII
+            } ?? false
+        }
+        if let emoji {
+            emojiInput = String(emoji)
+            viewModel.symbol = String(emoji)
+        } else if !newValue.isEmpty {
+            emojiInput = viewModel.symbol
         }
     }
 }
+
+// MARK: - Emoji Keyboard TextField (iOS only)
+
+#if canImport(UIKit)
+    struct EmojiTextField: UIViewRepresentable {
+        @Binding var text: String
+
+        func makeUIView(context: Context) -> EmojiUITextField {
+            let textField = EmojiUITextField()
+            textField.delegate = context.coordinator
+            textField.textAlignment = .center
+            textField.font = .systemFont(ofSize: 24)
+            textField.text = text
+            textField.tintColor = .clear
+            textField.backgroundColor = .clear
+            return textField
+        }
+
+        func updateUIView(_ uiView: EmojiUITextField, context: Context) {
+            if uiView.text != text {
+                uiView.text = text
+            }
+        }
+
+        func makeCoordinator() -> Coordinator {
+            Coordinator(text: $text)
+        }
+
+        class Coordinator: NSObject, UITextFieldDelegate {
+            @Binding var text: String
+
+            init(text: Binding<String>) {
+                _text = text
+            }
+
+            func textFieldDidChangeSelection(_ textField: UITextField) {
+                text = textField.text ?? ""
+            }
+        }
+    }
+
+    class EmojiUITextField: UITextField {
+        override var textInputMode: UITextInputMode? {
+            for mode in UITextInputMode.activeInputModes {
+                if mode.primaryLanguage == "emoji" {
+                    return mode
+                }
+            }
+            return super.textInputMode
+        }
+    }
+#endif

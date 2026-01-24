@@ -13,15 +13,15 @@ struct ActivityConfigurationView: View {
 
     var body: some View {
         UniversalStepView(viewModel: viewModel)
+            .navigationTitle(viewModel.stepTitle)
             .safeAreaInset(edge: .bottom) {
-                // Footer Buttons
                 HStack {
                     Spacer()
 
                     Button {
                         viewModel.createAttributes()
                     } label: {
-                        Text("Criar")
+                        Text("Avançar")
                             .bold()
                             .frame(minWidth: 100)
                             .padding()
@@ -38,18 +38,9 @@ struct ActivityConfigurationView: View {
                                     .offset(x: 0, y: 4)
                             )
                     }
-                    .padding(.bottom, 4)  // Add space for shadow
                 }
-                .padding()
-            }
-
-            .navigationTitle(viewModel.stepTitle)
-            #if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .toolbar {
-                // Cancel button removed
+                .padding(.horizontal, 24)
+                .background(.clear)
             }
     }
 }

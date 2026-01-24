@@ -4,89 +4,69 @@ struct ReflectConfigView: View {
     @Bindable var viewModel: ActivityConfigurationViewModel
 
     var body: some View {
-        VStack(spacing: 20) {
+
+        Group {
             if viewModel.context.type.title == "Diário" {
                 // 1. Journal
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Journal Style")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-
+                Section("Journal Style") {
                     Picker("Style", selection: $viewModel.journalStyle) {
                         Text("Free Text").tag("Free Text")
                         Text("Guided Prompts").tag("Guided Prompts")
                     }
                     .pickerStyle(.segmented)
+                    .listRowBackground(Color.clear)
                 }
-                .padding()
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                Toggle("Passcode Protect this Bucket?", isOn: $viewModel.passcodeProtected)
-                    .padding()
-                    .background(Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                Section {
+                    Toggle("Passcode Protect this Bucket?", isOn: $viewModel.passcodeProtected)
+                }
 
             } else if viewModel.context.type.title == "Notas" {
                 // 2. Notes
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("View Preference")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-
+                Section("View Preference") {
                     Picker("View", selection: $viewModel.listStyle) {  // Reusing listStyle property for now
                         Text("Grid (Post-its)").tag("Grid")
                         Text("List (Rows)").tag("List")
                     }
                     .pickerStyle(.segmented)
+                    .listRowBackground(Color.clear)
                 }
-                .padding()
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                Text("Notes allow for quick capture and organization.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                Section {
+                    Text("Notes allow for quick capture and organization.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
 
             } else if viewModel.context.type.title == "Registo de Sentimentos" {
                 // 3. Mood Tracker
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Define Scale")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-
+                Section("Define Scale") {
                     Picker("Scale", selection: $viewModel.moodScale) {
                         Text("Emojis").tag("Emojis")
                         Text("Numeric 1-5").tag("Numeric")
                         Text("Battery").tag("Battery")
                     }
                     .pickerStyle(.segmented)
+                    .listRowBackground(Color.clear)
                 }
-                .padding()
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text("Label for Low")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                Section("Scale Labels") {
+                    HStack {
+                        Text("Low")
+                        Spacer()
                         TextField("e.g. Tired", text: $viewModel.labelLow)
+                            .multilineTextAlignment(.trailing)
                     }
-                    Spacer()
-                    VStack(alignment: .trailing) {
-                        Text("Label for High")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+
+                    HStack {
+                        Text("High")
+                        Spacer()
                         TextField("e.g. Energetic", text: $viewModel.labelHigh)
                             .multilineTextAlignment(.trailing)
                     }
                 }
-                .padding()
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
         }
+
     }
 }

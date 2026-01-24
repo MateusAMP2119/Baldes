@@ -35,7 +35,7 @@ public struct TimerPickerView: View {
             )
         }
         .padding(.horizontal)
-        .background(Color.white)  // Light background
+        // .background(Color.white) - Removed for Form integration
         .onAppear {
             updatePickers(from: totalSeconds)
         }

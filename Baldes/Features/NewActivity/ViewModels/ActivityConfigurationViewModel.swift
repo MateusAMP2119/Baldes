@@ -23,6 +23,7 @@ class ActivityConfigurationViewModel {
 
     // Streaks
     var frequency: String = "Every Day"  // Placeholder enum later
+    var selectedDays: Set<Int> = [1, 2, 3, 4, 5, 6, 7]
 
     // Numeric
     var metricUnit: String = "Kilogram (kg)"
