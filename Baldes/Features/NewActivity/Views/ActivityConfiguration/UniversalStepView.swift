@@ -99,6 +99,9 @@ struct UniversalStepView: View {
                         ReflectConfigView(viewModel: viewModel)
                     }
                 }
+
+                // Commitment / Schedule Section
+                CommitmentConfigSection(viewModel: viewModel)
             }
             .padding()
             .padding(.bottom, 120)

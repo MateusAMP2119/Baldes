@@ -6,18 +6,14 @@ import SwiftUI
 class ActivityConfigurationViewModel {
     let context: ActivityConfigurationContext
 
-    // Navigation
-    enum Step {
-        case universal
-        case commitment
-    }
-    var currentStep: Step = .universal
-
     // Universal Data
     var name: String = ""
-
     var symbol: String = "bucket.fill"
     var color: Color
+
+    // Notifications
+    var sendAlerts: Bool = false
+    var notificationTime = Date()
 
     // Scope 1: Habits
     // Time-based
@@ -27,9 +23,6 @@ class ActivityConfigurationViewModel {
 
     // Streaks
     var frequency: String = "Every Day"  // Placeholder enum later
-    var reminderTime = Date()
-
-    // Numeric
 
     // Numeric
     var metricUnit: String = "Kilogram (kg)"
@@ -79,38 +72,14 @@ class ActivityConfigurationViewModel {
         }
     }
 
-    func nextStep() {
-        withAnimation {
-            switch currentStep {
-            case .universal:
-                // Check if we need screen 3
-                if needsCommitmentStep {
-                    currentStep = .commitment
-                } else {
-                    // Finish
-                }
-            case .commitment:
-                // Finish
-                break
-            }
-        }
-    }
-
-    var needsCommitmentStep: Bool {
-        // Listas Generalistas might skip Screen 3
-        if context.scope.title == "Planear e Organizar"
-            && context.type.title == "Listas Generalistas"
-        {
-            return false
-        }
-        return true
+    // Actions
+    func createAttributes() {
+        // TODO: Implement creation logic using the captured data
+        print("Creating activity: \(name) with symbol \(symbol)")
+        // Typically this would save to SwiftData or call a delegate
     }
 
     var stepTitle: String {
-        switch currentStep {
-        case .universal: return "Criar novo Balde"
-        case .commitment:
-            return "Schedule & Commit"
-        }
+        return "Configurar Balde"
     }
 }
