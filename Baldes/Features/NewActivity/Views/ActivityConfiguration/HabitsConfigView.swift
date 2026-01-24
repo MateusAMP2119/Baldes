@@ -7,33 +7,14 @@ struct HabitsConfigView: View {
             if viewModel.context.type.title == "Objetivos por tempo" {
                 // 1. Time-based
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Daily Goal")
+                    Text("Objetivo")
                         .font(.headline)
                         .foregroundStyle(.secondary)
 
-                    DatePicker(
-                        "Duration", selection: $viewModel.duration,
-                        displayedComponents: .hourAndMinute
-                    )
-                    .datePickerStyle(.wheel)
-                    .labelsHidden()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    TimerPickerView(totalSeconds: $viewModel.dailyGoalTime)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
-
-                Toggle(isOn: $viewModel.allowStopwatch) {
-                    VStack(alignment: .leading) {
-                        Text("Allow Stopwatch")
-                            .font(.headline)
-                        Text("You can also track time manually.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding()
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
 
             } else if viewModel.context.type.title == "Contagens Diárias" {
                 // 2. Streaks

@@ -17,7 +17,7 @@ class ActivityConfigurationViewModel {
 
     // Scope 1: Habits
     // Time-based
-    var duration = Date()  // For Picker
+
     var dailyGoalTime: TimeInterval = 45 * 60
     var allowStopwatch: Bool = true
 

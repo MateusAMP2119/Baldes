@@ -14,7 +14,7 @@ struct CommitmentConfigSection: View {
 
                     // Day Selector (Placeholder)
                     HStack {
-                        ForEach(["S", "M", "T", "W", "T", "F", "S"], id: \.self) { day in
+                        ForEach(["S", "T", "Q", "Q", "S", "S", "D"], id: \.self) { day in
                             Text(day)
                                 .font(.caption)
                                 .frame(width: 32, height: 32)
