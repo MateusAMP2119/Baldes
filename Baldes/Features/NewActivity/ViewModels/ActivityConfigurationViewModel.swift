@@ -8,12 +8,12 @@ class ActivityConfigurationViewModel {
 
     // Universal Data
     var name: String = ""
+    var motivation: String = ""
     var symbol: String = "bucket.fill"
     var color: Color
 
-    // Notifications
-    var sendAlerts: Bool = false
-    var notificationTime = Date()
+    // Recurring Plan
+    var recurringPlan = RecurringPlan()
 
     // Scope 1: Habits
     // Time-based

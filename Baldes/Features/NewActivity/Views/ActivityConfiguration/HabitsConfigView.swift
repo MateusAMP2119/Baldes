@@ -6,7 +6,7 @@ struct HabitsConfigView: View {
         Group {
             if viewModel.context.type.title == "Objetivos por tempo" {
                 // 1. Time-based
-                Section("Objetivo") {
+                Section("Tempo") {
                     TimerPickerView(totalSeconds: $viewModel.dailyGoalTime)
                         .frame(maxWidth: .infinity)
                 }

@@ -13,29 +13,39 @@ public struct TimerPickerView: View {
 
     public var body: some View {
         HStack(spacing: 0) {
-            // Hours
-            timeComponent(
+            // Hours Picker
+            CompactWheelPicker(
                 selection: $selectedHours,
                 range: 0...23,
                 label: "h"
             )
 
-            // Minutes
-            timeComponent(
+            Text(":")
+                .font(.system(size: 28, weight: .regular, design: .rounded))
+                .foregroundStyle(.tertiary)
+                .padding(.horizontal, 2)
+
+            // Minutes Picker
+            CompactWheelPicker(
                 selection: $selectedMinutes,
                 range: 0...59,
                 label: "m"
             )
 
-            // Seconds
-            timeComponent(
+            Text(":")
+                .font(.system(size: 28, weight: .regular, design: .rounded))
+                .foregroundStyle(.tertiary)
+                .padding(.horizontal, 2)
+
+            // Seconds Picker
+            CompactWheelPicker(
                 selection: $selectedSeconds,
                 range: 0...59,
                 label: "s"
             )
         }
-        .padding(.horizontal)
-        // .background(Color.white) - Removed for Form integration
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
         .onAppear {
             updatePickers(from: totalSeconds)
         }
@@ -45,40 +55,6 @@ public struct TimerPickerView: View {
         .onChange(of: selectedHours) { updateTimeInterval() }
         .onChange(of: selectedMinutes) { updateTimeInterval() }
         .onChange(of: selectedSeconds) { updateTimeInterval() }
-    }
-
-    @ViewBuilder
-    private func timeComponent(selection: Binding<Int>, range: ClosedRange<Int>, label: String)
-        -> some View
-    {
-        HStack(spacing: 4) {
-            let picker = Picker(label, selection: selection) {
-                ForEach(range, id: \.self) { value in
-                    Text("\(value)")
-                        .foregroundStyle(.primary)  // Primary text
-                        .font(.title2)
-                        .tag(value)
-                }
-            }
-
-            #if os(iOS)
-                picker.pickerStyle(.wheel)
-                    .labelsHidden()
-                    .frame(minWidth: 50, maxWidth: 70)
-                    .clipped()
-            #else
-                picker.pickerStyle(.automatic)
-                    .labelsHidden()
-                    .frame(minWidth: 50, maxWidth: 70)
-                    .clipped()
-            #endif
-
-            Text(label)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundStyle(.primary)
-                .fixedSize()
-        }
     }
 
     private func updatePickers(from interval: TimeInterval) {
@@ -100,6 +76,40 @@ public struct TimerPickerView: View {
     }
 }
 
+// MARK: - Compact Wheel Picker
+private struct CompactWheelPicker: View {
+    @Binding var selection: Int
+    let range: ClosedRange<Int>
+    let label: String
+
+    var body: some View {
+        HStack(spacing: 2) {
+            Picker("", selection: $selection) {
+                ForEach(range, id: \.self) { value in
+                    Text(String(format: "%02d", value))
+                        .font(.system(size: 22, weight: .medium, design: .rounded))
+                        .monospacedDigit()
+                        .tag(value)
+                }
+            }
+            .pickerStyle(.wheel)
+            .frame(width: 56, height: 100)
+            .clipped()
+
+            Text(label)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
 #Preview {
-    TimerPickerView(totalSeconds: .constant(3600 + 360 + 5))
+    VStack {
+        TimerPickerView(totalSeconds: .constant(45 * 60))
+            .padding()
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .padding()
+    }
+    .background(Color.gray.opacity(0.1))
 }

@@ -1,8 +1,5 @@
 import SwiftUI
-
-#if canImport(UIKit)
-    import UIKit
-#endif
+import UIKit
 
 struct UniversalStepView: View {
     @Bindable var viewModel: ActivityConfigurationViewModel
@@ -10,38 +7,34 @@ struct UniversalStepView: View {
 
     var body: some View {
         Form {
-            // Name Section
-            HStack(spacing: 12) {
-                // Emoji Picker Circle
-                #if canImport(UIKit)
-                    EmojiTextField(text: $emojiInput)
-                        .frame(width: 48, height: 48)
-                        .background(Circle().fill(.background))
-                        .onChange(of: emojiInput) { _, newValue in
-                            handleEmojiInput(newValue)
-                        }
-                #else
-                    TextField("", text: $emojiInput)
-                        .font(.title)
-                        .multilineTextAlignment(.center)
-                        .frame(width: 48, height: 48)
-                        .background(Circle().fill(.background))
-                        .onChange(of: emojiInput) { _, newValue in
-                            handleEmojiInput(newValue)
-                        }
-                #endif
+            // Activity Type Title
+            Text(viewModel.context.type.title)
+                .font(.largeTitle.bold())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 4, trailing: 0))
 
-                // Activity Name Field
-                TextField("Nome da Atividade", text: $viewModel.name)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(.background)
-                    )
+            // Objetivo Section
+            Section("Objetivo") {
+                HStack() {
+                    TextField("Nome", text: $viewModel.name)
+                    
+                    // Emoji Picker Circle
+                    Circle()
+                        .foregroundColor(Color.gray.opacity(0.2))
+                        .frame(width: 34, height: 34)
+                        .overlay(
+                            EmojiTextField(text: $emojiInput)
+                                .onChange(of: emojiInput) { _, newValue in
+                                    handleEmojiInput(newValue)
+                                }
+                        )
+                        .offset(x: -5)
+                }
+                .frame(height: 18)
+                
+                TextField("Motivação", text: $viewModel.motivation)
             }
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
 
             // Configuration Section (Merged)
             if viewModel.context.scope.title == "Acompanhar e Criar Hábitos" {
@@ -75,54 +68,51 @@ struct UniversalStepView: View {
     }
 }
 
-// MARK: - Emoji Keyboard TextField (iOS only)
+// MARK: - Emoji Keyboard TextField
+struct EmojiTextField: UIViewRepresentable {
+    @Binding var text: String
 
-#if canImport(UIKit)
-    struct EmojiTextField: UIViewRepresentable {
+    func makeUIView(context: Context) -> EmojiUITextField {
+        let textField = EmojiUITextField()
+        textField.delegate = context.coordinator
+        textField.textAlignment = .center
+        textField.font = .systemFont(ofSize: 24)
+        textField.text = text
+        textField.tintColor = .clear
+        textField.backgroundColor = .clear
+        return textField
+    }
+
+    func updateUIView(_ uiView: EmojiUITextField, context: Context) {
+        if uiView.text != text {
+            uiView.text = text
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(text: $text)
+    }
+
+    class Coordinator: NSObject, UITextFieldDelegate {
         @Binding var text: String
 
-        func makeUIView(context: Context) -> EmojiUITextField {
-            let textField = EmojiUITextField()
-            textField.delegate = context.coordinator
-            textField.textAlignment = .center
-            textField.font = .systemFont(ofSize: 24)
-            textField.text = text
-            textField.tintColor = .clear
-            textField.backgroundColor = .clear
-            return textField
+        init(text: Binding<String>) {
+            _text = text
         }
 
-        func updateUIView(_ uiView: EmojiUITextField, context: Context) {
-            if uiView.text != text {
-                uiView.text = text
-            }
-        }
-
-        func makeCoordinator() -> Coordinator {
-            Coordinator(text: $text)
-        }
-
-        class Coordinator: NSObject, UITextFieldDelegate {
-            @Binding var text: String
-
-            init(text: Binding<String>) {
-                _text = text
-            }
-
-            func textFieldDidChangeSelection(_ textField: UITextField) {
-                text = textField.text ?? ""
-            }
+        func textFieldDidChangeSelection(_ textField: UITextField) {
+            text = textField.text ?? ""
         }
     }
+}
 
-    class EmojiUITextField: UITextField {
-        override var textInputMode: UITextInputMode? {
-            for mode in UITextInputMode.activeInputModes {
-                if mode.primaryLanguage == "emoji" {
-                    return mode
-                }
+class EmojiUITextField: UITextField {
+    override var textInputMode: UITextInputMode? {
+        for mode in UITextInputMode.activeInputModes {
+            if mode.primaryLanguage == "emoji" {
+                return mode
             }
-            return super.textInputMode
         }
+        return super.textInputMode
     }
-#endif
+}
