@@ -66,7 +66,7 @@ class ActivityConfigurationViewModel {
 
     init(context: ActivityConfigurationContext) {
         self.context = context
-        self.color = context.scope.color
+        self.color = context.type.shadowColor
 
         // Inherit from Activity Type
         // self.name = context.type.title

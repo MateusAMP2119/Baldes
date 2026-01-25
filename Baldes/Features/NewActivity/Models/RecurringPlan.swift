@@ -4,8 +4,7 @@ import Foundation
 struct RecurringPlan: Hashable {
     var selectedDays: Set<Weekday> = []
     var remindMe: Bool = false
-    var reminderTime: Date =
-        Calendar.current.date(from: DateComponents(hour: 12, minute: 0)) ?? Date()
+    var reminderTimes: [ReminderTime] = [ReminderTime()]
 
     var hasRecurringPlan: Bool {
         !selectedDays.isEmpty
@@ -18,6 +17,12 @@ struct RecurringPlan: Hashable {
         let sortedDays = selectedDays.sorted { $0.rawValue < $1.rawValue }
         return sortedDays.map { $0.shortName }.joined(separator: ", ")
     }
+}
+
+/// Wrapper for reminder time with stable identity
+struct ReminderTime: Identifiable, Hashable {
+    let id = UUID()
+    var time: Date = Calendar.current.date(from: DateComponents(hour: 12, minute: 0)) ?? Date()
 }
 
 /// Days of the week for recurring plan selection
@@ -34,13 +39,13 @@ enum Weekday: Int, CaseIterable, Identifiable, Hashable {
 
     var name: String {
         switch self {
-        case .sunday: return "Sunday"
-        case .monday: return "Monday"
-        case .tuesday: return "Tuesday"
-        case .wednesday: return "Wednesday"
-        case .thursday: return "Thursday"
-        case .friday: return "Friday"
-        case .saturday: return "Saturday"
+        case .sunday: return "Domingo"
+        case .monday: return "Segunda-feira"
+        case .tuesday: return "Terça-feira"
+        case .wednesday: return "Quarta-feira"
+        case .thursday: return "Quinta-feira"
+        case .friday: return "Sexta-feira"
+        case .saturday: return "Sábado"
         }
     }
 

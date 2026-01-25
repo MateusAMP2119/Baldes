@@ -14,39 +14,67 @@ struct RecurringPlanView: View {
                     } label: {
                         HStack {
                             Text(day.name)
-                                .foregroundStyle(.primary)
+                                .foregroundStyle(Color(.label))
 
                             Spacer()
 
                             if viewModel.recurringPlan.selectedDays.contains(day) {
                                 Image(systemName: "checkmark")
-                                    .foregroundStyle(.primary)
+                                    .foregroundStyle(.orange)
                                     .fontWeight(.medium)
                             }
                         }
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
             } header: {
-                Text("Repeats on")
-                    .textCase(.lowercase)
+                Text("Repetições")
             }
 
             // MARK: - Reminder Section
             Section {
                 Toggle(isOn: $viewModel.recurringPlan.remindMe.animation(.smooth)) {
                     Label {
-                        Text("Remind Me")
+                        Text("Lembretes")
                     } icon: {
                         Image(systemName: "bell.badge")
+                            .foregroundStyle(.orange)
                     }
                 }
 
                 if viewModel.recurringPlan.remindMe {
-                    DatePicker(
-                        "Time",
-                        selection: $viewModel.recurringPlan.reminderTime,
-                        displayedComponents: .hourAndMinute
-                    )
+                    ForEach($viewModel.recurringPlan.reminderTimes) { $reminder in
+                        HStack {
+                            DatePicker(
+                                "Hora",
+                                selection: $reminder.time,
+                                displayedComponents: .hourAndMinute
+                            )
+
+                            if viewModel.recurringPlan.reminderTimes.count > 1 {
+                                Button {
+                                    withAnimation(.smooth) {
+                                        removeReminderTime(reminder)
+                                    }
+                                } label: {
+                                    Image(systemName: "minus.circle.fill")
+                                        .foregroundStyle(.red)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+
+                    Button {
+                        withAnimation(.smooth) {
+                            addReminderTime()
+                        }
+                    } label: {
+                        Label("Adicionar horário", systemImage: "plus.circle.fill")
+                            .foregroundStyle(.orange)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
 
@@ -63,14 +91,11 @@ struct RecurringPlanView: View {
                                 Spacer()
 
                                 Label {
-                                    if viewModel.recurringPlan.remindMe {
-                                        Text("Remove Recurring Plan & Reminder")
-                                    } else {
-                                        Text("Remove Recurring Plan")
-                                    }
+                                    Text("Limpar plano")
                                 } icon: {
                                     Image(systemName: "xmark.circle.fill")
                                 }
+                                .foregroundStyle(.red)
 
                                 Spacer()
                             }
@@ -81,12 +106,23 @@ struct RecurringPlanView: View {
             .animation(.smooth, value: viewModel.recurringPlan.hasRecurringPlan)
             .animation(.smooth, value: viewModel.recurringPlan.remindMe)
         }
-        .navigationTitle("Recurring Plan")
+        .navigationTitle("Plano Recorrente")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Done") {
+            ToolbarItem(placement: .cancellationAction) {
+                Button {
                     dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .foregroundStyle(.gray)
+                }
+            }
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "checkmark")
+                        .fontWeight(.semibold)
                 }
             }
         }
@@ -102,9 +138,17 @@ struct RecurringPlanView: View {
         }
     }
 
+    private func addReminderTime() {
+        viewModel.recurringPlan.reminderTimes.append(ReminderTime())
+    }
+
+    private func removeReminderTime(_ reminder: ReminderTime) {
+        guard viewModel.recurringPlan.reminderTimes.count > 1 else { return }
+        viewModel.recurringPlan.reminderTimes.removeAll { $0.id == reminder.id }
+    }
+
     private func removeRecurringPlan() {
         viewModel.recurringPlan = RecurringPlan()
-        dismiss()
     }
 }
 
