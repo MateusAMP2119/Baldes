@@ -13,41 +13,57 @@ struct HabitsConfigView: View {
 
             } else if viewModel.context.type.title == "Contagens Diárias" {
                 // 2. Streaks
-                Section("Frequency") {
-                    Picker("Frequency", selection: $viewModel.frequency) {
-                        Text("Every Day").tag("Every Day")
-                        Text("Weekdays").tag("Weekdays")
-                        Text("Custom").tag("Custom")
-                    }
-                    .pickerStyle(.segmented)
-                }
+                Section("Duração") {
+                    Toggle("Objetivo com fim", isOn: $viewModel.hasEndGoal.animation(.smooth))
 
-                Section {
-                    Text(
-                        "Just check in correctly according to your schedule to keep your streak alive!"
-                    )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    if viewModel.hasEndGoal {
+                        Picker("Medida", selection: $viewModel.frequency.animation(.smooth)) {
+                            Text("Dias").tag("Dias")
+                            Text("Semanas").tag("Semanas")
+                            Text("Meses").tag("Meses")
+                            Text("Outra data").tag("Outra data")
+                        }
+                        .pickerStyle(.menu)
+                        .tint(.secondary)
+
+                        if viewModel.frequency == "Outra data" {
+                            DatePicker(
+                                "Data final",
+                                selection: $viewModel.customEndDate,
+                                in: Date()...,
+                                displayedComponents: .date
+                            )
+                        }
+                    }
                 }
 
             } else if viewModel.context.type.title == "Metas Numéricas" {
                 // 3. Numeric Goals
-                Section("Measurement") {
-                    TextField("Metric Unit (e.g. Words)", text: $viewModel.metricUnit)
+                Section("Medida") {
+                    Picker("Unidade", selection: $viewModel.metricUnit.animation(.smooth)) {
+                        Text("Repetições").tag("Repetições")
+                        Text("Kilometros (Km)").tag("Kilometros (Km)")
+                        Text("Litros (L)").tag("Litros (L)")
+                        Text("Outra medida").tag("Outra medida")
+                    }
+                    .pickerStyle(.menu)
+                    .tint(.secondary)
+
+                    if viewModel.metricUnit == "Outra medida" {
+                        TextField("Nome da medida", text: $viewModel.customMetricUnit)
+                    }
 
                     HStack {
-                        Text("Target Number")
+                        Text("Meta")
                         Spacer()
                         TextField("0", value: $viewModel.metricTarget, format: .number)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                     }
-                }
 
-                Section("Goal Type") {
-                    Picker("Goal Type", selection: $viewModel.isLimit) {
-                        Text("Target to Reach").tag(false)
-                        Text("Limit to Avoid").tag(true)
+                    Picker("", selection: $viewModel.isLimit) {
+                        Text("Meta a alcançar").tag(false)
+                        Text("Meta a evitar").tag(true)
                     }
                     .pickerStyle(.segmented)
                 }

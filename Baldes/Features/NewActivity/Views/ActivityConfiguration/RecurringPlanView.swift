@@ -33,7 +33,7 @@ struct RecurringPlanView: View {
 
             // MARK: - Reminder Section
             Section {
-                Toggle(isOn: $viewModel.recurringPlan.remindMe) {
+                Toggle(isOn: $viewModel.recurringPlan.remindMe.animation(.smooth)) {
                     Label {
                         Text("Remind Me")
                     } icon: {
@@ -51,29 +51,35 @@ struct RecurringPlanView: View {
             }
 
             // MARK: - Remove Button
-            if viewModel.recurringPlan.hasRecurringPlan || viewModel.recurringPlan.remindMe {
-                Section {
-                    Button(role: .destructive) {
-                        removeRecurringPlan()
-                    } label: {
-                        HStack {
-                            Spacer()
-
-                            Label {
-                                if viewModel.recurringPlan.remindMe {
-                                    Text("Remove Recurring Plan & Reminder")
-                                } else {
-                                    Text("Remove Recurring Plan")
-                                }
-                            } icon: {
-                                Image(systemName: "xmark.circle.fill")
+            Group {
+                if viewModel.recurringPlan.hasRecurringPlan || viewModel.recurringPlan.remindMe {
+                    Section {
+                        Button(role: .destructive) {
+                            withAnimation(.smooth) {
+                                removeRecurringPlan()
                             }
+                        } label: {
+                            HStack {
+                                Spacer()
 
-                            Spacer()
+                                Label {
+                                    if viewModel.recurringPlan.remindMe {
+                                        Text("Remove Recurring Plan & Reminder")
+                                    } else {
+                                        Text("Remove Recurring Plan")
+                                    }
+                                } icon: {
+                                    Image(systemName: "xmark.circle.fill")
+                                }
+
+                                Spacer()
+                            }
                         }
                     }
                 }
             }
+            .animation(.smooth, value: viewModel.recurringPlan.hasRecurringPlan)
+            .animation(.smooth, value: viewModel.recurringPlan.remindMe)
         }
         .navigationTitle("Recurring Plan")
         .navigationBarTitleDisplayMode(.inline)

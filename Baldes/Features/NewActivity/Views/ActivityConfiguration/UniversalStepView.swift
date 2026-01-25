@@ -16,9 +16,9 @@ struct UniversalStepView: View {
 
             // Objetivo Section
             Section("Objetivo") {
-                HStack() {
+                HStack {
                     TextField("Nome", text: $viewModel.name)
-                    
+
                     // Emoji Picker Circle
                     Circle()
                         .foregroundColor(Color.gray.opacity(0.2))
@@ -32,8 +32,9 @@ struct UniversalStepView: View {
                         .offset(x: -5)
                 }
                 .frame(height: 18)
-                
-                TextField("Motivação", text: $viewModel.motivation)
+
+                TextField("Motivação", text: $viewModel.motivation, axis: .vertical)
+                    .lineLimit(1...5)
             }
 
             // Configuration Section (Merged)

@@ -22,11 +22,14 @@ class ActivityConfigurationViewModel {
     var allowStopwatch: Bool = true
 
     // Streaks
-    var frequency: String = "Every Day"  // Placeholder enum later
+    var frequency: String = "Dias"  // Placeholder enum later
+    var hasEndGoal: Bool = true
+    var customEndDate: Date = Date()
     var selectedDays: Set<Int> = [1, 2, 3, 4, 5, 6, 7]
 
     // Numeric
-    var metricUnit: String = "Kilogram (kg)"
+    var metricUnit: String = "Repetições"
+    var customMetricUnit: String = ""
     var metricTarget: Double = 0
     var isLimit: Bool = false
 
