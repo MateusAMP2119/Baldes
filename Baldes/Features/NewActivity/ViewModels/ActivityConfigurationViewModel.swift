@@ -80,10 +80,14 @@ class ActivityConfigurationViewModel {
 
     // Actions
     func saveActivity(modelContext: ModelContext) {
+        let planSummary = recurringPlan.hasRecurringPlan ? recurringPlan.summary : nil
+
         let newActivity = Activity(
             name: name,
             symbol: symbol,
             colorHex: color.toHex() ?? "#000000",
+            motivation: motivation,
+            recurringPlanSummary: planSummary,
             creationDate: Date(),
             goalTimeSeconds: (context.type.title == "Objetivos por tempo") ? dailyGoalTime : nil,
             targetCount: (context.type.title == "Metas Numéricas") ? Int(metricTarget) : nil,
@@ -99,6 +103,12 @@ class ActivityConfigurationViewModel {
         } catch {
             print("Failed to save activity: \(error.localizedDescription)")
         }
+    }
+
+    /// Validates that all mandatory fields are filled
+    var canSave: Bool {
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !motivation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     var stepTitle: String {

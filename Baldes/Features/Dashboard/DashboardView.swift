@@ -3,7 +3,6 @@ import SwiftUI
 
 struct DashboardView: View {
     @State private var showingNewActivitySheet = false
-    @State private var activityToEdit: Activity?
     @Query private var activities: [Activity]
 
     var body: some View {
@@ -23,33 +22,13 @@ struct DashboardView: View {
         .sheet(isPresented: $showingNewActivitySheet) {
             NewActivityView()
         }
-        .sheet(item: $activityToEdit) { activity in
-            ActivityEditView(activity: activity)
-        }
     }
 
     private var activitiesList: some View {
         ScrollView {
             VStack(spacing: 16) {
                 ForEach(activities) { activity in
-                    ActivityCardView(activity: activity) {
-                        activityToEdit = activity
-                    }
-                }
-
-                // Add button at bottom of list too? Or just toolbar?
-                // For now, let's keep the main + button accessible maybe via toolbar or floating
-                // But the request implies the empty state was the main issue.
-                // Let's add a "New Activity" button at the end of the list as well or floating.
-
-                Button(action: { showingNewActivitySheet = true }) {
-                    HStack {
-                        Image(systemName: "plus.circle.fill")
-                        Text("Novo Balde")
-                    }
-                    .font(.headline)
-                    .foregroundStyle(.gray)
-                    .padding(.vertical, 20)
+                    ActivityCardView(activity: activity)
                 }
             }
             .padding()

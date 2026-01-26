@@ -4,35 +4,34 @@ struct MainTabView: View {
     @State private var selection = 0
     @State private var previousSelection = 0
     @State private var showSheet = false
-    
+
     var body: some View {
         NavigationStack {
             TabView(selection: $selection) {
                 Tab(value: 0) {
                     DashboardView()
-                } label : {
+                } label: {
                     Label("Actividades", systemImage: "text.rectangle.page")
                 }
-                
+
                 Tab(value: 1) {
                     StreamLogView()
-                } label : {
+                } label: {
                     Label("Histórico", systemImage: "bookmark")
                 }
-                
+
                 Tab(value: 2, role: .search) {
                 } label: {
                     Label("Ações", systemImage: "plus")
                 }
             }
-            .tint(Color(red: 0.906, green: 0.365, blue: 0.227)) // #e75d3a
+            .tint(Color(red: 0.906, green: 0.365, blue: 0.227))  // #e75d3a
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Image("Logo")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 38, height: 38)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
                 }.sharedBackgroundVisibility(.hidden)
 
                 ToolbarItem(placement: .principal) {
@@ -43,7 +42,7 @@ struct MainTabView: View {
                         .padding(.vertical, 8)
                         .glassEffect(.regular.interactive())
                 }
-                
+
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: {}) {
                         Image(systemName: "person.crop.circle")
@@ -62,11 +61,10 @@ struct MainTabView: View {
             }
         }
         .sheet(isPresented: $showSheet) {
-            Text("TBD: New Entry Sheet")
-                .presentationDetents([.medium, .large])
+            NewActivityView()
         }
     }
-    
+
     private var todayDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEE MMM d"

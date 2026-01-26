@@ -43,6 +43,8 @@ struct ActivityConfigurationView: View {
                                     .offset(x: 0, y: 4)
                             )
                     }
+                    .disabled(!viewModel.canSave)
+                    .opacity(viewModel.canSave ? 1.0 : 0.5)
                 }
                 .padding(.horizontal, 24)
                 .background(.clear)
