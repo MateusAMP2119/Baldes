@@ -4,7 +4,6 @@ import UIKit
 struct UniversalStepView: View {
     @Bindable var viewModel: ActivityConfigurationViewModel
     @State private var emojiInput: String = ""
-    @State private var showingQuote = false
     @State private var currentQuote: PhilosopherQuote?
 
     private let philosopherQuotes: [PhilosopherQuote] = [
@@ -73,37 +72,42 @@ struct UniversalStepView: View {
                     TextField("Motivação", text: $viewModel.motivation, axis: .vertical)
                         .lineLimit(1...5)
 
-                    Button {
-                        currentQuote = philosopherQuotes.randomElement()
-                        showingQuote = true
-                    } label: {
-                        Image(systemName: "lightbulb.fill")
-                            .foregroundStyle(.yellow)
-                            .font(.system(size: 18))
-                    }
-                    .buttonStyle(.plain)
-                    .popover(isPresented: $showingQuote) {
-                        if let quote = currentQuote {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("\"\(quote.quote)\"")
-                                    .font(.body)
-                                    .italic()
-                                Text("— \(quote.author)")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-
-                                Button("Usar esta citação") {
-                                    viewModel.motivation = quote.quote
-                                    showingQuote = false
-                                }
-                                .font(.caption)
-                                .padding(.top, 4)
+                    Circle()
+                        .foregroundColor(Color.gray.opacity(0.2))
+                        .frame(width: 34, height: 34)
+                        .overlay(
+                            Button {
+                                currentQuote = philosopherQuotes.randomElement()
+                            } label: {
+                                Image(systemName: "lightbulb.min")
+                                    .foregroundStyle(.gray)
+                                    .font(.system(size: 18))
                             }
-                            .padding()
-                            .frame(maxWidth: 300)
-                            .presentationCompactAdaptation(.popover)
-                        }
-                    }
+                            .buttonStyle(.plain)
+                            .popover(item: $currentQuote) { quote in
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("\"\(quote.quote)\"")
+                                        .font(.body)
+                                        .italic()
+                                        .fixedSize(horizontal: false, vertical: true)
+                                    Text("— \(quote.author)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+
+                                    Button("Usar esta citação") {
+                                        viewModel.motivation = quote.quote
+                                        currentQuote = nil
+                                    }
+                                    .font(.caption)
+                                    .padding(.top, 4)
+                                }
+                                .padding()
+                                .frame(minWidth: 200, idealWidth: 300)
+                                .presentationCompactAdaptation(.popover)
+                            }
+                        )
+                        .offset(x: -5)
+                        .frame(height: 18)
                 }
             }
 

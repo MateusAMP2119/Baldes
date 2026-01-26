@@ -5,47 +5,85 @@ struct ActivityCardView: View {
     let activity: Activity
     var onEdit: (() -> Void)? = nil
 
-    var body: some View {
-        HStack {
-            // Circle Icon
-            ZStack {
-                Circle()
-                    .fill(Color(hex: activity.colorHex).opacity(0.3))  // Lighter background
-                    .frame(width: 50, height: 50)
+    private var activityColor: Color {
+        Color(hex: activity.colorHex)
+    }
 
-                Image(systemName: activity.symbol)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 24, height: 24)
-                    .foregroundStyle(Color(hex: activity.colorHex).opacity(0.8))  // Darker icon
+    // MARK: - Goal Display Helpers
+
+    private var goalTypeLabel: String {
+        if activity.goalTimeSeconds != nil {
+            return "Tempo diário"
+        } else if activity.metricTarget != nil {
+            return "Meta numérica"
+        } else {
+            return "Atividade"
+        }
+    }
+
+    private var goalTypeIcon: String {
+        if activity.goalTimeSeconds != nil {
+            return "clock.fill"
+        } else if activity.metricTarget != nil {
+            return "number.circle.fill"
+        } else {
+            return "checkmark.circle.fill"
+        }
+    }
+
+    private var formattedGoal: String {
+        if let seconds = activity.goalTimeSeconds {
+            let hours = Int(seconds) / 3600
+            let minutes = (Int(seconds) % 3600) / 60
+            if hours > 0 {
+                return "\(hours)h \(minutes)m"
+            } else {
+                return "\(minutes) min"
             }
-            .overlay(
-                Circle()
-                    .stroke(Color.black, lineWidth: 1.5)
-            )
-            .padding(.trailing, 8)
+        } else if let target = activity.metricTarget, let unit = activity.metricUnit {
+            let formattedTarget =
+                target.truncatingRemainder(dividingBy: 1) == 0
+                ? String(format: "%.0f", target)
+                : String(format: "%.1f", target)
+            return "\(formattedTarget) \(unit)"
+        }
+        return ""
+    }
 
-            // Text Content
-            VStack(alignment: .leading, spacing: 4) {
+    var body: some View {
+        HStack(spacing: 12) {
+            // Activity Icon
+            activityIcon
+
+            // Main Content
+            VStack(alignment: .leading, spacing: 6) {
+                // Activity Name
                 Text(activity.name)
-                    .font(.body)
+                    .font(.headline)
                     .fontWeight(.semibold)
                     .foregroundStyle(.black)
+                    .lineLimit(1)
 
-                // We can add logic to show progress here later
-                // For now, static or based on properties
-                if activity.goalTimeSeconds != nil {
-                    Text("0 m")
+                // Goal Info Row
+                HStack(spacing: 6) {
+                    Image(systemName: goalTypeIcon)
+                        .font(.caption)
+                        .foregroundStyle(activityColor)
+
+                    Text(goalTypeLabel)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                } else if let unit = activity.metricUnit, let target = activity.targetCount {
-                    Text("0 / \(target) \(unit)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text("This Week")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+
+                    if !formattedGoal.isEmpty {
+                        Text("•")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Text(formattedGoal)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(activityColor)
+                    }
                 }
             }
 
@@ -59,21 +97,6 @@ struct ActivityCardView: View {
                         .foregroundStyle(.gray)
                 }
                 .buttonStyle(.plain)
-                .padding(.trailing, 8)
-            }
-
-            // Trailing info (e.g. "0 mi" in screenshot)
-            VStack(alignment: .trailing) {
-                if let target = activity.metricTarget, let unit = activity.metricUnit {
-                    Text("0 \(unit)")
-                        .font(.headline)
-                        .foregroundStyle(Color(hex: activity.colorHex))
-                    Text("This Week")
-                        .font(.caption2)
-                        .foregroundStyle(.black)
-                } else {
-                    // Empty for now or custom
-                }
             }
         }
         .padding()
@@ -84,10 +107,9 @@ struct ActivityCardView: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color.black, lineWidth: 1.5)
         )
-        .shadow(color: Color.black.opacity(0.0), radius: 0, x: 0, y: 0)  // Reset default shadow
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(hex: activity.colorHex).opacity(0.3))
+                .fill(activityColor.opacity(0.3))
                 .offset(x: 0, y: 5)
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
@@ -96,6 +118,23 @@ struct ActivityCardView: View {
                 )
                 .zIndex(-1)
         )
-        .padding(.bottom, 6)  // For the shadow offset
+        .padding(.bottom, 6)
+    }
+
+    // MARK: - Subviews
+
+    private var activityIcon: some View {
+        ZStack {
+            Circle()
+                .fill(activityColor.opacity(0.2))
+                .frame(width: 50, height: 50)
+
+            Text(activity.symbol)
+                .font(.title2)
+        }
+        .overlay(
+            Circle()
+                .stroke(Color.black, lineWidth: 1.5)
+        )
     }
 }
