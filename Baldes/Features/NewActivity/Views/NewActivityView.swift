@@ -149,10 +149,14 @@ struct NewActivityView: View {
                 }
             }
             .navigationDestination(for: ActivityScope.self) { scope in
-                ActivityTypeSelectionView(scope: scope)
+                ActivityTypeSelectionView(scope: scope, path: $navigationPath)
             }
             .navigationDestination(for: ActivityConfigurationContext.self) { context in
-                ActivityConfigurationView(context: context)
+                ActivityConfigurationView(
+                    context: context,
+                    onSave: {
+                        dismiss()
+                    })
             }
         }
     }

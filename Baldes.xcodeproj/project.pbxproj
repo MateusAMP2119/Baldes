@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A7CACCB02F26AAF5001AA561 /* BaldesIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = A7CACCAF2F26AAF5001AA561 /* BaldesIcon.icon */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		A71740F32F1D5D5E0054971E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +31,7 @@
 		A71740E52F1D5D5D0054971E /* Baldes.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Baldes.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A71740F22F1D5D5E0054971E /* BaldesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BaldesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A71740FC2F1D5D5E0054971E /* BaldesUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BaldesUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A7CACCAF2F26AAF5001AA561 /* BaldesIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = BaldesIcon.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -79,6 +84,7 @@
 				A71740F52F1D5D5E0054971E /* BaldesTests */,
 				A71740FF2F1D5D5E0054971E /* BaldesUITests */,
 				A71740E62F1D5D5D0054971E /* Products */,
+				A7CACCAF2F26AAF5001AA561 /* BaldesIcon.icon */,
 			);
 			sourceTree = "<group>";
 		};
@@ -212,6 +218,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A7CACCB02F26AAF5001AA561 /* BaldesIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -393,8 +400,9 @@
 		A71741072F1D5D5E0054971E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = BaldesIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = SC8X3XN7R6;
@@ -425,8 +433,9 @@
 		A71741082F1D5D5E0054971E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = BaldesIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = SC8X3XN7R6;

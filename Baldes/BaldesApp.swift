@@ -5,6 +5,7 @@
 //  Created by Mateus Costa on 18/01/2026.
 //
 
+import SwiftData
 import SwiftUI
 
 @main
@@ -13,5 +14,6 @@ struct BaldesApp: App {
         WindowGroup {
             MainTabView()
         }
+        .modelContainer(for: Activity.self)
     }
 }

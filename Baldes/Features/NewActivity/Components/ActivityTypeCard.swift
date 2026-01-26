@@ -5,6 +5,7 @@ struct ActivityTypeCard: View {
     let description: String
     let examples: [ActivityExample]
     let shadowColor: Color
+    var onExampleTap: ((ActivityExample) -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -31,22 +32,27 @@ struct ActivityTypeCard: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(examples, id: \.text) { example in
-                        HStack(spacing: 4) {
-                            Text(example.emoji)
-                            Text(example.text)
-                                .fontWeight(.medium)
-                            if !example.detail.isEmpty {
-                                Text("•")
-                                    .foregroundStyle(.secondary)
-                                Text(example.detail)
-                                    .foregroundStyle(.secondary)
+                        Button {
+                            onExampleTap?(example)
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text(example.emoji)
+                                Text(example.text)
+                                    .fontWeight(.medium)
+                                if !example.detail.isEmpty {
+                                    Text("•")
+                                        .foregroundStyle(.secondary)
+                                    Text(example.detail)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
+                            .font(.caption)
+                            .padding(.vertical, 4)
+                            .padding(.horizontal, 8)
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(8)
                         }
-                        .font(.caption)
-                        .padding(.vertical, 4)
-                        .padding(.horizontal, 8)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(8)
+                        .buttonStyle(.plain)
                     }
                 }
             }

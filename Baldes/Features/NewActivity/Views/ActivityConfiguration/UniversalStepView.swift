@@ -4,6 +4,42 @@ import UIKit
 struct UniversalStepView: View {
     @Bindable var viewModel: ActivityConfigurationViewModel
     @State private var emojiInput: String = ""
+    @State private var showingQuote = false
+    @State private var currentQuote: PhilosopherQuote?
+
+    private let philosopherQuotes: [PhilosopherQuote] = [
+        PhilosopherQuote(
+            quote: "A vida não examinada não vale a pena ser vivida.", author: "Sócrates"),
+        PhilosopherQuote(
+            quote:
+                "Somos o que repetidamente fazemos. A excelência, portanto, não é um ato, mas um hábito.",
+            author: "Aristóteles"),
+        PhilosopherQuote(
+            quote: "Aquele que tem um porquê para viver pode suportar quase qualquer como.",
+            author: "Friedrich Nietzsche"),
+        PhilosopherQuote(
+            quote: "A felicidade não é algo pronto. Ela vem das suas próprias ações.",
+            author: "Dalai Lama"),
+        PhilosopherQuote(quote: "Conhece-te a ti mesmo.", author: "Sócrates"),
+        PhilosopherQuote(quote: "A única coisa que sei é que nada sei.", author: "Sócrates"),
+        PhilosopherQuote(quote: "Penso, logo existo.", author: "René Descartes"),
+        PhilosopherQuote(quote: "O homem é condenado a ser livre.", author: "Jean-Paul Sartre"),
+        PhilosopherQuote(
+            quote:
+                "Age apenas segundo uma máxima tal que possas ao mesmo tempo querer que ela se torne lei universal.",
+            author: "Immanuel Kant"),
+        PhilosopherQuote(
+            quote: "A maior glória não é ficar de pé, mas levantar-se cada vez que se cai.",
+            author: "Confúcio"),
+        PhilosopherQuote(
+            quote:
+                "Não é a consciência do homem que lhe determina o ser, mas o seu ser social que lhe determina a consciência.",
+            author: "Karl Marx"),
+        PhilosopherQuote(
+            quote:
+                "A alegria está na luta, na tentativa, no sofrimento envolvido. Não na vitória propriamente dita.",
+            author: "Mahatma Gandhi"),
+    ]
 
     var body: some View {
         Form {
@@ -33,8 +69,42 @@ struct UniversalStepView: View {
                 }
                 .frame(height: 18)
 
-                TextField("Motivação", text: $viewModel.motivation, axis: .vertical)
-                    .lineLimit(1...5)
+                HStack(alignment: .top) {
+                    TextField("Motivação", text: $viewModel.motivation, axis: .vertical)
+                        .lineLimit(1...5)
+
+                    Button {
+                        currentQuote = philosopherQuotes.randomElement()
+                        showingQuote = true
+                    } label: {
+                        Image(systemName: "lightbulb.fill")
+                            .foregroundStyle(.yellow)
+                            .font(.system(size: 18))
+                    }
+                    .buttonStyle(.plain)
+                    .popover(isPresented: $showingQuote) {
+                        if let quote = currentQuote {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("\"\(quote.quote)\"")
+                                    .font(.body)
+                                    .italic()
+                                Text("— \(quote.author)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+
+                                Button("Usar esta citação") {
+                                    viewModel.motivation = quote.quote
+                                    showingQuote = false
+                                }
+                                .font(.caption)
+                                .padding(.top, 4)
+                            }
+                            .padding()
+                            .frame(maxWidth: 300)
+                            .presentationCompactAdaptation(.popover)
+                        }
+                    }
+                }
             }
 
             // Configuration Section (Merged)

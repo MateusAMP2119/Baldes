@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ActivityTypeSelectionView: View {
     let scope: ActivityScope
+    @Binding var path: NavigationPath
 
     var body: some View {
         ZStack(alignment: scope.imagePosition.alignment) {
@@ -28,7 +29,15 @@ struct ActivityTypeSelectionView: View {
                                     title: type.title,
                                     description: type.description,
                                     examples: type.examples,
-                                    shadowColor: type.shadowColor
+                                    shadowColor: type.shadowColor,
+                                    onExampleTap: { example in
+                                        let context = ActivityConfigurationContext(
+                                            scope: scope,
+                                            type: type,
+                                            selectedExample: example
+                                        )
+                                        path.append(context)
+                                    }
                                 )
                             }
                             .buttonStyle(PlainButtonStyle())

@@ -1,4 +1,5 @@
 import Observation
+import SwiftData
 import SwiftUI
 
 @MainActor
@@ -68,19 +69,36 @@ class ActivityConfigurationViewModel {
         self.context = context
         self.color = context.type.shadowColor
 
-        // Inherit from Activity Type
-        // self.name = context.type.title
-
-        if let firstExample = context.type.examples.first {
+        // Pre-fill from selected example if available
+        if let example = context.selectedExample {
+            self.name = example.text
+            self.symbol = example.emoji
+        } else if let firstExample = context.type.examples.first {
             self.symbol = firstExample.emoji
         }
     }
 
     // Actions
-    func createAttributes() {
-        // TODO: Implement creation logic using the captured data
-        print("Creating activity: \(name) with symbol \(symbol)")
-        // Typically this would save to SwiftData or call a delegate
+    func saveActivity(modelContext: ModelContext) {
+        let newActivity = Activity(
+            name: name,
+            symbol: symbol,
+            colorHex: color.toHex() ?? "#000000",
+            creationDate: Date(),
+            goalTimeSeconds: (context.type.title == "Objetivos por tempo") ? dailyGoalTime : nil,
+            targetCount: (context.type.title == "Metas Numéricas") ? Int(metricTarget) : nil,
+            metricTarget: (context.type.title == "Metas Numéricas") ? metricTarget : nil,
+            metricUnit: (context.type.title == "Metas Numéricas") ? metricUnit : nil
+        )
+
+        modelContext.insert(newActivity)
+
+        do {
+            try modelContext.save()
+            print("Activity saved successfully!")
+        } catch {
+            print("Failed to save activity: \(error.localizedDescription)")
+        }
     }
 
     var stepTitle: String {

@@ -5,9 +5,13 @@ struct ActivityConfigurationView: View {
     let context: ActivityConfigurationContext
     @State private var viewModel: ActivityConfigurationViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
 
-    init(context: ActivityConfigurationContext) {
+    var onSave: () -> Void
+
+    init(context: ActivityConfigurationContext, onSave: @escaping () -> Void) {
         self.context = context
+        self.onSave = onSave
         _viewModel = State(wrappedValue: ActivityConfigurationViewModel(context: context))
     }
 
@@ -19,7 +23,8 @@ struct ActivityConfigurationView: View {
                     Spacer()
 
                     Button {
-                        viewModel.createAttributes()
+                        viewModel.saveActivity(modelContext: modelContext)
+                        onSave()
                     } label: {
                         Text("Avançar")
                             .bold()
