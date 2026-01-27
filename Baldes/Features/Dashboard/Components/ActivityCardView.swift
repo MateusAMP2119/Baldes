@@ -95,15 +95,18 @@ struct ActivityCardView: View {
                         .font(.caption)
                         .foregroundStyle(activityColor)
 
-                    HStack(alignment: .lastTextBaseline, spacing: 4) {
-                        Text(activity.motivation)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(10)
-                            .italic()
+                    Text(
+                        "\(Text(activity.motivation).font(.caption).foregroundStyle(.secondary).italic())  \(Text(Image(systemName: "quote.closing")).font(.caption).foregroundStyle(activityColor))"
+                    )
+                    .lineLimit(10)
+                }
 
-                        Image(systemName: "quote.closing")
-                            .font(.caption)
+                if let author = activity.motivationAuthor {
+                    HStack {
+                        Spacer()
+                        Text("- \(author)")
+                            .font(.caption2)
+                            .fontWeight(.medium)
                             .foregroundStyle(activityColor)
                     }
                 }

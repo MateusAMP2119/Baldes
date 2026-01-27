@@ -18,7 +18,7 @@ struct DashboardView: View {
                 activitiesList
             }
         }
-        .navigationTitle("Activities")
+
         .sheet(isPresented: $showingNewActivitySheet) {
             NewActivityView()
         }
@@ -26,12 +26,17 @@ struct DashboardView: View {
 
     private var activitiesList: some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Actividades")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+
                 ForEach(activities) { activity in
                     ActivityCardView(activity: activity)
                 }
             }
-            .padding()
+            .padding(.horizontal)
+            .padding(.bottom)
         }
     }
 

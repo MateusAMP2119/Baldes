@@ -11,6 +11,7 @@ class Activity {
 
     // Motivation (mandatory)
     var motivation: String
+    var motivationAuthor: String?  // Optional author
 
     // Recurring Plan Summary (optional - displayed as text)
     var recurringPlanSummary: String?
@@ -28,6 +29,7 @@ class Activity {
         symbol: String,
         colorHex: String,
         motivation: String,
+        motivationAuthor: String? = nil,
         recurringPlanSummary: String? = nil,
         creationDate: Date = Date(),
         goalTimeSeconds: TimeInterval? = nil,
@@ -40,6 +42,7 @@ class Activity {
         self.symbol = symbol
         self.colorHex = colorHex
         self.motivation = motivation
+        self.motivationAuthor = motivationAuthor
         self.recurringPlanSummary = recurringPlanSummary
         self.creationDate = creationDate
         self.goalTimeSeconds = goalTimeSeconds

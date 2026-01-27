@@ -96,6 +96,7 @@ struct UniversalStepView: View {
 
                                     Button("Usar esta citação") {
                                         viewModel.motivation = quote.quote
+                                        viewModel.motivationAuthor = quote.author
                                         currentQuote = nil
                                     }
                                     .font(.caption)

@@ -10,6 +10,7 @@ class ActivityConfigurationViewModel {
     // Universal Data
     var name: String = ""
     var motivation: String = ""
+    var motivationAuthor: String? = nil
     var symbol: String = "bucket.fill"
     var color: Color
 
@@ -87,6 +88,7 @@ class ActivityConfigurationViewModel {
             symbol: symbol,
             colorHex: color.toHex() ?? "#000000",
             motivation: motivation,
+            motivationAuthor: motivationAuthor,
             recurringPlanSummary: planSummary,
             creationDate: Date(),
             goalTimeSeconds: (context.type.title == "Objetivos por tempo") ? dailyGoalTime : nil,
