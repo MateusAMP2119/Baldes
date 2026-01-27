@@ -31,6 +31,9 @@ struct DashboardView: View {
                     .font(.largeTitle)
                     .fontWeight(.bold)
 
+                ContributionGraphView(dates: activities.map { $0.creationDate })
+                    .padding(.bottom, 8)
+
                 ForEach(activities) { activity in
                     ActivityCardView(activity: activity)
                 }
