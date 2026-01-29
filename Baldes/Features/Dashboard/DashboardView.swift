@@ -31,7 +31,7 @@ struct DashboardView: View {
                     .font(.largeTitle)
                     .fontWeight(.bold)
                     .padding(.horizontal)
-
+                
                 CalendarStripView()
                     .offset(y: -8)  // Slight negative offset to pull it closer to the title
 
