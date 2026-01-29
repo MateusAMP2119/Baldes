@@ -2,8 +2,8 @@ import SwiftData
 import SwiftUI
 
 @Model
-class Activity {
-    var id: UUID
+public class Activity {
+    public var id: UUID
     var name: String
     var symbol: String
     var colorHex: String

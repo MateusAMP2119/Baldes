@@ -8,7 +8,7 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "B1A09F36-F60F-4273-9328-2A42430E6AFB"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Baldes/Features/NewActivity/Views/ActivityConfiguration/CommitmentConfigSection.swift"

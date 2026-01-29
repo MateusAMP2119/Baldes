@@ -14,6 +14,6 @@ struct BaldesApp: App {
         WindowGroup {
             MainTabView()
         }
-        .modelContainer(for: Activity.self)
+        .modelContainer(for: [Activity.self, HistoryEvent.self])
     }
 }

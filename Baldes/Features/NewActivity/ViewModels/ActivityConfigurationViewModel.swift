@@ -99,9 +99,19 @@ class ActivityConfigurationViewModel {
 
         modelContext.insert(newActivity)
 
+        // Log creation event
+        let historyEvent = HistoryEvent(
+            type: .created,
+            activityId: newActivity.id,
+            activityName: newActivity.name,
+            activitySymbol: newActivity.symbol,
+            activityColorHex: newActivity.colorHex
+        )
+        modelContext.insert(historyEvent)
+
         do {
             try modelContext.save()
-            print("Activity saved successfully!")
+            print("Activity and HistoryEvent saved successfully!")
         } catch {
             print("Failed to save activity: \(error.localizedDescription)")
         }

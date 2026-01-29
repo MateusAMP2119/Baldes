@@ -30,16 +30,17 @@ struct DashboardView: View {
                 Text("Actividades")
                     .font(.largeTitle)
                     .fontWeight(.bold)
-
-                ContributionGraphView(dates: activities.map { $0.creationDate })
-                    .padding(.bottom, 8)
+                    .padding(.horizontal)
 
                 ForEach(activities) { activity in
-                    ActivityCardView(activity: activity)
+                    NavigationLink(destination: ActivityDetailsView(activity: activity)) {
+                        ActivityCardView(activity: activity)
+                    }
                 }
+                .padding(.horizontal)  // Add padding back to List Items
             }
-            .padding(.horizontal)
-            .padding(.bottom)
+            .padding(.bottom, 100)
+            .offset(y: -28)
         }
     }
 

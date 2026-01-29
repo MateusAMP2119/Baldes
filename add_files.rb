@@ -15,7 +15,8 @@ end
 files_to_add = [
   'Baldes/Features/Shared/Models/Activity.swift',
   'Baldes/Features/Shared/Extensions/Color+Hex.swift',
-  'Baldes/Features/Dashboard/Components/ActivityCardView.swift'
+  'Baldes/Features/Dashboard/Components/ActivityCardView.swift',
+  'Baldes/Features/Dashboard/Components/DashboardHistoryView.swift'
 ]
 
 # Get the main group (usually the project root group)
