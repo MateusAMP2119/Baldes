@@ -1,7 +1,7 @@
 import SwiftData
 import SwiftUI
 
-enum HistoryEventType: String, Codable {
+public enum HistoryEventType: String, Codable {
     case created
     case edited
     case completed
@@ -16,21 +16,21 @@ enum HistoryEventType: String, Codable {
 }
 
 @Model
-class HistoryEvent {
-    var id: UUID
-    var date: Date
-    var type: HistoryEventType
+public class HistoryEvent {
+    public var id: UUID
+    public var date: Date
+    public var type: HistoryEventType
 
     // Snapshot of Activity Data
-    var activityId: UUID  // Keep reference ID even if activity is deleted (optional)
-    var activityName: String
-    var activitySymbol: String
-    var activityColorHex: String
+    public var activityId: UUID  // Keep reference ID even if activity is deleted (optional)
+    public var activityName: String
+    public var activitySymbol: String
+    public var activityColorHex: String
 
     // Optional details
-    var details: String?
+    public var details: String?
 
-    init(
+    public init(
         id: UUID = UUID(),
         date: Date = Date(),
         type: HistoryEventType,
