@@ -35,12 +35,7 @@ struct MainTabView: View {
                 }.sharedBackgroundVisibility(.hidden)
 
                 ToolbarItem(placement: .principal) {
-                    Text(todayDate)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .glassEffect(.regular.interactive())
+                    EmptyView()
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
