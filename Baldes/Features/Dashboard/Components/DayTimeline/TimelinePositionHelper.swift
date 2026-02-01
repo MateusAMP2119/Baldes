@@ -27,9 +27,13 @@ enum TimelinePositionHelper {
     static func timeFromPosition(_ x: CGFloat, width: CGFloat) -> (hour: Int, minute: Int) {
         let progress = max(0, min(x / width, 1))
         let totalMinutes = progress * 24.0 * 60.0
-        let hour = Int(totalMinutes / 60)
+        let hour = min(Int(totalMinutes / 60), 23)
         let minute = Int(totalMinutes.truncatingRemainder(dividingBy: 60))
-        return (max(0, min(hour, 23)), max(0, min(minute, 59)))
+        // Allow scheduling up to 23:59
+        if hour == 23 {
+            return (23, min(minute, 59))
+        }
+        return (hour, min(minute, 59))
     }
     
     /// Format hour as "HH:00"

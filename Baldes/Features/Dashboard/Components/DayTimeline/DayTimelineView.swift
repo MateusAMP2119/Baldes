@@ -108,7 +108,7 @@ struct DayTimelineView: View {
         if !scheduledActivities.isEmpty {
             let rows = maxLabelRows(width: availableWidth)
             ZStack(alignment: .top) {
-                ForEach(scheduledActivities, id: \.id) { activity in
+                ForEach(scheduledActivities.reversed(), id: \.id) { activity in
                     let row = labelRow(for: activity, in: scheduledActivities, width: availableWidth)
                     ActivityTimeLabel(
                         activity: activity,

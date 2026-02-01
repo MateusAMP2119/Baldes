@@ -136,14 +136,6 @@ struct ActivityTimeLabel: View {
         TimelinePositionHelper.positionForTime(hour: hour, minute: minute, width: width)
     }
     
-    private var endX: CGFloat {
-        TimelinePositionHelper.positionForTime(hour: endHour, minute: endMinute, width: width)
-    }
-    
-    private var centerX: CGFloat {
-        (startX + endX) / 2
-    }
-    
     private var timeRangeString: String {
         TimelinePositionHelper.formattedTime(hour: hour, minute: minute)
     }
@@ -158,6 +150,14 @@ struct ActivityTimeLabel: View {
     
     private var yPosition: CGFloat {
         lineHeight / 2 + 6 + CGFloat(row) * 9
+    }
+    
+    // Clamp label position to stay within bounds while keeping it centered with activity
+    private var labelX: CGFloat {
+        let labelWidth: CGFloat = 45 // Approximate width of time label
+        let minX = labelWidth / 2
+        let maxX = width - labelWidth / 2
+        return min(max(startX, minX), maxX)
     }
     
     var body: some View {
@@ -183,6 +183,6 @@ struct ActivityTimeLabel: View {
                         .stroke(activityColor, lineWidth: 1)
                 )
         }
-        .position(x: centerX, y: yPosition)
+        .position(x: labelX, y: yPosition)
     }
 }
