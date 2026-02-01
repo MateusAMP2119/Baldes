@@ -25,6 +25,7 @@ public class Activity {
 
     // Scheduled time for timeline display
     var scheduledTime: Date?
+    var scheduledDurationMinutes: Int?
 
     init(
         id: UUID = UUID(),
@@ -38,7 +39,8 @@ public class Activity {
         goalTimeSeconds: TimeInterval? = nil,
         targetCount: Int? = nil,
         metricTarget: Double? = nil,
-        metricUnit: String? = nil
+        metricUnit: String? = nil,
+        scheduledDurationMinutes: Int? = 60
     ) {
         self.id = id
         self.name = name
@@ -52,5 +54,6 @@ public class Activity {
         self.targetCount = targetCount
         self.metricTarget = metricTarget
         self.metricUnit = metricUnit
+        self.scheduledDurationMinutes = scheduledDurationMinutes
     }
 }
