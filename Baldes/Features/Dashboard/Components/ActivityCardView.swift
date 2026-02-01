@@ -112,8 +112,8 @@ struct ActivityCardView: View {
                 .fill(activityColor)
                 .offset(x: 4, y: 4)
         )
+        .contentShape(Rectangle())
         .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 16))
-
     }
 
     // MARK: - Mantra Box

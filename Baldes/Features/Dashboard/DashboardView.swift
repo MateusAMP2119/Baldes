@@ -26,9 +26,9 @@ struct DashboardView: View {
     }
 
     private var activitiesList: some View {
-        List {
-            // Header Section
-            Group {
+        VStack(spacing: 0) {
+            // Header outside of List - so drop works
+            VStack(alignment: .leading, spacing: 0) {
                 Text("Actividades")
                     .font(.largeTitle)
                     .fontWeight(.bold)
@@ -39,47 +39,45 @@ struct DashboardView: View {
                     activities: activities,
                     onScheduleActivity: scheduleActivity
                 )
-                .offset(y: -8)
                 .padding(.bottom, 8)
             }
-            .listRowSeparator(.hidden)
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
-
-            // Content Section
-            ForEach(activities) { activity in
-                ActivityCardView(activity: activity)
-                    .background(
-                        NavigationLink(destination: ActivityDetailsView(activity: activity)) {
-                            EmptyView()
+            
+            // List only for activity cards - native swipe works
+            List {
+                ForEach(activities) { activity in
+                    ActivityCardView(activity: activity)
+                        .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 16))
+                        .onDrag {
+                            NSItemProvider(object: activity.id.uuidString as NSString)
                         }
-                        .opacity(0)
-                    )
-                    .onDrag {
-                        NSItemProvider(object: activity.id.uuidString as NSString)
-                    }
+                        .background(
+                            NavigationLink(destination: ActivityDetailsView(activity: activity)) {
+                                EmptyView()
+                            }
+                            .opacity(0)
+                        )
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                deleteActivity(activity)
+                            } label: {
+                                Label("Eliminar", systemImage: "trash")
+                            }
+                        }
+                }
+
+                // Bottom Spacing
+                Color.clear
+                    .frame(height: 80)
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button(role: .destructive) {
-                            deleteActivity(activity)
-                        } label: {
-                            Label("Eliminar", systemImage: "trash")
-                        }
-                        .tint(.red)
-                    }
+                    .listRowInsets(EdgeInsets())
             }
-
-            // Bottom Spacing within List
-            Color.clear
-                .frame(height: 80)
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets())
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)  // Removes default gray background
     }
 
     // MARK: - Schedule Activity

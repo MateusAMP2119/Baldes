@@ -40,6 +40,17 @@ struct DayTimelineView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
+            .contentShape(Rectangle())
+            .onDrop(
+                of: [UTType.plainText],
+                delegate: TimelineDropDelegate(
+                    availableWidth: availableWidth,
+                    selectedDate: selectedDate,
+                    onScheduleActivity: onScheduleActivity,
+                    isTargeted: $isTargeted,
+                    dropLocation: $dropLocation
+                )
+            )
         }
         .frame(height: scheduledActivities.isEmpty ? 76 : 120)
     }
@@ -167,15 +178,6 @@ struct DayTimelineView: View {
             }
         }
         .frame(width: availableWidth, height: 36)
-        .onDrop(
-            of: [.text],
-            delegate: TimelineDropDelegate(
-                availableWidth: availableWidth,
-                selectedDate: selectedDate,
-                onScheduleActivity: onScheduleActivity,
-                isTargeted: $isTargeted,
-                dropLocation: $dropLocation
-            ))
         .overlay(alignment: .top) {
             // Current time badge (above timeline)
             if Calendar.current.isDateInToday(selectedDate) {

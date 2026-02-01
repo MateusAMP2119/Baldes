@@ -8,6 +8,10 @@ struct TimelineDropDelegate: DropDelegate {
     @Binding var isTargeted: Bool
     @Binding var dropLocation: CGPoint
 
+    func validateDrop(info: DropInfo) -> Bool {
+        info.hasItemsConforming(to: [UTType.plainText])
+    }
+
     func dropEntered(info: DropInfo) {
         withAnimation(.easeInOut(duration: 0.15)) {
             isTargeted = true
@@ -29,32 +33,37 @@ struct TimelineDropDelegate: DropDelegate {
     func performDrop(info: DropInfo) -> Bool {
         isTargeted = false
         dropLocation = .zero
-
-        guard let itemProvider = info.itemProviders(for: [.text]).first else {
+        
+        // Get item providers for plain text (NSString from NSItemProvider)
+        let providers = info.itemProviders(for: [UTType.plainText])
+        guard let itemProvider = providers.first else {
             return false
         }
-
-        _ = itemProvider.loadObject(ofClass: String.self) { string, error in
-            guard let activityIdString = string,
-                let activityId = UUID(uuidString: activityIdString)
+        
+        // Calculate target time from drop position
+        let targetTime = TimelinePositionHelper.timeFromPosition(info.location.x, width: availableWidth)
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: selectedDate)
+        components.hour = targetTime.hour
+        components.minute = targetTime.minute
+        
+        guard let scheduledDate = calendar.date(from: components) else {
+            return false
+        }
+        
+        // Load as NSString (from NSItemProvider)
+        itemProvider.loadObject(ofClass: NSString.self) { nsString, error in
+            guard let activityIdString = nsString as? String,
+                  let activityId = UUID(uuidString: activityIdString)
             else {
                 return
             }
-
-            let targetTime = TimelinePositionHelper.timeFromPosition(info.location.x, width: availableWidth)
-
-            let calendar = Calendar.current
-            var components = calendar.dateComponents([.year, .month, .day], from: selectedDate)
-            components.hour = targetTime.hour
-            components.minute = targetTime.minute
-
-            if let scheduledDate = calendar.date(from: components) {
-                DispatchQueue.main.async {
-                    onScheduleActivity(activityId, scheduledDate)
-                }
+            
+            DispatchQueue.main.async {
+                self.onScheduleActivity(activityId, scheduledDate)
             }
         }
-
+        
         return true
     }
 }
