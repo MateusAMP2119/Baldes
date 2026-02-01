@@ -5,12 +5,14 @@ public enum HistoryEventType: String, Codable {
     case created
     case edited
     case completed
+    case skipped
 
     var label: String {
         switch self {
         case .created: return "Created"
         case .edited: return "Edited"
         case .completed: return "Completed"
+        case .skipped: return "Skipped"
         }
     }
 }
