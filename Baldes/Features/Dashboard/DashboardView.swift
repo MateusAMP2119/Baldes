@@ -31,9 +31,12 @@ struct DashboardView: View {
                     .font(.largeTitle)
                     .fontWeight(.bold)
                     .padding(.horizontal)
-                
-                CalendarStripView()
-                    .offset(y: -8)  // Slight negative offset to pull it closer to the title
+
+                CalendarStripView(
+                    activities: activities,
+                    onScheduleActivity: scheduleActivity
+                )
+                .offset(y: -8)  // Slight negative offset to pull it closer to the title
 
                 ForEach(activities) { activity in
                     NavigationLink(destination: ActivityDetailsView(activity: activity)) {
@@ -43,6 +46,16 @@ struct DashboardView: View {
                 .padding(.horizontal)  // Add padding back to List Items
             }
             .padding(.bottom, 100)
+        }
+    }
+
+    // MARK: - Schedule Activity
+
+    private func scheduleActivity(activityId: UUID, at scheduledTime: Date) {
+        guard let activity = activities.first(where: { $0.id == activityId }) else { return }
+
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            activity.scheduledTime = scheduledTime
         }
     }
 

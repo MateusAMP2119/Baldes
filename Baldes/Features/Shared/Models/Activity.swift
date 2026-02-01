@@ -23,6 +23,9 @@ public class Activity {
     var metricTarget: Double?
     var metricUnit: String?
 
+    // Scheduled time for timeline display
+    var scheduledTime: Date?
+
     init(
         id: UUID = UUID(),
         name: String,

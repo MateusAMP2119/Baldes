@@ -73,6 +73,8 @@ struct ActivityCardView: View {
                 .fill(activityColor)
                 .offset(x: 4, y: 4)
         )
+        // Enable drag for scheduling on timeline
+        .draggable(activity.id.uuidString)
     }
 
     // MARK: - Layer 1: Control Row
@@ -258,4 +260,4 @@ struct StreakDot: View {
                 .frame(width: 8, height: 8)
         }
     }
-} 
+}

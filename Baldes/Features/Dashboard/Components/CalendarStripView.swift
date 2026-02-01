@@ -1,12 +1,18 @@
 import SwiftUI
 
 struct CalendarStripView: View {
+    let activities: [Activity]
+    let onScheduleActivity: (UUID, Date) -> Void
+
     @State private var selectedDate: Date = Date()
     @State private var startDate: Date
     @State private var endDate: Date
     @State private var isDatePickerPresented: Bool = false
 
-    init() {
+    init(activities: [Activity], onScheduleActivity: @escaping (UUID, Date) -> Void) {
+        self.activities = activities
+        self.onScheduleActivity = onScheduleActivity
+
         let calendar = Calendar.current
         let today = Date()
         // Default to current week
@@ -71,55 +77,30 @@ struct CalendarStripView: View {
                 .presentationDetents([.medium, .large])
             }
 
-            ScrollViewReader { proxy in
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(days, id: \.self) { date in
-                            CalendarDayPill(
-                                date: date,
-                                isSelected: Calendar.current.isDate(date, inSameDayAs: selectedDate)
-                            )
-                            .id(date)
-                            .onTapGesture {
-                                withAnimation {
-                                    selectedDate = date
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 8)
-                }
-                .onChange(of: selectedDate) {
-                    withAnimation {
-                        proxy.scrollTo(selectedDate, anchor: .center)
-                    }
-                }
-                .onAppear {
-                    // Scroll to the selected date (today) when the view appears
-                    DispatchQueue.main.async {
-                        withAnimation {
-                            proxy.scrollTo(selectedDate, anchor: .center)
-                        }
-                    }
-                }
-            }
-        }  // Fading edges
-        .mask(
             HStack(spacing: 0) {
-                LinearGradient(
-                    colors: [.black.opacity(0), .black], startPoint: .leading,
-                    endPoint: .trailing
-                )
-                .frame(width: 20)
-                Rectangle()
-                LinearGradient(
-                    colors: [.black, .black.opacity(0)], startPoint: .leading,
-                    endPoint: .trailing
-                )
-                .frame(width: 20)
+                ForEach(days, id: \.self) { date in
+                    CalendarDayPill(
+                        date: date,
+                        isSelected: Calendar.current.isDate(date, inSameDayAs: selectedDate)
+                    )
+                    .frame(maxWidth: .infinity)
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            selectedDate = date
+                        }
+                    }
+                }
             }
-        )
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+
+            // Hourly timeline for selected day with drop support
+            DayTimelineView(
+                selectedDate: selectedDate,
+                activities: activities,
+                onScheduleActivity: onScheduleActivity
+            )
+        }
     }
 
     private var timeFrameTitle: String {
@@ -142,6 +123,6 @@ struct CalendarStripView: View {
 #Preview {
     ZStack {
         Color.gray.opacity(0.1).ignoresSafeArea()
-        CalendarStripView()
+        CalendarStripView(activities: [], onScheduleActivity: { _, _ in })
     }
 }
