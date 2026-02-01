@@ -3,6 +3,7 @@ import SwiftUI
 
 struct DashboardView: View {
     @State private var showingNewActivitySheet = false
+    @Environment(\.modelContext) private var modelContext
     @Query private var activities: [Activity]
 
     var body: some View {
@@ -25,28 +26,60 @@ struct DashboardView: View {
     }
 
     private var activitiesList: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+        List {
+            // Header Section
+            Group {
                 Text("Actividades")
                     .font(.largeTitle)
                     .fontWeight(.bold)
                     .padding(.horizontal)
+                    .padding(.top, 16)
 
                 CalendarStripView(
                     activities: activities,
                     onScheduleActivity: scheduleActivity
                 )
-                .offset(y: -8)  // Slight negative offset to pull it closer to the title
-
-                ForEach(activities) { activity in
-                    NavigationLink(destination: ActivityDetailsView(activity: activity)) {
-                        ActivityCardView(activity: activity)
-                    }
-                }
-                .padding(.horizontal)  // Add padding back to List Items
+                .offset(y: -8)
+                .padding(.bottom, 8)
             }
-            .padding(.bottom, 100)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+
+            // Content Section
+            ForEach(activities) { activity in
+                ActivityCardView(activity: activity)
+                    .background(
+                        NavigationLink(destination: ActivityDetailsView(activity: activity)) {
+                            EmptyView()
+                        }
+                        .opacity(0)
+                    )
+                    .onDrag {
+                        NSItemProvider(object: activity.id.uuidString as NSString)
+                    }
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button(role: .destructive) {
+                            deleteActivity(activity)
+                        } label: {
+                            Label("Eliminar", systemImage: "trash")
+                        }
+                        .tint(.red)
+                    }
+            }
+
+            // Bottom Spacing within List
+            Color.clear
+                .frame(height: 80)
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)  // Removes default gray background
     }
 
     // MARK: - Schedule Activity
@@ -56,6 +89,12 @@ struct DashboardView: View {
 
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             activity.scheduledTime = scheduledTime
+        }
+    }
+
+    private func deleteActivity(_ activity: Activity) {
+        withAnimation {
+            modelContext.delete(activity)
         }
     }
 

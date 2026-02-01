@@ -33,11 +33,11 @@ struct ActivityCardView: View {
     private var isCompletedToday: Bool {
         todayEvent != nil
     }
-    
+
     private var isSkippedToday: Bool {
         history.first { Calendar.current.isDateInToday($0.date) && $0.type == .skipped } != nil
     }
-    
+
     private var goalText: String {
         if let seconds = activity.goalTimeSeconds, seconds > 0 {
             let hours = Int(seconds) / 3600
@@ -50,16 +50,17 @@ struct ActivityCardView: View {
         } else if let count = activity.targetCount, count > 0 {
             return "\(count) times"
         } else if let target = activity.metricTarget, let unit = activity.metricUnit, target > 0 {
-            let formatted = target.truncatingRemainder(dividingBy: 1) == 0
+            let formatted =
+                target.truncatingRemainder(dividingBy: 1) == 0
                 ? String(format: "%.0f", target)
                 : String(format: "%.1f", target)
             return "\(formatted) \(unit)"
         }
-        
+
         if let plan = activity.recurringPlanSummary, !plan.isEmpty {
             return plan
         }
-        
+
         return "Daily"
     }
 
@@ -72,26 +73,26 @@ struct ActivityCardView: View {
                 // Emoji icon
                 Text(activity.symbol)
                     .font(.title2)
-                
+
                 // Activity name and goal
                 VStack(alignment: .leading, spacing: 2) {
                     Text(activity.name)
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.black)
-                    
+
                     Text(goalText)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
-                
+
                 Spacer()
-                
+
                 // Completion controls (X, ✓)
                 completionControls
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
-            
+
             // Motivation box (if exists)
             if !activity.motivation.isEmpty {
                 mantraBox
@@ -112,11 +113,11 @@ struct ActivityCardView: View {
                 .offset(x: 4, y: 4)
         )
         .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 16))
-        .draggable(activity.id.uuidString)
+
     }
-    
+
     // MARK: - Mantra Box
-    
+
     private var mantraBox: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("\"\(activity.motivation)\"")
@@ -148,12 +149,12 @@ struct ActivityCardView: View {
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(PlainButtonStyle())
-            
+
             // Divider
             Rectangle()
                 .fill(Color.black.opacity(0.1))
                 .frame(width: 1, height: 20)
-            
+
             // Complete button (✓)
             Button(action: markCompleted) {
                 Image(systemName: "checkmark")
@@ -168,7 +169,7 @@ struct ActivityCardView: View {
     }
 
     // MARK: - Actions
-    
+
     private func markCompleted() {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
             // If already completed, just clear (toggle off)
@@ -176,10 +177,10 @@ struct ActivityCardView: View {
                 clearTodayEvents()
                 return
             }
-            
+
             // Remove any existing today events first
             clearTodayEvents()
-            
+
             // Create completed event
             let event = HistoryEvent(
                 type: .completed,
@@ -191,7 +192,7 @@ struct ActivityCardView: View {
             modelContext.insert(event)
         }
     }
-    
+
     private func markSkipped() {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
             // If already skipped, just clear (toggle off)
@@ -199,10 +200,10 @@ struct ActivityCardView: View {
                 clearTodayEvents()
                 return
             }
-            
+
             // Remove any existing today events first
             clearTodayEvents()
-            
+
             // Create skipped event
             let event = HistoryEvent(
                 type: .skipped,
@@ -214,13 +215,13 @@ struct ActivityCardView: View {
             modelContext.insert(event)
         }
     }
-    
+
     private func clearToday() {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
             clearTodayEvents()
         }
     }
-    
+
     private func clearTodayEvents() {
         // Remove all today's events for this activity
         let todayEvents = history.filter { Calendar.current.isDateInToday($0.date) }
@@ -232,12 +233,14 @@ struct ActivityCardView: View {
 }
 
 #Preview {
-    ActivityCardView(activity: Activity(
-        name: "Added sugar",
-        symbol: "🍬",
-        colorHex: "#FF6B6B",
-        motivation: "You've added too much sugar to your diet."
-    ))
+    ActivityCardView(
+        activity: Activity(
+            name: "Added sugar",
+            symbol: "🍬",
+            colorHex: "#FF6B6B",
+            motivation: "You've added too much sugar to your diet."
+        )
+    )
     .padding()
     .background(Color(white: 0.1))
 }
