@@ -73,7 +73,8 @@ struct ActivityCardView: View {
                 .fill(activityColor)
                 .offset(x: 4, y: 4)
         )
-        // Enable drag for scheduling on timeline
+        // Enable drag for scheduling on timeline with proper rounded preview
+        .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 24))
         .draggable(activity.id.uuidString)
     }
 
