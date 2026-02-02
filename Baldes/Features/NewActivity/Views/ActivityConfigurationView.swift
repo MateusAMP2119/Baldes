@@ -30,12 +30,12 @@ struct ActivityConfigurationView: View {
                             .bold()
                             .frame(minWidth: 100)
                             .padding()
-                            .background(Color.white)
-                            .foregroundStyle(.black)
+                            .background(Color("CardBackground"))
+                            .foregroundStyle(Color("TextPrimary"))
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 16)
-                                    .stroke(Color.black, lineWidth: 1.5)
+                                    .stroke(Color("Border"), lineWidth: 1.5)
                             )
                             .background(
                                 RoundedRectangle(cornerRadius: 16)

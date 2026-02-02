@@ -91,11 +91,11 @@ struct ScheduledActivityIndicator: View {
             // Activity indicator with fixed size and 3D effect
             ZStack {
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.white)
+                    .fill(Color("CardBackground"))
                     .frame(width: fixedSize, height: 28)
                     .overlay(
                         RoundedRectangle(cornerRadius: 4)
-                            .stroke(Color.black, lineWidth: 1)
+                            .stroke(Color("Border"), lineWidth: 1)
                     )
                     .background(
                         RoundedRectangle(cornerRadius: 4)
@@ -112,7 +112,7 @@ struct ScheduledActivityIndicator: View {
                 if isDragging, let targetTime = dragTargetTime {
                     Text(TimelinePositionHelper.formattedTime(hour: targetTime.hour, minute: targetTime.minute))
                         .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.white)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
                         .background(

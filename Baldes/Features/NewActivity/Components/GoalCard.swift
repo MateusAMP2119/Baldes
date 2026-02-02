@@ -26,11 +26,11 @@ struct GoalCard: View {
                     .fontWeight(.semibold)
             }
             .padding(20)
-            .background(Color.white)
+            .background(Color("CardBackground"))
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.black, lineWidth: 1.5)
+                    .stroke(Color("Border"), lineWidth: 1.5)
             )
             .background(
                 RoundedRectangle(cornerRadius: 16)

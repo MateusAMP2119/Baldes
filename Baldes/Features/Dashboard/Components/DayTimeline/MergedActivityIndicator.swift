@@ -169,7 +169,7 @@ struct MergedActivityIndicator: View {
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         .overlay(
             RoundedRectangle(cornerRadius: cornerRadius)
-                .stroke(Color.black, lineWidth: 1)
+                .stroke(Color("Border"), lineWidth: 1)
         )
         .scaleEffect(isGroupDragging ? 1.08 : 1.0)
         .shadow(
@@ -202,7 +202,7 @@ struct MergedActivityIndicator: View {
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                 .overlay(
                     RoundedRectangle(cornerRadius: cornerRadius)
-                        .stroke(Color.black, lineWidth: 1)
+                        .stroke(Color("Border"), lineWidth: 1)
                 )
             }
         }
@@ -224,7 +224,7 @@ struct MergedActivityIndicator: View {
             
             // White background
             Rectangle()
-                .fill(Color.white)
+                .fill(Color("CardBackground"))
                 .frame(width: fixedItemSize, height: fixedItemSize)
             
             // Symbol
@@ -241,11 +241,11 @@ struct MergedActivityIndicator: View {
                 .offset(x: 2, y: 2)
             
             RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(Color.white)
+                .fill(Color("CardBackground"))
                 .frame(width: fixedItemSize, height: fixedItemSize)
             
             RoundedRectangle(cornerRadius: cornerRadius)
-                .stroke(Color.black, lineWidth: 1)
+                .stroke(Color("Border"), lineWidth: 1)
                 .frame(width: fixedItemSize, height: fixedItemSize)
             
             Text(activity.symbol)
@@ -261,11 +261,12 @@ struct MergedActivityIndicator: View {
                 .offset(x: 2, y: 2)
             
             RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(Color.white)
+                .fill(Color("CardBackground"))
                 .frame(width: fixedItemSize, height: fixedItemSize)
+                .offset(x: 2, y: 2)
             
             RoundedRectangle(cornerRadius: cornerRadius)
-                .stroke(Color.black, lineWidth: 1)
+                .stroke(Color("Border"), lineWidth: 1)
                 .frame(width: fixedItemSize, height: fixedItemSize)
             
             Text(activity.symbol)
@@ -284,7 +285,7 @@ struct MergedActivityIndicator: View {
     private func timeBadgeView(targetTime: (hour: Int, minute: Int), color: Color) -> some View {
         Text(TimelinePositionHelper.formattedTime(hour: targetTime.hour, minute: targetTime.minute))
             .font(.system(size: 11, weight: .bold, design: .rounded))
-            .foregroundStyle(.white)
+            .foregroundStyle(Color.white)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
             .background(

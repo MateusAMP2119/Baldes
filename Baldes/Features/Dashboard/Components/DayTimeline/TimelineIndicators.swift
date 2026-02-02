@@ -176,7 +176,7 @@ struct ActivityTimeLabel: View {
                 .padding(.vertical, 2)
                 .background(
                     Capsule()
-                        .fill(Color.white)
+                        .fill(Color("CardBackground"))
                 )
                 .overlay(
                     Capsule()

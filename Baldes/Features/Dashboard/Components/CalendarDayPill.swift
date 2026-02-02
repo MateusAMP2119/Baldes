@@ -39,8 +39,8 @@ struct CalendarDayPill: View {
 
                     // Top Layer
                     Capsule()
-                        .fill(Color.white)
-                        .stroke(Color.black, lineWidth: 1)
+                        .fill(Color("CardBackground"))
+                        .stroke(Color("Border"), lineWidth: 1)
                 }
             )
         } else {

@@ -41,7 +41,7 @@ struct MainTabView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: {}) {
                         Image(systemName: "person.crop.circle")
-                            .foregroundColor(Color.black)
+                            .foregroundColor(Color("TextPrimary"))
                     }
                 }
             }

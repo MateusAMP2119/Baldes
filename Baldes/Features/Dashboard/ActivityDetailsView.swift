@@ -58,7 +58,7 @@ struct ActivityDetailsView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
+        .background(Color("CardBackground"))
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
@@ -94,12 +94,8 @@ struct ActivityDetailsView: View {
                 }
             }
             .padding()
-            .background(Color.white)
+            .background(Color("CardBackground"))
             .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(activityColor.opacity(0.3), lineWidth: 1)
-            )
         }
     }
 
@@ -131,7 +127,7 @@ struct ActivityDetailsView: View {
                     icon: "calendar.badge.plus")
             }
             .padding()
-            .background(Color.white)
+            .background(Color("CardBackground"))
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }

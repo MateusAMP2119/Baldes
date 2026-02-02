@@ -104,10 +104,10 @@ struct DateRangePicker: View {
                     
                     // White layer (top)
                     RoundedRectangle(cornerRadius: 6)
-                        .fill(Color.white)
+                        .fill(Color("CardBackground"))
                         .overlay(
                             RoundedRectangle(cornerRadius: 6)
-                                .stroke(Color.black, lineWidth: 1)
+                                .stroke(Color("Border"), lineWidth: 1)
                         )
                 }
             }
@@ -150,11 +150,11 @@ struct DateRangePicker: View {
                                 .frame(width: 28, height: 28)
                                 .offset(y: 2)
                             Circle()
-                                .fill(Color.white)
+                                .fill(Color("CardBackground"))
                                 .frame(width: 28, height: 28)
                                 .overlay(
                                     Circle()
-                                        .stroke(Color.black, lineWidth: 1)
+                                        .stroke(Color("Border"), lineWidth: 1)
                                 )
                         }
                     }
@@ -223,10 +223,10 @@ struct DateRangePicker: View {
                             
                             // White layer (top)
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.white)
+                                .fill(Color("CardBackground"))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 4)
-                                        .stroke(Color.black, lineWidth: 1)
+                                        .stroke(Color("Border"), lineWidth: 1)
                                 )
                         }
                     }

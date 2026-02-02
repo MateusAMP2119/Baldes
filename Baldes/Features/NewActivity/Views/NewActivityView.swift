@@ -143,7 +143,7 @@ struct NewActivityView: View {
                         dismiss()
                     } label: {
                         Image(systemName: "xmark")
-                            .foregroundColor(Color.black)
+                            .foregroundColor(Color("TextPrimary"))
                             .font(.system(size: 16, weight: .semibold))
                     }
                 }

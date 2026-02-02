@@ -107,7 +107,7 @@ private struct CompactWheelPicker: View {
     VStack {
         TimerPickerView(totalSeconds: .constant(45 * 60))
             .padding()
-            .background(Color.white)
+            .background(Color("CardBackground"))
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .padding()
     }

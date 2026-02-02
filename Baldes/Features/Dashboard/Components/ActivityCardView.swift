@@ -78,7 +78,7 @@ struct ActivityCardView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(activity.name)
                         .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(.black)
+                        .foregroundStyle(Color("TextPrimary"))
 
                     Text(goalText)
                         .font(.system(size: 13, weight: .medium))
@@ -100,11 +100,12 @@ struct ActivityCardView: View {
                     .padding(.bottom, 14)
             }
         }
-        .background(Color.white)
+        .padding(16)
+        .background(Color("CardBackground"))
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.black, lineWidth: 2)
+                .stroke(Color("Border"), lineWidth: 2)
         )
         // 3D Shadow Effect
         .background(
@@ -123,7 +124,7 @@ struct ActivityCardView: View {
             Text("\"\(activity.motivation)\"")
                 .font(.system(size: 14))
                 .italic()
-                .foregroundStyle(Color.black.opacity(0.6))
+                .foregroundStyle(Color("TextPrimary").opacity(0.6))
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
@@ -131,7 +132,7 @@ struct ActivityCardView: View {
             if let author = activity.motivationAuthor, !author.isEmpty {
                 Text("— \(author)")
                     .font(.caption)
-                    .foregroundStyle(Color.black.opacity(0.4))
+                    .foregroundStyle(Color("TextPrimary").opacity(0.4))
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
@@ -145,26 +146,26 @@ struct ActivityCardView: View {
             Button(action: markSkipped) {
                 Image(systemName: "xmark")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(isSkippedToday ? Color.black : Color.black.opacity(0.25))
+                    .foregroundStyle(isSkippedToday ? Color("TextPrimary") : Color("TextPrimary").opacity(0.25))
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(PlainButtonStyle())
 
             // Divider
             Rectangle()
-                .fill(Color.black.opacity(0.1))
+                .fill(Color("TextPrimary").opacity(0.1))
                 .frame(width: 1, height: 20)
 
             // Complete button (✓)
             Button(action: markCompleted) {
                 Image(systemName: "checkmark")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(isCompletedToday ? activityColor : Color.black.opacity(0.25))
+                    .foregroundStyle(isCompletedToday ? activityColor : Color("TextPrimary").opacity(0.25))
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(PlainButtonStyle())
         }
-        .background(Color.black.opacity(0.05))
+        .background(Color("TextPrimary").opacity(0.05))
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 

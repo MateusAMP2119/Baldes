@@ -9,7 +9,7 @@ struct DashboardView: View {
     var body: some View {
         ZStack {
             // Background color
-            Color.white.ignoresSafeArea()
+            Color("AppBackground").ignoresSafeArea()
 
             // Content
             if activities.isEmpty {
@@ -33,15 +33,17 @@ struct DashboardView: View {
                     .font(.largeTitle)
                     .fontWeight(.bold)
                     .padding(.horizontal)
-                    .padding(.top, 16)
+                    .padding(.top, 18)
 
                 CalendarStripView(
                     activities: activities,
                     onScheduleActivity: scheduleActivity
                 )
                 .padding(.bottom, 10)
-            }
-            .background(Color.white)  // Ensure header is opaque over any scrolling content if it were to go under directly
+                        }
+                        .padding(.horizontal)
+                        .padding(.bottom, 10)
+                        .background(Color("AppBackground"))  // Ensure header is opaque over any scrolling content if it were to go under directly
             .zIndex(1)  // Ensure header stays on top
 
             // List only for activity cards - native swipe works
@@ -85,13 +87,13 @@ struct DashboardView: View {
                 // Gradient Overlay
                 LinearGradient(
                     stops: [
-                        .init(color: .white, location: 0.0),
-                        .init(color: .white.opacity(0), location: 1.0),
+                        .init(color: Color("AppBackground"), location: 0.0),
+                        .init(color: Color("AppBackground").opacity(0), location: 1.0),
                     ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                .frame(height: 16)
+                .frame(height: 12)
                 .allowsHitTesting(false)  // Let touches pass through to the list
             }
         }
@@ -128,7 +130,7 @@ struct DashboardView: View {
                 Text("Sem Baldes criados!")
                     .font(.title2)
                     .fontWeight(.bold)
-                    .foregroundStyle(.black)
+                    .foregroundStyle(Color("TextPrimary"))
 
                 Text("Vamos criar um novo Balde para começar.")
                     .font(.subheadline)
@@ -141,7 +143,7 @@ struct DashboardView: View {
             Button(action: { showingNewActivitySheet = true }) {
                 Text("Novo Balde")
                     .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(.black)
+                    .foregroundStyle(Color("TextPrimary"))
                     .padding(.horizontal, 32)
                     .padding(.vertical, 16)
                     .background(
@@ -153,8 +155,11 @@ struct DashboardView: View {
 
                             // Top layer
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.white)
-                                .stroke(Color.black, lineWidth: 1)
+                                .fill(Color("CardBackground"))
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color("Border"), lineWidth: 1)
+                                )
                         }
                     )
             }
