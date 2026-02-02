@@ -45,24 +45,79 @@ struct CalendarStripView: View {
         }
         return dates
     }
+    
+    // Check if currently viewing the week containing today
+    private var isCurrentWeek: Bool {
+        let calendar = Calendar.current
+        let today = Date()
+        return calendar.isDate(startDate, equalTo: today, toGranularity: .weekOfYear) &&
+               calendar.isDate(startDate, equalTo: today, toGranularity: .yearForWeekOfYear)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Button(action: {
-                isDatePickerPresented = true
-            }) {
-                HStack(spacing: 4) {
-                    Text(timeFrameTitle)
-                        .font(.subheadline)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.gray)
-
-                    Image(systemName: "chevron.down")
-                        .font(.caption)
-                        .foregroundStyle(.gray)
+            Spacer()
+                .frame(height: 2)
+            // Teams-style header
+            HStack(spacing: 8) {
+                // Today button - shows arrow when not on current week
+                Button(action: {
+                    goToToday()
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: isCurrentWeek ? "calendar" : "arrow.left")
+                            .font(.system(size: 14))
+                        Text("Today")
+                            .font(.system(size: 13, weight: .medium))
+                    }
+                    .foregroundStyle(.gray)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color(.systemGray6))
+                    )
                 }
-                .padding(.horizontal, 20)
+                
+                // Navigation arrows
+                HStack(spacing: 0) {
+                    Button(action: {
+                        navigatePrevious()
+                    }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.gray)
+                            .frame(width: 24, height: 24)
+                    }
+                    
+                    Button(action: {
+                        navigateNext()
+                    }) {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.gray)
+                            .frame(width: 24, height: 24)
+                    }
+                }
+                
+                // Date range button
+                Button(action: {
+                    isDatePickerPresented = true
+                }) {
+                    HStack(spacing: 4) {
+                        Text(timeFrameTitle)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.gray)
+                        
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(.gray)
+                    }
+                }
+                
+                Spacer()
             }
+            .padding(.horizontal, 16)
             .sheet(isPresented: $isDatePickerPresented) {
                 NavigationStack {
                     DateRangePicker(startDate: $startDate, endDate: $endDate)
@@ -106,17 +161,89 @@ struct CalendarStripView: View {
     private var timeFrameTitle: String {
         guard let firstDay = days.first, let lastDay = days.last else { return "" }
         let formatter = DateFormatter()
-        formatter.dateFormat = "d MMM"
+        let calendar = Calendar.current
+        
+        // Get month and day components
+        let firstMonth = calendar.component(.month, from: firstDay)
+        let lastMonth = calendar.component(.month, from: lastDay)
+        let firstYear = calendar.component(.year, from: firstDay)
+        let lastYear = calendar.component(.year, from: lastDay)
+        
         formatter.locale = Locale(identifier: "pt_PT")
-
-        let start = formatter.string(from: firstDay)
-        let end = formatter.string(from: lastDay)
-
-        // Remove periods that might appear in abbreviations (e.g. "jan." -> "jan")
-        let startString = start.replacingOccurrences(of: ".", with: "")
-        let endString = end.replacingOccurrences(of: ".", with: "")
-
-        return "\(startString) - \(endString)".capitalized
+        
+        // Format: "fev 2–7, 2026" or "jan 30 – fev 5, 2026"
+        if firstMonth == lastMonth && firstYear == lastYear {
+            // Same month and year
+            formatter.dateFormat = "MMM d"
+            let monthDay = formatter.string(from: firstDay).replacingOccurrences(of: ".", with: "")
+            let lastDayNum = calendar.component(.day, from: lastDay)
+            return "\(monthDay)–\(lastDayNum), \(firstYear)"
+        } else if firstYear == lastYear {
+            // Different months, same year
+            formatter.dateFormat = "MMM d"
+            let start = formatter.string(from: firstDay).replacingOccurrences(of: ".", with: "")
+            let end = formatter.string(from: lastDay).replacingOccurrences(of: ".", with: "")
+            return "\(start) – \(end), \(firstYear)"
+        } else {
+            // Different years
+            formatter.dateFormat = "MMM d, yyyy"
+            let start = formatter.string(from: firstDay).replacingOccurrences(of: ".", with: "")
+            let end = formatter.string(from: lastDay).replacingOccurrences(of: ".", with: "")
+            return "\(start) – \(end)"
+        }
+    }
+    
+    // Navigate to today
+    private func goToToday() {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            selectedDate = today
+            
+            if let weekInterval = calendar.dateInterval(of: .weekOfYear, for: today) {
+                startDate = weekInterval.start
+                endDate = weekInterval.end.addingTimeInterval(-1)
+            }
+        }
+    }
+    
+    // Navigate to previous period
+    private func navigatePrevious() {
+        let calendar = Calendar.current
+        let daysDifference = calendar.dateComponents([.day], from: startDate, to: endDate).day ?? 6
+        
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            if let newStart = calendar.date(byAdding: .day, value: -(daysDifference + 1), to: startDate),
+               let newEnd = calendar.date(byAdding: .day, value: -1, to: startDate) {
+                startDate = newStart
+                endDate = newEnd
+                
+                // Update selected date to corresponding day in new range
+                if let newSelectedDate = calendar.date(byAdding: .day, value: -(daysDifference + 1), to: selectedDate) {
+                    selectedDate = newSelectedDate
+                }
+            }
+        }
+    }
+    
+    // Navigate to next period
+    private func navigateNext() {
+        let calendar = Calendar.current
+        let daysDifference = calendar.dateComponents([.day], from: startDate, to: endDate).day ?? 6
+        
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            if let newStart = calendar.date(byAdding: .day, value: 1, to: endDate),
+               let newEnd = calendar.date(byAdding: .day, value: daysDifference + 1, to: endDate) {
+                startDate = newStart
+                endDate = newEnd
+                
+                // Update selected date to corresponding day in new range
+                if let newSelectedDate = calendar.date(byAdding: .day, value: daysDifference + 1, to: selectedDate) {
+                    selectedDate = newSelectedDate
+                }
+            }
+        }
     }
 }
 

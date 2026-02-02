@@ -17,6 +17,9 @@ struct DayTimelineView: View {
     @State private var dragTargetTime: (hour: Int, minute: Int)? = nil
     @State private var resizingActivityId: UUID? = nil
     @State private var resizeOffset: CGFloat = 0
+    
+    // Namespace for matched geometry animations
+    @Namespace private var indicatorAnimation
 
     // Computed: activities scheduled for this day (sorted by time)
     private var scheduledActivities: [Activity] {
@@ -151,20 +154,43 @@ struct DayTimelineView: View {
                     .position(x: xPosition, y: 18)
             }
             
-            // Scheduled activity indicators
-            ForEach(scheduledActivities, id: \.id) { activity in
-                ScheduledActivityIndicator(
-                    activity: activity,
-                    width: availableWidth,
-                    selectedDate: selectedDate,
-                    onScheduleActivity: onScheduleActivity,
-                    onUpdateActivityDuration: onUpdateActivityDuration,
-                    draggingActivityId: $draggingActivityId,
-                    dragOffset: $dragOffset,
-                    dragTargetTime: $dragTargetTime,
-                    resizingActivityId: $resizingActivityId,
-                    resizeOffset: $resizeOffset
-                )
+            // Scheduled activity indicators - grouped when close together
+            let groups = ActivityGroupingHelper.groupActivities(scheduledActivities, width: availableWidth)
+            
+            ForEach(groups) { group in
+                if group.isMerged {
+                    // Merged indicator for close activities
+                    MergedActivityIndicator(
+                        activities: group.activities,
+                        width: availableWidth,
+                        selectedDate: selectedDate,
+                        onScheduleActivity: onScheduleActivity,
+                        onUpdateActivityDuration: onUpdateActivityDuration,
+                        draggingActivityId: $draggingActivityId,
+                        dragOffset: $dragOffset,
+                        dragTargetTime: $dragTargetTime,
+                        resizingActivityId: $resizingActivityId,
+                        resizeOffset: $resizeOffset
+                    )
+                    .id("merged-\(group.id)")
+                } else {
+                    // Single activity indicator
+                    ForEach(group.activities, id: \.id) { activity in
+                        ScheduledActivityIndicator(
+                            activity: activity,
+                            width: availableWidth,
+                            selectedDate: selectedDate,
+                            onScheduleActivity: onScheduleActivity,
+                            onUpdateActivityDuration: onUpdateActivityDuration,
+                            draggingActivityId: $draggingActivityId,
+                            dragOffset: $dragOffset,
+                            dragTargetTime: $dragTargetTime,
+                            resizingActivityId: $resizingActivityId,
+                            resizeOffset: $resizeOffset
+                        )
+                        .id("single-\(activity.id)")
+                    }
+                }
             }
             
             // Current time indicator (if selected date is today)

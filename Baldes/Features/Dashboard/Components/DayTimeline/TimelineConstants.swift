@@ -15,4 +15,10 @@ enum TimelineConstants {
     
     /// Default activity duration in minutes
     static let defaultDurationMinutes = 60
+    
+    /// Minimum distance in points between activity indicators before they merge
+    static let mergeThreshold: CGFloat = 36
+    
+    /// Size of individual activity indicator
+    static let indicatorSize: CGFloat = 28
 }
