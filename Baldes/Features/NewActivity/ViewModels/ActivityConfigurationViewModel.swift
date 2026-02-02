@@ -18,10 +18,10 @@ class ActivityConfigurationViewModel {
     var recurringPlan = RecurringPlan()
 
     // Scope 1: Habits
-    // Time-based
-
-    var dailyGoalTime: TimeInterval = 45 * 60
-    var allowStopwatch: Bool = true
+        // Time-based
+        var dailyGoalTime: TimeInterval = 45 * 60
+        var startTime: Date = Date()
+        var allowStopwatch: Bool = true
 
     // Streaks
     var frequency: String = "Dias"  // Placeholder enum later
@@ -97,15 +97,24 @@ class ActivityConfigurationViewModel {
             metricUnit: (context.type.title == "Metas Numéricas") ? metricUnit : nil
         )
 
+        // Helper to combine date and time
+        func combineDateAndTime(date: Date, time: Date) -> Date {
+            let calendar = Calendar.current
+            let timeComponents = calendar.dateComponents([.hour, .minute], from: time)
+            return calendar.date(bySettingHour: timeComponents.hour ?? 0, minute: timeComponents.minute ?? 0, second: 0, of: date) ?? date
+        }
+
         // Calculate initial scheduled time based on Recurring Plan
         if recurringPlan.hasRecurringPlan {
             let today = Date()
             let calendar = Calendar.current
             let todayWeekdayInt = calendar.component(.weekday, from: today)
 
+            var targetDate: Date?
+
             // Check if today matches any selected day
             if recurringPlan.selectedDays.contains(where: { $0.rawValue == todayWeekdayInt }) {
-                newActivity.scheduledTime = today
+                targetDate = today
             } else {
                 // Find next upcoming day
                 let sortedDays = recurringPlan.selectedDays.sorted { $0.rawValue < $1.rawValue }
@@ -113,19 +122,31 @@ class ActivityConfigurationViewModel {
                 // Try to find a day later in the current week
                 if let nextDay = sortedDays.first(where: { $0.rawValue > todayWeekdayInt }) {
                     let daysToAdd = nextDay.rawValue - todayWeekdayInt
-                    newActivity.scheduledTime = calendar.date(
-                        byAdding: .day, value: daysToAdd, to: today)
+                    targetDate = calendar.date(byAdding: .day, value: daysToAdd, to: today)
                 }
                 // If not, use the first day of next week
                 else if let firstDayOfWeek = sortedDays.first {
                     let daysToAdd = 7 - todayWeekdayInt + firstDayOfWeek.rawValue
-                    newActivity.scheduledTime = calendar.date(
-                        byAdding: .day, value: daysToAdd, to: today)
+                    targetDate = calendar.date(byAdding: .day, value: daysToAdd, to: today)
+                }
+            }
+
+            if let date = targetDate {
+                // If it's a time-based goal, use the user's selected start time
+                if context.type.title == "Objetivos por tempo" {
+                    newActivity.scheduledTime = combineDateAndTime(date: date, time: startTime)
+                } else {
+                    // For others, default to current time or maybe start of day? Keeping current time behavior for now
+                    newActivity.scheduledTime = date
                 }
             }
         } else {
             // No recurring plan: schedule for today by default
-            newActivity.scheduledTime = Date()
+            if context.type.title == "Objetivos por tempo" {
+                newActivity.scheduledTime = combineDateAndTime(date: Date(), time: startTime)
+            } else {
+                newActivity.scheduledTime = Date()
+            }
         }
 
         modelContext.insert(newActivity)

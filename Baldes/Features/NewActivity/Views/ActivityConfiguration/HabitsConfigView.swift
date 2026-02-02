@@ -9,6 +9,17 @@ struct HabitsConfigView: View {
                 Section("Tempo") {
                     TimerPickerView(totalSeconds: $viewModel.dailyGoalTime)
                         .frame(maxWidth: .infinity)
+
+                    HStack {
+                        Text("Horário de Início")
+                        Spacer()
+                        DatePicker(
+                            "",
+                            selection: $viewModel.startTime,
+                            displayedComponents: .hourAndMinute
+                        )
+                        .labelsHidden()
+                    }
                 }
 
             } else if viewModel.context.type.title == "Contagens Diárias" {

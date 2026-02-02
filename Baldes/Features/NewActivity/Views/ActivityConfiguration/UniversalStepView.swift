@@ -110,6 +110,9 @@ struct UniversalStepView: View {
                         .offset(x: -5)
                         .frame(height: 18)
                 }
+
+                // Color Picker
+                ColorPicker("Cor", selection: $viewModel.color, supportsOpacity: false)
             }
 
             // Configuration Section (Merged)

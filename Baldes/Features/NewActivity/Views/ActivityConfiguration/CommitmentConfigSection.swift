@@ -2,7 +2,6 @@ import SwiftUI
 
 struct CommitmentConfigSection: View {
     @Bindable var viewModel: ActivityConfigurationViewModel
-    @State private var showRecurringPlanSheet = false
 
     var body: some View {
         // Type-specific configuration
@@ -10,11 +9,6 @@ struct CommitmentConfigSection: View {
 
         // Recurring Plan - always shown
         recurringPlanSection
-            .sheet(isPresented: $showRecurringPlanSheet) {
-                NavigationStack {
-                    RecurringPlanView(viewModel: viewModel)
-                }
-            }
     }
 
     // MARK: - Type Specific Section
@@ -60,31 +54,11 @@ struct CommitmentConfigSection: View {
     // MARK: - Recurring Plan Section
 
     private var recurringPlanSection: some View {
-        Section {
-            Button {
-                showRecurringPlanSheet = true
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "sun.max")
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Plano recorrente")
-                            .foregroundStyle(.primary)
-                    }
-
-                    Spacer()
-
-                    Text(viewModel.recurringPlan.summary)
-                        .foregroundStyle(.secondary)
-
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                }
-            }
-            .buttonStyle(.plain)
+        Section("Plano Recorrente") {
+            WeekdayPicker(
+                selectedDays: $viewModel.recurringPlan.selectedDays,
+                accentColor: viewModel.color
+            )
         }
     }
 }
