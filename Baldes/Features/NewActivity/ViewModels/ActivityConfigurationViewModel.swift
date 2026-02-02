@@ -97,6 +97,37 @@ class ActivityConfigurationViewModel {
             metricUnit: (context.type.title == "Metas Numéricas") ? metricUnit : nil
         )
 
+        // Calculate initial scheduled time based on Recurring Plan
+        if recurringPlan.hasRecurringPlan {
+            let today = Date()
+            let calendar = Calendar.current
+            let todayWeekdayInt = calendar.component(.weekday, from: today)
+
+            // Check if today matches any selected day
+            if recurringPlan.selectedDays.contains(where: { $0.rawValue == todayWeekdayInt }) {
+                newActivity.scheduledTime = today
+            } else {
+                // Find next upcoming day
+                let sortedDays = recurringPlan.selectedDays.sorted { $0.rawValue < $1.rawValue }
+
+                // Try to find a day later in the current week
+                if let nextDay = sortedDays.first(where: { $0.rawValue > todayWeekdayInt }) {
+                    let daysToAdd = nextDay.rawValue - todayWeekdayInt
+                    newActivity.scheduledTime = calendar.date(
+                        byAdding: .day, value: daysToAdd, to: today)
+                }
+                // If not, use the first day of next week
+                else if let firstDayOfWeek = sortedDays.first {
+                    let daysToAdd = 7 - todayWeekdayInt + firstDayOfWeek.rawValue
+                    newActivity.scheduledTime = calendar.date(
+                        byAdding: .day, value: daysToAdd, to: today)
+                }
+            }
+        } else {
+            // No recurring plan: schedule for today by default
+            newActivity.scheduledTime = Date()
+        }
+
         modelContext.insert(newActivity)
 
         // Log creation event

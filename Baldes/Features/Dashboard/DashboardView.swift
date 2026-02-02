@@ -39,44 +39,61 @@ struct DashboardView: View {
                     activities: activities,
                     onScheduleActivity: scheduleActivity
                 )
-                .padding(.bottom, 8)
+                .padding(.bottom, 10)
             }
-            
+            .background(Color.white)  // Ensure header is opaque over any scrolling content if it were to go under directly
+            .zIndex(1)  // Ensure header stays on top
+
             // List only for activity cards - native swipe works
-            List {
-                ForEach(activities) { activity in
-                    ActivityCardView(activity: activity)
-                        .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 16))
-                        .onDrag {
-                            NSItemProvider(object: activity.id.uuidString as NSString)
-                        }
-                        .background(
-                            NavigationLink(destination: ActivityDetailsView(activity: activity)) {
-                                EmptyView()
+            ZStack(alignment: .top) {
+                List {
+                    ForEach(activities) { activity in
+                        ActivityCardView(activity: activity)
+                            .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 16))
+                            .onDrag {
+                                NSItemProvider(object: activity.id.uuidString as NSString)
                             }
-                            .opacity(0)
-                        )
+                            .background(
+                                NavigationLink(destination: ActivityDetailsView(activity: activity))
+                                {
+                                    EmptyView()
+                                }
+                                .opacity(0)
+                            )
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    deleteActivity(activity)
+                                } label: {
+                                    Label("Eliminar", systemImage: "trash")
+                                }
+                            }
+                    }
+
+                    // Bottom Spacing
+                    Color.clear
+                        .frame(height: 80)
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                deleteActivity(activity)
-                            } label: {
-                                Label("Eliminar", systemImage: "trash")
-                            }
-                        }
+                        .listRowInsets(EdgeInsets())
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
 
-                // Bottom Spacing
-                Color.clear
-                    .frame(height: 80)
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
+                // Gradient Overlay
+                LinearGradient(
+                    stops: [
+                        .init(color: .white, location: 0.0),
+                        .init(color: .white.opacity(0), location: 1.0),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 16)
+                .allowsHitTesting(false)  // Let touches pass through to the list
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
         }
     }
 

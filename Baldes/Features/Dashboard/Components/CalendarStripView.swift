@@ -9,6 +9,10 @@ struct CalendarStripView: View {
     @State private var endDate: Date
     @State private var isDatePickerPresented: Bool = false
 
+    // Temporary state for cancellation
+    @State private var originalStartDate: Date?
+    @State private var originalEndDate: Date?
+
     init(activities: [Activity], onScheduleActivity: @escaping (UUID, Date) -> Void) {
         self.activities = activities
         self.onScheduleActivity = onScheduleActivity
@@ -45,13 +49,13 @@ struct CalendarStripView: View {
         }
         return dates
     }
-    
+
     // Check if currently viewing the week containing today
     private var isCurrentWeek: Bool {
         let calendar = Calendar.current
         let today = Date()
-        return calendar.isDate(startDate, equalTo: today, toGranularity: .weekOfYear) &&
-               calendar.isDate(startDate, equalTo: today, toGranularity: .yearForWeekOfYear)
+        return calendar.isDate(startDate, equalTo: today, toGranularity: .weekOfYear)
+            && calendar.isDate(startDate, equalTo: today, toGranularity: .yearForWeekOfYear)
     }
 
     var body: some View {
@@ -65,8 +69,11 @@ struct CalendarStripView: View {
                     goToToday()
                 }) {
                     HStack(spacing: 4) {
-                        Image(systemName: isCurrentWeek ? "calendar" : "arrow.left")
-                            .font(.system(size: 14))
+                        Image(
+                            systemName: Calendar.current.isDateInToday(selectedDate)
+                                ? "calendar" : "arrow.left"
+                        )
+                        .font(.system(size: 14))
                         Text("Today")
                             .font(.system(size: 13, weight: .medium))
                     }
@@ -78,7 +85,7 @@ struct CalendarStripView: View {
                             .fill(Color(.systemGray6))
                     )
                 }
-                
+
                 // Navigation arrows
                 HStack(spacing: 0) {
                     Button(action: {
@@ -89,7 +96,7 @@ struct CalendarStripView: View {
                             .foregroundStyle(.gray)
                             .frame(width: 24, height: 24)
                     }
-                    
+
                     Button(action: {
                         navigateNext()
                     }) {
@@ -99,22 +106,25 @@ struct CalendarStripView: View {
                             .frame(width: 24, height: 24)
                     }
                 }
-                
+
                 // Date range button
                 Button(action: {
+                    // Save current state before opening
+                    originalStartDate = startDate
+                    originalEndDate = endDate
                     isDatePickerPresented = true
                 }) {
                     HStack(spacing: 4) {
                         Text(timeFrameTitle)
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(.gray)
-                        
+
                         Image(systemName: "chevron.down")
                             .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(.gray)
                     }
                 }
-                
+
                 Spacer()
             }
             .padding(.horizontal, 16)
@@ -123,8 +133,30 @@ struct CalendarStripView: View {
                     DateRangePicker(startDate: $startDate, endDate: $endDate)
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) {
-                                Button("Fechar") {
+                                Button(action: {
+                                    // Restore original state
+                                    if let originalStart = originalStartDate {
+                                        startDate = originalStart
+                                    }
+                                    if let originalEnd = originalEndDate {
+                                        endDate = originalEnd
+                                    }
                                     isDatePickerPresented = false
+                                }) {
+                                    Image(systemName: "xmark")
+                                        .foregroundStyle(.gray.opacity(0.8))
+                                        .font(.system(size: 16))
+                                }
+                            }
+
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button(action: {
+                                    // confirm changes
+                                    isDatePickerPresented = false
+                                }) {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.orange)
+                                        .font(.system(size: 16))
                                 }
                             }
                         }
@@ -156,21 +188,55 @@ struct CalendarStripView: View {
                 onScheduleActivity: onScheduleActivity
             )
         }
+        .onChange(of: startDate) { oldValue, newValue in
+            preserveWeekday(from: oldValue, to: newValue)
+        }
+    }
+
+    private func preserveWeekday(from oldStart: Date, to newStart: Date) {
+        let calendar = Calendar.current
+
+        // 1. Get current weekday of the selected date (before update catch-up)
+        // Note: selectedDate might not have changed yet if driven by Picker
+        let currentWeekday = calendar.component(.weekday, from: selectedDate)
+
+        // 2. Find the date in the new sequence that matches this weekday
+        // We look for the first occurrence of 'currentWeekday' starting from 'newStart'
+        // limited to 'endDate'
+
+        if let targetDate = calendar.nextDate(
+            after: newStart.addingTimeInterval(-1),  // -1 to include start if it matches
+            matching: DateComponents(weekday: currentWeekday),
+            matchingPolicy: .nextTime
+        ) {
+            if targetDate <= endDate {
+                // Found valid date in range
+                if selectedDate != targetDate {
+                    selectedDate = targetDate
+                }
+            } else {
+                // Determine fallback: clamp to range
+                // If the desired weekday isn't in range, default to start
+                selectedDate = newStart
+            }
+        } else {
+            selectedDate = newStart
+        }
     }
 
     private var timeFrameTitle: String {
         guard let firstDay = days.first, let lastDay = days.last else { return "" }
         let formatter = DateFormatter()
         let calendar = Calendar.current
-        
+
         // Get month and day components
         let firstMonth = calendar.component(.month, from: firstDay)
         let lastMonth = calendar.component(.month, from: lastDay)
         let firstYear = calendar.component(.year, from: firstDay)
         let lastYear = calendar.component(.year, from: lastDay)
-        
+
         formatter.locale = Locale(identifier: "pt_PT")
-        
+
         // Format: "fev 2–7, 2026" or "jan 30 – fev 5, 2026"
         if firstMonth == lastMonth && firstYear == lastYear {
             // Same month and year
@@ -192,55 +258,76 @@ struct CalendarStripView: View {
             return "\(start) – \(end)"
         }
     }
-    
+
     // Navigate to today
     private func goToToday() {
         let calendar = Calendar.current
         let today = Date()
-        
+
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             selectedDate = today
-            
+
             if let weekInterval = calendar.dateInterval(of: .weekOfYear, for: today) {
                 startDate = weekInterval.start
                 endDate = weekInterval.end.addingTimeInterval(-1)
             }
         }
     }
-    
+
     // Navigate to previous period
     private func navigatePrevious() {
         let calendar = Calendar.current
         let daysDifference = calendar.dateComponents([.day], from: startDate, to: endDate).day ?? 6
-        
+
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-            if let newStart = calendar.date(byAdding: .day, value: -(daysDifference + 1), to: startDate),
-               let newEnd = calendar.date(byAdding: .day, value: -1, to: startDate) {
+            if let newStart = calendar.date(
+                byAdding: .day, value: -(daysDifference + 1), to: startDate),
+                let newEnd = calendar.date(byAdding: .day, value: -1, to: startDate)
+            {
                 startDate = newStart
                 endDate = newEnd
-                
-                // Update selected date to corresponding day in new range
-                if let newSelectedDate = calendar.date(byAdding: .day, value: -(daysDifference + 1), to: selectedDate) {
-                    selectedDate = newSelectedDate
+
+                // Update selected date to corresponding day in new range, or clamp to start
+                if let newSelectedDate = calendar.date(
+                    byAdding: .day, value: -(daysDifference + 1), to: selectedDate)
+                {
+                    // Ensure the new selected date checks out with the new range
+                    if newSelectedDate >= newStart && newSelectedDate <= newEnd {
+                        selectedDate = newSelectedDate
+                    } else {
+                        selectedDate = newStart
+                    }
+                } else {
+                    selectedDate = newStart
                 }
             }
         }
     }
-    
+
     // Navigate to next period
     private func navigateNext() {
         let calendar = Calendar.current
         let daysDifference = calendar.dateComponents([.day], from: startDate, to: endDate).day ?? 6
-        
+
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             if let newStart = calendar.date(byAdding: .day, value: 1, to: endDate),
-               let newEnd = calendar.date(byAdding: .day, value: daysDifference + 1, to: endDate) {
+                let newEnd = calendar.date(byAdding: .day, value: daysDifference + 1, to: endDate)
+            {
                 startDate = newStart
                 endDate = newEnd
-                
-                // Update selected date to corresponding day in new range
-                if let newSelectedDate = calendar.date(byAdding: .day, value: daysDifference + 1, to: selectedDate) {
-                    selectedDate = newSelectedDate
+
+                // Update selected date to corresponding day in new range, or clamp to start
+                if let newSelectedDate = calendar.date(
+                    byAdding: .day, value: daysDifference + 1, to: selectedDate)
+                {
+                    // Ensure the new selected date checks out with the new range
+                    if newSelectedDate >= newStart && newSelectedDate <= newEnd {
+                        selectedDate = newSelectedDate
+                    } else {
+                        selectedDate = newStart
+                    }
+                } else {
+                    selectedDate = newStart
                 }
             }
         }
