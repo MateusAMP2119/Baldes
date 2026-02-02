@@ -100,7 +100,7 @@ struct ActivityCardView: View {
                     .padding(.bottom, 14)
             }
         }
-        .padding(16)
+        .padding(.top, 2)
         .background(Color("CardBackground"))
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(

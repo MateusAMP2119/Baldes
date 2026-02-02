@@ -14,38 +14,27 @@ public struct TimerPickerView: View {
     public var body: some View {
         HStack(spacing: 0) {
             // Hours Picker
-            CompactWheelPicker(
+            CompactScrollPicker(
                 selection: $selectedHours,
                 range: 0...23,
                 label: "h"
             )
 
-            Text(":")
-                .font(.system(size: 28, weight: .regular, design: .rounded))
-                .foregroundStyle(.tertiary)
-                .padding(.horizontal, 2)
-
             // Minutes Picker
-            CompactWheelPicker(
+            CompactScrollPicker(
                 selection: $selectedMinutes,
                 range: 0...59,
                 label: "m"
             )
 
-            Text(":")
-                .font(.system(size: 28, weight: .regular, design: .rounded))
-                .foregroundStyle(.tertiary)
-                .padding(.horizontal, 2)
-
             // Seconds Picker
-            CompactWheelPicker(
+            CompactScrollPicker(
                 selection: $selectedSeconds,
                 range: 0...59,
                 label: "s"
             )
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
+        .frame(height: 44)
         .onAppear {
             updatePickers(from: totalSeconds)
         }
@@ -76,40 +65,113 @@ public struct TimerPickerView: View {
     }
 }
 
-// MARK: - Compact Wheel Picker
-private struct CompactWheelPicker: View {
+// MARK: - Compact Scroll Picker with Fade Effect
+private struct CompactScrollPicker: View {
     @Binding var selection: Int
     let range: ClosedRange<Int>
     let label: String
 
+    @State private var dragOffset: CGFloat = 0
+    @State private var lastDragValue: CGFloat = 0
+
+    private let itemHeight: CGFloat = 18
+
+    private var prevValue: Int {
+        selection > range.lowerBound ? selection - 1 : range.upperBound
+    }
+
+    private var nextValue: Int {
+        selection < range.upperBound ? selection + 1 : range.lowerBound
+    }
+
+    private func wrappedValue(_ value: Int) -> Int {
+        let count = range.upperBound - range.lowerBound + 1
+        var result = value
+        while result < range.lowerBound {
+            result += count
+        }
+        while result > range.upperBound {
+            result -= count
+        }
+        return result
+    }
+
     var body: some View {
         HStack(spacing: 2) {
-            Picker("", selection: $selection) {
-                ForEach(range, id: \.self) { value in
-                    Text(String(format: "%02d", value))
-                        .font(.system(size: 22, weight: .medium, design: .rounded))
-                        .monospacedDigit()
-                        .tag(value)
+            VStack(spacing: 2) {
+                // Previous value (faded)
+                Text(String(format: "%02d", prevValue))
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.tertiary)
+
+                // Current value
+                Text(String(format: "%02d", selection))
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.primary)
+
+                // Next value (faded)
+                Text(String(format: "%02d", nextValue))
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(width: 32)
+            .mask(
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0),
+                        .init(color: .black, location: 0.25),
+                        .init(color: .black, location: 0.75),
+                        .init(color: .clear, location: 1),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 1)
+                    .onChanged { value in
+                        let delta = value.translation.height - lastDragValue
+                        dragOffset += delta
+                        lastDragValue = value.translation.height
+
+                        // Every itemHeight pixels of drag changes the value by 1
+                        if abs(dragOffset) >= itemHeight {
+                            let steps = Int(dragOffset / itemHeight)
+                            // Dragging down = negative steps (decrease), dragging up = positive steps (increase)
+                            let newValue = wrappedValue(selection - steps)
+                            selection = newValue
+                            dragOffset = dragOffset.truncatingRemainder(dividingBy: itemHeight)
+                        }
+                    }
+                    .onEnded { _ in
+                        dragOffset = 0
+                        lastDragValue = 0
+                    }
+            )
+            .onTapGesture(count: 2) {
+                // Double tap to reset to 0
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    selection = 0
                 }
             }
-            .pickerStyle(.wheel)
-            .frame(width: 56, height: 100)
-            .clipped()
 
             Text(label)
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.secondary)
         }
     }
 }
 
 #Preview {
-    VStack {
-        TimerPickerView(totalSeconds: .constant(45 * 60))
-            .padding()
-            .background(Color("CardBackground"))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .padding()
+    Form {
+        HStack {
+            Text("Meta")
+            Spacer()
+            TimerPickerView(totalSeconds: .constant(45 * 60))
+        }
     }
-    .background(Color.gray.opacity(0.1))
 }

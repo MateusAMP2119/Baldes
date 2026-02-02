@@ -8,9 +8,9 @@ struct WeekdayPicker: View {
     private let weekdays: [Weekday] = Weekday.allCases.sorted { $0.rawValue < $1.rawValue }
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             ForEach(weekdays) { day in
-                WeekdayButton(
+                WeekdayToggle(
                     day: day,
                     isSelected: selectedDays.contains(day),
                     color: accentColor,
@@ -18,34 +18,36 @@ struct WeekdayPicker: View {
                 )
             }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
     }
 
     private func toggle(_ day: Weekday) {
-        if selectedDays.contains(day) {
-            selectedDays.remove(day)
-        } else {
-            selectedDays.insert(day)
+        withAnimation(.easeInOut(duration: 0.15)) {
+            if selectedDays.contains(day) {
+                selectedDays.remove(day)
+            } else {
+                selectedDays.insert(day)
+            }
         }
     }
 }
 
-private struct WeekdayButton: View {
+private struct WeekdayToggle: View {
     let day: Weekday
     let isSelected: Bool
     let color: Color
     let action: () -> Void
 
+    private let size: CGFloat = 26
+
     var body: some View {
         Button(action: action) {
-            Text(day.shortName.prefix(1)) // Use first letter (D, S, T...)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(isSelected ? .white : .primary)
-                .frame(width: 36, height: 36)
+            Text(day.shortName.prefix(1))
+                .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
+                .foregroundStyle(isSelected ? Color.white : Color.secondary)
+                .frame(width: size, height: size)
                 .background(
                     Circle()
-                        .fill(isSelected ? color : Color(.systemGray5))
+                        .fill(isSelected ? Color.clear : .secondary.opacity(0.1))
                 )
                 .overlay(
                     Circle()
@@ -53,14 +55,22 @@ private struct WeekdayButton: View {
                 )
         }
         .buttonStyle(.plain)
+        // 3D offset shadow - applied OUTSIDE the button for proper layering
+        .background(
+            Circle()
+                .fill(isSelected ? color.opacity(0.5) : .clear)
+                .frame(width: size, height: size)
+                .offset(x: 2, y: 2)
+        )
+        .sensoryFeedback(.selection, trigger: isSelected)
     }
 }
 
 #Preview {
     @Previewable @State var days: Set<Weekday> = [.monday, .friday]
-    return VStack {
+    VStack {
         WeekdayPicker(selectedDays: $days, accentColor: .purple)
     }
     .padding()
-    .background(Color.gray.opacity(0.1))
+    .background(Color(.systemBackground))
 }

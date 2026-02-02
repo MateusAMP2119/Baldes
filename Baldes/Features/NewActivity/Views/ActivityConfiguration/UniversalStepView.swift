@@ -112,7 +112,25 @@ struct UniversalStepView: View {
                 }
 
                 // Color Picker
-                ColorPicker("Cor", selection: $viewModel.color, supportsOpacity: false)
+                HStack {
+                    Text("Cor")
+                    Spacer()
+                    ColorPicker("", selection: $viewModel.color, supportsOpacity: false)
+                        .labelsHidden()
+                        .frame(width: 34, height: 34)
+                        .offset(x: -5)
+                }
+                .frame(height: 18)
+
+                // Meta (only for time-based goals)
+                if viewModel.context.type.title == "Objetivos por tempo" {
+                    HStack {
+                        Text("Meta")
+                        Spacer()
+                        TimerPickerView(totalSeconds: $viewModel.dailyGoalTime)
+                    }
+                    .frame(height: 18)
+                }
             }
 
             // Configuration Section (Merged)

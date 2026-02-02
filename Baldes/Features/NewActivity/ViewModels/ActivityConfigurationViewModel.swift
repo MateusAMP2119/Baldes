@@ -18,10 +18,16 @@ class ActivityConfigurationViewModel {
     var recurringPlan = RecurringPlan()
 
     // Scope 1: Habits
-        // Time-based
-        var dailyGoalTime: TimeInterval = 45 * 60
-        var startTime: Date = Date()
-        var allowStopwatch: Bool = true
+    // Time-based
+    var dailyGoalTime: TimeInterval = 45 * 60
+    var startTime: Date = Date()
+    var reminderEnabled: Bool = true
+    var reminderOffset: TimeInterval = 0  // 0 = "No horário", negative = before, positive = after
+    var activityStartDate: Date = Date()  // Start date for the activity
+    var startsToday: Bool = true  // Whether activity starts today
+    var hasNoEnd: Bool = true  // Whether activity has no end date
+    var activityEndDate: Date? = nil
+    var allowStopwatch: Bool = true
 
     // Streaks
     var frequency: String = "Dias"  // Placeholder enum later
@@ -101,7 +107,9 @@ class ActivityConfigurationViewModel {
         func combineDateAndTime(date: Date, time: Date) -> Date {
             let calendar = Calendar.current
             let timeComponents = calendar.dateComponents([.hour, .minute], from: time)
-            return calendar.date(bySettingHour: timeComponents.hour ?? 0, minute: timeComponents.minute ?? 0, second: 0, of: date) ?? date
+            return calendar.date(
+                bySettingHour: timeComponents.hour ?? 0, minute: timeComponents.minute ?? 0,
+                second: 0, of: date) ?? date
         }
 
         // Calculate initial scheduled time based on Recurring Plan
@@ -132,21 +140,12 @@ class ActivityConfigurationViewModel {
             }
 
             if let date = targetDate {
-                // If it's a time-based goal, use the user's selected start time
-                if context.type.title == "Objetivos por tempo" {
-                    newActivity.scheduledTime = combineDateAndTime(date: date, time: startTime)
-                } else {
-                    // For others, default to current time or maybe start of day? Keeping current time behavior for now
-                    newActivity.scheduledTime = date
-                }
+                // Use the user's selected start time for all scheduled activities
+                newActivity.scheduledTime = combineDateAndTime(date: date, time: startTime)
             }
         } else {
-            // No recurring plan: schedule for today by default
-            if context.type.title == "Objetivos por tempo" {
-                newActivity.scheduledTime = combineDateAndTime(date: Date(), time: startTime)
-            } else {
-                newActivity.scheduledTime = Date()
-            }
+            // No recurring plan: schedule for today with the selected start time
+            newActivity.scheduledTime = combineDateAndTime(date: Date(), time: startTime)
         }
 
         modelContext.insert(newActivity)

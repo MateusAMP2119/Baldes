@@ -5,26 +5,11 @@ struct HabitsConfigView: View {
     var body: some View {
         Group {
             if viewModel.context.type.title == "Objetivos por tempo" {
-                // 1. Time-based
-                Section("Tempo") {
-                    TimerPickerView(totalSeconds: $viewModel.dailyGoalTime)
-                        .frame(maxWidth: .infinity)
-
-                    HStack {
-                        Text("Horário de Início")
-                        Spacer()
-                        DatePicker(
-                            "",
-                            selection: $viewModel.startTime,
-                            displayedComponents: .hourAndMinute
-                        )
-                        .labelsHidden()
-                    }
-                }
-
+                // Time-based goals - Meta is shown in Objetivo section
+                EmptyView()
             } else if viewModel.context.type.title == "Contagens Diárias" {
                 // 2. Streaks
-                Section("Duração") {
+            Section("Duração") {
                     Toggle("Objetivo com fim", isOn: $viewModel.hasEndGoal.animation(.smooth))
 
                     if viewModel.hasEndGoal {
