@@ -7,15 +7,8 @@ struct ActivityDetailsView: View {
     let activity: Activity
     @Query private var history: [HistoryEvent]
 
-    // Time Scopes
-    enum TimeScope: String, CaseIterable {
-        case week = "Week"
-        case month = "Month"
-        case year = "Year"
-    }
-
-    @State private var selectedScope: TimeScope = .week
-    @State private var anchorDate: Date = Date()
+    @State private var startDate: Date
+    @State private var endDate: Date
     @State private var groupedSessions: [Date: [HistoryEvent]] = [:]
 
     init(activity: Activity) {
@@ -28,6 +21,17 @@ struct ActivityDetailsView: View {
             sort: \.date,
             order: .reverse
         )
+        
+        // Initialize to current week
+        let calendar = Calendar.current
+        let today = Date()
+        if let weekInterval = calendar.dateInterval(of: .weekOfYear, for: today) {
+            _startDate = State(initialValue: weekInterval.start)
+            _endDate = State(initialValue: weekInterval.end.addingTimeInterval(-1))
+        } else {
+            _startDate = State(initialValue: today)
+            _endDate = State(initialValue: today)
+        }
     }
 
     private var activityColor: Color {
@@ -67,20 +71,8 @@ struct ActivityDetailsView: View {
                 // MARK: - Merged Header & Stats
                 mergedHeaderAndStats
 
-                // MARK: - Scope Picker
-                scopePicker
-
-                // MARK: - Stats Overview
-                statsOverview
-
-                // MARK: - Progress Chart
-                progressChartCard
-
-                // MARK: - Insights Card
-                insightsCard
-
-                // MARK: - Session History
-                sessionHistoryCard
+                // MARK: - Merged Analytics Card
+                mergedAnalyticsCard
 
                 Spacer(minLength: 80)
             }
@@ -89,7 +81,7 @@ struct ActivityDetailsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .background(Color("AppBackground").ignoresSafeArea())
         .onChange(of: history) { updateGroupedData() }
-        .onChange(of: selectedScope) { updateGroupedData() }
+        .onChange(of: startDate) { updateGroupedData() }
         .onAppear { updateGroupedData() }
     }
 
@@ -282,77 +274,128 @@ struct ActivityDetailsView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Scope Picker
+    // MARK: - Analytics Sections
 
-    private var scopePicker: some View {
+    private var mergedAnalyticsCard: some View {
+        VStack(spacing: 0) {
+            // --- Week Navigation ---
+            weekNavigationSection
+                .padding(16)
+                .padding(.horizontal, 4)
+            
+            Divider()
+                .padding(.horizontal, 16)
+            
+            // --- Stats Grid ---
+            statsGridSection
+                .padding(16)
+            
+            Divider()
+                .padding(.horizontal, 16)
+            
+            // --- Chart Section ---
+            chartSection
+                .padding(16)
+            
+            Divider()
+                .padding(.horizontal, 16)
+            
+            // --- Insights Section ---
+            insightsSection
+                .padding(16)
+        }
+        .padding(.vertical, 16)
+    }
+    
+    private var weekNavigationSection: some View {
+        HStack(spacing: 12) {
+            // Today button
+            Button(action: goToToday) {
+                HStack(spacing: 6) {
+                    Image(systemName: isCurrentWeek ? "calendar" : "arrow.uturn.left")
+                        .font(.system(size: 14, weight: .medium))
+                    Text("Today")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                }
+                .foregroundStyle(isCurrentWeek ? .secondary : .primary)
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            // Navigation controls
+            HStack(spacing: 4) {
+                Button(action: navigatePrevious) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 32, height: 32)
+                }
+
+                Text(timeFrameTitle)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color("TextPrimary"))
+                    .frame(minWidth: 110)
+
+                Button(action: navigateNext) {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(canNavigateNext ? .secondary : .quaternary)
+                        .frame(width: 32, height: 32)
+                }
+                .disabled(!canNavigateNext)
+            }
+        }
+    }
+    
+    private var statsGridSection: some View {
+        HStack(spacing: 0) {
+            // Sessions stat
+            statCell(
+                value: "\(totalSessionsInScope)",
+                label: "Sessions"
+            )
+            
+            Divider()
+                .frame(height: 32)
+            
+            // Average stat
+            statCell(
+                value: averagePerPeriod,
+                label: "Daily Avg"
+            )
+            
+            Divider()
+                .frame(height: 32)
+            
+            // Active days stat
+            statCell(
+                value: "\(activeDaysInScope)/\(totalDaysInScope)",
+                label: "Active"
+            )
+        }
+    }
+    
+    private func statCell(value: String, label: String) -> some View {
+        VStack(spacing: 4) {
+            Text(value)
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundStyle(Color("TextPrimary"))
+            
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+    
+    private var chartSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text(dateRangeString)
-                    .font(.headline)
-                    .foregroundStyle(Color("TextPrimary"))
-
-                Spacer()
-
-                // Navigation arrows
-                HStack(spacing: 4) {
-                    Button(action: navigatePrevious) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(.secondary)
-                            .frame(width: 32, height: 32)
-                            .background(Color("CardBackground"))
-                            .clipShape(Circle())
-                    }
-
-                    Button(action: navigateNext) {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(canNavigateNext ? .secondary : .quaternary)
-                            .frame(width: 32, height: 32)
-                            .background(Color("CardBackground"))
-                            .clipShape(Circle())
-                    }
-                    .disabled(!canNavigateNext)
-                }
-            }
-
-            Picker("Time Scope", selection: $selectedScope) {
-                ForEach(TimeScope.allCases, id: \.self) { scope in
-                    Text(scope.rawValue).tag(scope)
-                }
-            }
-            .pickerStyle(.segmented)
-        }
-    }
-
-    // MARK: - Stats Overview
-
-    private var statsOverview: some View {
-        HStack(spacing: 12) {
-            // Sessions this period
-            StatCard(
-                title: "Sessions",
-                value: "\(totalSessionsInScope)",
-                subtitle: selectedScope.rawValue.lowercased(),
-                color: activityColor
-            )
-
-            // Average per day/week
-            StatCard(
-                title: "Average",
-                value: averagePerPeriod,
-                subtitle: "per day",
-                color: activityColor
-            )
-        }
-    }
-
-    // MARK: - Progress Chart Card
-
-    private var progressChartCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("Activity")
+                Text("This Week")
                     .font(.headline)
                     .foregroundStyle(Color("TextPrimary"))
 
@@ -362,10 +405,6 @@ struct ActivityDetailsView: View {
                     Text("Goal: \(goal)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(activityColor.opacity(0.1))
-                        .clipShape(Capsule())
                 }
             }
 
@@ -378,93 +417,59 @@ struct ActivityDetailsView: View {
                     .foregroundStyle(
                         dataPoint.isToday
                             ? activityColor
-                            : activityColor.opacity(0.4)
+                            : activityColor.opacity(0.35)
                     )
                     .cornerRadius(4)
                 }
 
                 if let goal = activity.targetCount, goal > 0 {
                     RuleMark(y: .value("Goal", goal))
-                        .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 3]))
-                        .foregroundStyle(activityColor.opacity(0.6))
-                        .annotation(position: .top, alignment: .trailing) {
-                            Text("Goal")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                        .foregroundStyle(Color.secondary.opacity(0.5))
                 }
             }
             .chartXAxis {
-                AxisMarks(values: .stride(by: chartUnit)) { value in
+                AxisMarks(values: .stride(by: chartUnit)) { _ in
                     AxisValueLabel(format: chartAxisFormat)
+                        .foregroundStyle(.secondary)
                 }
             }
             .chartYAxis {
-                AxisMarks(position: .leading) { value in
+                AxisMarks(position: .leading) { _ in
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                        .foregroundStyle(Color.gray.opacity(0.2))
+                        .foregroundStyle(Color("Border"))
                     AxisValueLabel()
+                        .foregroundStyle(.secondary)
                 }
             }
-            .frame(height: 180)
-
-            // Legend
-            if totalSessionsInScope > 0 {
-                HStack(spacing: 16) {
-                    legendItem(color: activityColor, label: "Today")
-                    legendItem(color: activityColor.opacity(0.4), label: "Other days")
-                }
-                .font(.caption)
-            }
-        }
-        .padding()
-        .background(Color("CardBackground"))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color("Border"), lineWidth: 1)
-        )
-    }
-
-    private func legendItem(color: Color, label: String) -> some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(color)
-                .frame(width: 8, height: 8)
-            Text(label)
-                .foregroundStyle(.secondary)
+            .frame(height: 160)
         }
     }
-
-    // MARK: - Insights Card
-
-    private var insightsCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
+    
+    private var insightsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
             Text("Insights")
                 .font(.headline)
                 .foregroundStyle(Color("TextPrimary"))
-
-            VStack(spacing: 12) {
+            
+            VStack(spacing: 8) {
                 if let bestDay = bestPerformingDay {
                     insightRow(
                         icon: "star.fill",
-                        iconColor: .yellow,
                         title: "Best Day",
                         value: bestDay
                     )
                 }
 
                 insightRow(
-                    icon: "calendar",
-                    iconColor: activityColor,
-                    title: "Active Days",
-                    value: "\(activeDaysInScope) of \(totalDaysInScope)"
+                    icon: "flame.fill",
+                    title: "Current Streak",
+                    value: "\(currentStreak) days"
                 )
 
                 if let longestStreak = longestStreakInScope, longestStreak > 0 {
                     insightRow(
-                        icon: "flame.fill",
-                        iconColor: .orange,
+                        icon: "trophy.fill",
                         title: "Best Streak",
                         value: "\(longestStreak) days"
                     )
@@ -473,29 +478,19 @@ struct ActivityDetailsView: View {
                 if totalDuration > 0 {
                     insightRow(
                         icon: "clock.fill",
-                        iconColor: .blue,
                         title: "Total Time",
                         value: formattedDuration
                     )
                 }
             }
         }
-        .padding()
-        .background(Color("CardBackground"))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color("Border"), lineWidth: 1)
-        )
     }
 
-    private func insightRow(icon: String, iconColor: Color, title: String, value: String)
-        -> some View
-    {
+    private func insightRow(icon: String, title: String, value: String) -> some View {
         HStack {
             Image(systemName: icon)
                 .font(.system(size: 14))
-                .foregroundStyle(iconColor)
+                .foregroundStyle(.secondary)
                 .frame(width: 24)
 
             Text(title)
@@ -511,74 +506,6 @@ struct ActivityDetailsView: View {
         }
     }
 
-    // MARK: - Session History Card
-
-    private var sessionHistoryCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("History")
-                    .font(.headline)
-                    .foregroundStyle(Color("TextPrimary"))
-
-                Spacer()
-
-                Text("\(totalSessionsInScope) sessions")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            if sortedGroupedKeys.isEmpty {
-                emptyHistoryState
-            } else {
-                LazyVStack(spacing: 8) {
-                    ForEach(sortedGroupedKeys.prefix(10), id: \.self) { date in
-                        let sessions = groupedSessions[date] ?? []
-                        SessionDayRow(
-                            date: date,
-                            sessions: sessions,
-                            color: activityColor,
-                            isToday: Calendar.current.isDateInToday(date)
-                        )
-                    }
-
-                    if sortedGroupedKeys.count > 10 {
-                        Text("+ \(sortedGroupedKeys.count - 10) more days")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, 8)
-                    }
-                }
-            }
-        }
-        .padding()
-        .background(Color("CardBackground"))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color("Border"), lineWidth: 1)
-        )
-    }
-
-    private var emptyHistoryState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "calendar.badge.clock")
-                .font(.system(size: 32))
-                .foregroundStyle(.tertiary)
-
-            Text("No sessions yet")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            Text("Complete this activity to see your history")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 24)
-    }
-
     // MARK: - Computed Properties
 
     private var chartData: [DailyData] {
@@ -592,42 +519,51 @@ struct ActivityDetailsView: View {
     }
 
     private var chartUnit: Calendar.Component {
-        switch selectedScope {
-        case .week: return .day
-        case .month: return .day
-        case .year: return .month
-        }
+        return .day
     }
 
     private var chartAxisFormat: Date.FormatStyle {
-        switch selectedScope {
-        case .week: return .dateTime.weekday(.abbreviated)
-        case .month: return .dateTime.day()
-        case .year: return .dateTime.month(.abbreviated)
-        }
+        return .dateTime.weekday(.abbreviated)
     }
 
     private var dateRange: (start: Date, end: Date, dates: [Date]) {
+        let dates = startDate.daysInRange(to: endDate)
+        return (startDate, endDate, dates)
+    }
+
+    private var timeFrameTitle: String {
         let calendar = Calendar.current
-        var start: Date
-        var end: Date
-
-        switch selectedScope {
-        case .week:
-            start = anchorDate.startOfWeek
-            end = anchorDate.endOfWeek
-        case .month:
-            start = anchorDate.startOfMonth
-            end = anchorDate.endOfMonth
-        case .year:
-            start = anchorDate.startOfYear
-            end =
-                calendar.date(byAdding: .year, value: 1, to: start)?.addingTimeInterval(-1)
-                ?? Date()
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "pt_PT")
+        
+        let firstMonth = calendar.component(.month, from: startDate)
+        let lastMonth = calendar.component(.month, from: endDate)
+        let firstYear = calendar.component(.year, from: startDate)
+        let lastYear = calendar.component(.year, from: endDate)
+        
+        if firstMonth == lastMonth && firstYear == lastYear {
+            formatter.dateFormat = "MMM d"
+            let monthDay = formatter.string(from: startDate).replacingOccurrences(of: ".", with: "")
+            let lastDayNum = calendar.component(.day, from: endDate)
+            return "\(monthDay)–\(lastDayNum), \(firstYear)"
+        } else if firstYear == lastYear {
+            formatter.dateFormat = "MMM d"
+            let start = formatter.string(from: startDate).replacingOccurrences(of: ".", with: "")
+            let end = formatter.string(from: endDate).replacingOccurrences(of: ".", with: "")
+            return "\(start) – \(end), \(firstYear)"
+        } else {
+            formatter.dateFormat = "MMM d, yyyy"
+            let start = formatter.string(from: startDate).replacingOccurrences(of: ".", with: "")
+            let end = formatter.string(from: endDate).replacingOccurrences(of: ".", with: "")
+            return "\(start) – \(end)"
         }
+    }
 
-        let dates = start.daysInRange(to: end)
-        return (start, end, dates)
+    private var isCurrentWeek: Bool {
+        let calendar = Calendar.current
+        let today = Date()
+        return calendar.isDate(startDate, equalTo: today, toGranularity: .weekOfYear)
+            && calendar.isDate(startDate, equalTo: today, toGranularity: .yearForWeekOfYear)
     }
 
     private var dateRangeString: String {
@@ -644,15 +580,12 @@ struct ActivityDetailsView: View {
     }
 
     private var canNavigateNext: Bool {
+        let calendar = Calendar.current
         let today = Date()
-        switch selectedScope {
-        case .week:
-            return anchorDate.startOfWeek < today.startOfWeek
-        case .month:
-            return anchorDate.startOfMonth < today.startOfMonth
-        case .year:
-            return anchorDate.startOfYear < today.startOfYear
+        guard let currentWeekStart = calendar.dateInterval(of: .weekOfYear, for: today)?.start else {
+            return false
         }
+        return startDate < currentWeekStart
     }
 
     // MARK: - Statistics
@@ -772,30 +705,40 @@ struct ActivityDetailsView: View {
 
     // MARK: - Navigation
 
+    private func goToToday() {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            if let weekInterval = calendar.dateInterval(of: .weekOfYear, for: today) {
+                startDate = weekInterval.start
+                endDate = weekInterval.end.addingTimeInterval(-1)
+            }
+        }
+    }
+
     private func navigatePrevious() {
         let calendar = Calendar.current
-        switch selectedScope {
-        case .week:
-            anchorDate =
-                calendar.date(byAdding: .weekOfYear, value: -1, to: anchorDate) ?? anchorDate
-        case .month:
-            anchorDate = calendar.date(byAdding: .month, value: -1, to: anchorDate) ?? anchorDate
-        case .year:
-            anchorDate = calendar.date(byAdding: .year, value: -1, to: anchorDate) ?? anchorDate
+        
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            if let newStart = calendar.date(byAdding: .weekOfYear, value: -1, to: startDate),
+               let newEnd = calendar.date(byAdding: .weekOfYear, value: -1, to: endDate) {
+                startDate = newStart
+                endDate = newEnd
+            }
         }
     }
 
     private func navigateNext() {
         guard canNavigateNext else { return }
         let calendar = Calendar.current
-        switch selectedScope {
-        case .week:
-            anchorDate =
-                calendar.date(byAdding: .weekOfYear, value: 1, to: anchorDate) ?? anchorDate
-        case .month:
-            anchorDate = calendar.date(byAdding: .month, value: 1, to: anchorDate) ?? anchorDate
-        case .year:
-            anchorDate = calendar.date(byAdding: .year, value: 1, to: anchorDate) ?? anchorDate
+        
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            if let newStart = calendar.date(byAdding: .weekOfYear, value: 1, to: startDate),
+               let newEnd = calendar.date(byAdding: .weekOfYear, value: 1, to: endDate) {
+                startDate = newStart
+                endDate = newEnd
+            }
         }
     }
 
@@ -957,43 +900,6 @@ struct TodaySessionRow: View {
 }
 
 // MARK: - Supporting Views
-
-struct StatCard: View {
-    let title: String
-    let value: String
-    let subtitle: String
-    let color: Color
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Text(value)
-                .font(.title)
-                .fontWeight(.bold)
-                .foregroundStyle(Color("TextPrimary"))
-
-            Text(subtitle)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(Color("CardBackground"))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color("Border"), lineWidth: 1)
-        )
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(color.opacity(0.3))
-                .offset(x: 3, y: 3)
-        )
-    }
-}
 
 struct SessionDayRow: View {
     let date: Date
