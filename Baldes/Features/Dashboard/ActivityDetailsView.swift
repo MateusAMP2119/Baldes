@@ -188,10 +188,10 @@ struct ActivityDetailsView: View {
                         Text(formattedTodayDuration)
                             .font(.caption)
                             .fontWeight(.semibold)
-                            .foregroundStyle(activityColor)
+                            .foregroundStyle(Color("TextPrimary"))
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(activityColor.opacity(0.1))
+                            .background(activityColor.opacity(0.15))
                             .clipShape(Capsule())
                     }
                 }
@@ -304,7 +304,7 @@ struct ActivityDetailsView: View {
             insightsSection
                 .padding(16)
         }
-        .padding(.vertical, 16)
+        .padding(.vertical, 12)
     }
     
     private var weekNavigationSection: some View {
@@ -329,7 +329,7 @@ struct ActivityDetailsView: View {
                 Button(action: navigatePrevious) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color("TextPrimary"))
                         .frame(width: 32, height: 32)
                 }
 
@@ -337,12 +337,11 @@ struct ActivityDetailsView: View {
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .foregroundStyle(Color("TextPrimary"))
-                    .frame(minWidth: 110)
 
                 Button(action: navigateNext) {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(canNavigateNext ? .secondary : .quaternary)
+                        .foregroundStyle(canNavigateNext ? Color("TextPrimary") : .secondary.opacity(0.2))
                         .frame(width: 32, height: 32)
                 }
                 .disabled(!canNavigateNext)
@@ -395,7 +394,7 @@ struct ActivityDetailsView: View {
     private var chartSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("This Week")
+                Text("A tua semana")
                     .font(.headline)
                     .foregroundStyle(Color("TextPrimary"))
 
@@ -431,15 +430,12 @@ struct ActivityDetailsView: View {
             .chartXAxis {
                 AxisMarks(values: .stride(by: chartUnit)) { _ in
                     AxisValueLabel(format: chartAxisFormat)
-                        .foregroundStyle(.secondary)
                 }
             }
             .chartYAxis {
                 AxisMarks(position: .leading) { _ in
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                        .foregroundStyle(Color("Border"))
                     AxisValueLabel()
-                        .foregroundStyle(.secondary)
                 }
             }
             .frame(height: 160)
@@ -879,7 +875,7 @@ struct TodaySessionRow: View {
             Text(formattedDuration)
                 .font(.subheadline)
                 .fontWeight(.medium)
-                .foregroundStyle(color)
+                .foregroundStyle(Color("TextPrimary"))
             
             Button(action: onDelete) {
                 Image(systemName: "xmark.circle.fill")
