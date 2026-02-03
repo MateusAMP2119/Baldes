@@ -4,15 +4,17 @@ import SwiftUI
 
 struct ActivityDetailsView: View {
     @Environment(\.modelContext) private var modelContext
-    let activity: Activity
+    @Environment(\.dismiss) private var dismiss
+    @Bindable var activity: Activity
     @Query private var history: [HistoryEvent]
 
     @State private var startDate: Date
     @State private var endDate: Date
     @State private var groupedSessions: [Date: [HistoryEvent]] = [:]
+    @State private var showEditSheet: Bool = false
 
     init(activity: Activity) {
-        self.activity = activity
+        _activity = Bindable(wrappedValue: activity)
         let id = activity.id
         _history = Query(
             filter: #Predicate<HistoryEvent> { event in
@@ -79,6 +81,26 @@ struct ActivityDetailsView: View {
             .padding(.horizontal)
         }
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showEditSheet = true
+                } label: {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(activityColor)
+                }
+            }
+        }
+        .sheet(isPresented: $showEditSheet) {
+            ActivityEditView(activity: activity)
+                .onDisappear {
+                    // Check if activity was deleted
+                    if activity.isDeleted {
+                        dismiss()
+                    }
+                }
+        }
         .background(Color("AppBackground").ignoresSafeArea())
         .onChange(of: history) { updateGroupedData() }
         .onChange(of: startDate) { updateGroupedData() }
