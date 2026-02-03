@@ -18,36 +18,19 @@ struct ActivityConfigurationView: View {
     var body: some View {
         UniversalStepView(viewModel: viewModel)
             .navigationTitle(viewModel.stepTitle)
-            .safeAreaInset(edge: .bottom) {
-                HStack {
-                    Spacer()
-
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
                     Button {
-                        viewModel.saveActivity(modelContext: modelContext)
-                        onSave()
+                        if viewModel.validate() {
+                            viewModel.saveActivity(modelContext: modelContext)
+                            onSave()
+                        }
                     } label: {
-                        Text("Avançar")
-                            .bold()
-                            .frame(minWidth: 100)
-                            .padding()
-                            .background(Color("CardBackground"))
-                            .foregroundStyle(Color("TextPrimary"))
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(Color("Border"), lineWidth: 1.5)
-                            )
-                            .background(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(viewModel.color)
-                                    .offset(x: 0, y: 4)
-                            )
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(viewModel.canSave ? viewModel.color : .gray)
                     }
-                    .disabled(!viewModel.canSave)
-                    .opacity(viewModel.canSave ? 1.0 : 0.5)
                 }
-                .padding(.horizontal, 24)
-                .background(.clear)
             }
     }
 }

@@ -2,6 +2,13 @@ import Observation
 import SwiftData
 import SwiftUI
 
+// MARK: - Reminder Item for stable ForEach identifiers
+
+struct ReminderItem: Identifiable {
+    let id = UUID()
+    var offset: TimeInterval = 0
+}
+
 @MainActor
 @Observable
 class ActivityConfigurationViewModel {
@@ -23,6 +30,7 @@ class ActivityConfigurationViewModel {
     var startTime: Date = Date()
     var reminderEnabled: Bool = true
     var reminderOffset: TimeInterval = 0  // 0 = "No horário", negative = before, positive = after
+    var reminderItems: [ReminderItem] = [ReminderItem()]  // Support for multiple reminders with stable IDs
     var activityStartDate: Date = Date()  // Start date for the activity
     var startsToday: Bool = true  // Whether activity starts today
     var hasNoEnd: Bool = true  // Whether activity has no end date
@@ -172,6 +180,29 @@ class ActivityConfigurationViewModel {
     var canSave: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && !motivation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !recurringPlan.selectedDays.isEmpty
+    }
+
+    // MARK: - Validation
+
+    var showValidationErrors: Bool = false
+
+    var isNameValid: Bool {
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var isMotivationValid: Bool {
+        !motivation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var isFrequencyValid: Bool {
+        !recurringPlan.selectedDays.isEmpty
+    }
+
+    /// Triggers validation and returns whether form is valid
+    func validate() -> Bool {
+        showValidationErrors = true
+        return canSave
     }
 
     var stepTitle: String {

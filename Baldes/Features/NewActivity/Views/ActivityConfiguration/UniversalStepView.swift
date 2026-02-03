@@ -53,6 +53,19 @@ struct UniversalStepView: View {
             Section("Objetivo") {
                 HStack {
                     TextField("Nome", text: $viewModel.name)
+                        .onChange(of: viewModel.name) { _, _ in
+                            // Clear validation error when user types
+                            if viewModel.showValidationErrors && viewModel.isNameValid {
+                                // Validation will update automatically
+                            }
+                        }
+
+                    // Validation warning
+                    if viewModel.showValidationErrors && !viewModel.isNameValid {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                            .font(.system(size: 14))
+                    }
 
                     // Emoji Picker Circle
                     Circle()
@@ -71,6 +84,13 @@ struct UniversalStepView: View {
                 HStack(alignment: .top) {
                     TextField("Motivação", text: $viewModel.motivation, axis: .vertical)
                         .lineLimit(1...5)
+
+                    // Validation warning
+                    if viewModel.showValidationErrors && !viewModel.isMotivationValid {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                            .font(.system(size: 14))
+                    }
 
                     Circle()
                         .foregroundColor(Color.gray.opacity(0.2))

@@ -146,22 +146,18 @@ struct DashboardView: View {
                     .foregroundStyle(Color("TextPrimary"))
                     .padding(.horizontal, 32)
                     .padding(.vertical, 16)
-                    .background(
-                        ZStack {
-                            // Shadow/Depth layer
+                    .background(Color("CardBackground"))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .overlay(
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(Color(red: 0.906, green: 0.365, blue: 0.227))  // #e75d3a
-                                .offset(y: 4)
-
-                            // Top layer
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color("CardBackground"))
-                                .overlay(
-                                    Circle()
-                                        .stroke(Color("Border"), lineWidth: 1)
-                                )
-                        }
+                                .stroke(Color("Border"), lineWidth: 2)
                     )
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.orange)
+                            .offset(x: 4, y: 4)
+                    )
+                    .contentShape(Rectangle())
             }
             .buttonStyle(PlainButtonStyle())  // Prevent default opacity effect on press if desired
 

@@ -47,21 +47,10 @@ private struct WeekdayToggle: View {
                 .frame(width: size, height: size)
                 .background(
                     Circle()
-                        .fill(isSelected ? Color.clear : .secondary.opacity(0.1))
-                )
-                .overlay(
-                    Circle()
-                        .stroke(isSelected ? color : .clear, lineWidth: 1)
+                        .fill(isSelected ? color : .secondary.opacity(0.1))
                 )
         }
         .buttonStyle(.plain)
-        // 3D offset shadow - applied OUTSIDE the button for proper layering
-        .background(
-            Circle()
-                .fill(isSelected ? color.opacity(0.5) : .clear)
-                .frame(width: size, height: size)
-                .offset(x: 2, y: 2)
-        )
         .sensoryFeedback(.selection, trigger: isSelected)
     }
 }
