@@ -97,6 +97,14 @@ class ActivityConfigurationViewModel {
     func saveActivity(modelContext: ModelContext) {
         let planSummary = recurringPlan.hasRecurringPlan ? recurringPlan.summary : nil
 
+        // Extract hour and minute from startTime
+        let calendar = Calendar.current
+        let hour = calendar.component(.hour, from: startTime)
+        let minute = calendar.component(.minute, from: startTime)
+
+        // Convert recurringPlan.selectedDays to array of weekday integers
+        let recurringDaysArray = recurringPlan.selectedDays.map { $0.rawValue }
+
         let newActivity = Activity(
             name: name,
             symbol: symbol,
@@ -104,6 +112,11 @@ class ActivityConfigurationViewModel {
             motivation: motivation,
             motivationAuthor: motivationAuthor,
             recurringPlanSummary: planSummary,
+            recurringDays: recurringDaysArray.isEmpty ? nil : recurringDaysArray,
+            scheduledHour: hour,
+            scheduledMinute: minute,
+            startDate: startsToday ? Date() : activityStartDate,
+            endDate: hasNoEnd ? nil : activityEndDate,
             creationDate: Date(),
             goalTimeSeconds: (context.type.title == "Objetivos por tempo") ? dailyGoalTime : nil,
             targetCount: (context.type.title == "Metas Numéricas") ? Int(metricTarget) : nil,

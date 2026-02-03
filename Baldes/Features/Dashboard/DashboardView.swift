@@ -40,10 +40,10 @@ struct DashboardView: View {
                     onScheduleActivity: scheduleActivity
                 )
                 .padding(.bottom, 10)
-                        }
-                        .padding(.horizontal)
-                        .padding(.bottom, 10)
-                        .background(Color("AppBackground"))  // Ensure header is opaque over any scrolling content if it were to go under directly
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 10)
+            .background(Color("AppBackground"))  // Ensure header is opaque over any scrolling content if it were to go under directly
             .zIndex(1)  // Ensure header stays on top
 
             // List only for activity cards - native swipe works
@@ -104,8 +104,38 @@ struct DashboardView: View {
     private func scheduleActivity(activityId: UUID, at scheduledTime: Date) {
         guard let activity = activities.first(where: { $0.id == activityId }) else { return }
 
+        let calendar = Calendar.current
+        let hour = calendar.component(.hour, from: scheduledTime)
+        let minute = calendar.component(.minute, from: scheduledTime)
+
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-            activity.scheduledTime = scheduledTime
+            // Check if it's a recurring activity
+            if let days = activity.recurringDays, !days.isEmpty {
+                // Create or update exception for this specific date
+                let startOfDay = calendar.startOfDay(for: scheduledTime)
+
+                if let existingException = activity.exceptions?.first(where: {
+                    calendar.isDate($0.originalDate, inSameDayAs: startOfDay)
+                }) {
+                    existingException.newHour = hour
+                    existingException.newMinute = minute
+                } else {
+                    let exception = ActivityScheduleException(
+                        originalDate: startOfDay,
+                        newHour: hour,
+                        newMinute: minute
+                    )
+                    if activity.exceptions == nil {
+                        activity.exceptions = []
+                    }
+                    activity.exceptions?.append(exception)
+                }
+            } else {
+                // Non-recurring: update global schedule
+                activity.scheduledTime = scheduledTime
+                activity.scheduledHour = hour
+                activity.scheduledMinute = minute
+            }
         }
     }
 
@@ -147,10 +177,10 @@ struct DashboardView: View {
                     .padding(.horizontal, 32)
                     .padding(.vertical, 16)
                     .background(Color("CardBackground"))
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color("Border"), lineWidth: 2)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color("Border"), lineWidth: 2)
                     )
                     .background(
                         RoundedRectangle(cornerRadius: 16)
