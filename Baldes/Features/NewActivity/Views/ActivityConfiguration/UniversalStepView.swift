@@ -42,13 +42,6 @@ struct UniversalStepView: View {
 
     var body: some View {
         Form {
-            // Activity Type Title
-            Text(viewModel.context.type.title)
-                .font(.largeTitle.bold())
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 4, trailing: 0))
-
             // Objetivo Section
             Section("Objetivo") {
                 HStack {

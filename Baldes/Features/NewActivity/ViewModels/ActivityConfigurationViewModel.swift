@@ -226,6 +226,6 @@ class ActivityConfigurationViewModel {
     }
 
     var stepTitle: String {
-        return "Configurar Balde"
+        return context.type.title
     }
 }

@@ -32,5 +32,6 @@ struct ActivityConfigurationView: View {
                     }
                 }
             }
+            .navigationBarTitleDisplayMode(.large)
     }
 }

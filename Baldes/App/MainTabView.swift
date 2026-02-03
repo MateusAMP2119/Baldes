@@ -6,46 +6,35 @@ struct MainTabView: View {
     @State private var showSheet = false
 
     var body: some View {
-        NavigationStack {
-            TabView(selection: $selection) {
-                Tab(value: 0) {
+        TabView(selection: $selection) {
+            Tab(value: 0) {
+                NavigationStack {
                     DashboardView()
-                } label: {
-                    Label("Actividades", systemImage: "text.rectangle.page")
+                        .mainToolbar()
                 }
-
-                Tab(value: 1) {
-                    StreamLogView()
-                } label: {
-                    Label("Histórico", systemImage: "bookmark")
-                }
-
-                Tab(value: 2, role: .search) {
-                } label: {
-                    Label("Ações", systemImage: "plus")
-                }
+            } label: {
+                Label("Agenda", systemImage: selection == 0 ? "text.book.closed.fill" : "text.book.closed")
+                    .environment(\.symbolVariants, .none)
             }
-            .tint(Color(red: 0.906, green: 0.365, blue: 0.227))  // #e75d3a
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Image("Logo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 38, height: 38)
-                }.sharedBackgroundVisibility(.hidden)
 
-                ToolbarItem(placement: .principal) {
-                    EmptyView()
+            Tab(value: 1) {
+                NavigationStack {
+                    StreamLogView()
+                        .mainToolbar()
                 }
+            } label: {
+                Label("Atividade", systemImage: selection == 1 ? "list.bullet.rectangle.fill" : "list.bullet.rectangle")
+                    .environment(\.symbolVariants, .none)
+            }
 
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: {}) {
-                        Image(systemName: "person.crop.circle")
-                            .foregroundColor(Color("TextPrimary"))
-                    }
-                }
+            Tab(value: 2, role: .search) {
+            }
+            label: {
+                Label("Ações", systemImage: selection == 2 ? "plus.circle.fill" : "plus")
+                    .environment(\.symbolVariants, .none)
             }
         }
+        .tint(Color(red: 0.906, green: 0.365, blue: 0.227))  // #e75d3a
         .onChange(of: selection) { oldValue, newValue in
             if newValue == 2 {
                 showSheet = true
@@ -65,6 +54,30 @@ struct MainTabView: View {
         formatter.dateFormat = "EEE MMM d"
         formatter.locale = Locale(identifier: "pt_PT")
         return formatter.string(from: Date()).capitalized.replacingOccurrences(of: ".", with: "")
+    }
+}
+
+extension View {
+    func mainToolbar() -> some View {
+        self.toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Image("Logo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 38, height: 38)
+            }
+
+            ToolbarItem(placement: .principal) {
+                EmptyView()
+            }
+
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(action: {}) {
+                    Image(systemName: "person.crop.circle")
+                        .foregroundColor(Color("TextPrimary"))
+                }
+            }
+        }
     }
 }
 

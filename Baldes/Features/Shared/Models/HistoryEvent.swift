@@ -31,6 +31,12 @@ public class HistoryEvent {
 
     // Optional details
     public var details: String?
+    public var endDate: Date?
+
+    public var duration: TimeInterval {
+        guard let endDate else { return 0 }
+        return endDate.timeIntervalSince(date)
+    }
 
     public init(
         id: UUID = UUID(),
@@ -40,7 +46,8 @@ public class HistoryEvent {
         activityName: String,
         activitySymbol: String,
         activityColorHex: String,
-        details: String? = nil
+        details: String? = nil,
+        endDate: Date? = nil
     ) {
         self.id = id
         self.date = date
@@ -50,5 +57,6 @@ public class HistoryEvent {
         self.activitySymbol = activitySymbol
         self.activityColorHex = activityColorHex
         self.details = details
+        self.endDate = endDate
     }
 }

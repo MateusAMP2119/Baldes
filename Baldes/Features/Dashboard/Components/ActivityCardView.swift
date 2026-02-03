@@ -183,12 +183,18 @@ struct ActivityCardView: View {
             clearTodayEvents()
 
             // Create completed event
+            let now = Date()
+            let duration = activity.goalTimeSeconds ?? 0
+            let endDate = duration > 0 ? now.addingTimeInterval(duration) : now
+            
             let event = HistoryEvent(
+                date: now,
                 type: .completed,
                 activityId: activity.id,
                 activityName: activity.name,
                 activitySymbol: activity.symbol,
-                activityColorHex: activity.colorHex
+                activityColorHex: activity.colorHex,
+                endDate: endDate
             )
             modelContext.insert(event)
         }
