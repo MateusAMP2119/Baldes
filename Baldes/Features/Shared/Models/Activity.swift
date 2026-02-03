@@ -38,6 +38,10 @@ public class Activity {
     var scheduledTime: Date?
     var scheduledDurationMinutes: Int?
 
+    // Notifications
+    var reminderEnabled: Bool = false
+    var reminderOffsets: [TimeInterval]? = []
+
     // Exceptions for recurring schedule
     @Relationship(deleteRule: .cascade) var exceptions: [ActivityScheduleException]?
 

@@ -169,6 +169,10 @@ class ActivityConfigurationViewModel {
             newActivity.scheduledTime = combineDateAndTime(date: Date(), time: startTime)
         }
 
+        // Configure Notifications
+        newActivity.reminderEnabled = reminderEnabled
+        newActivity.reminderOffsets = reminderItems.map { $0.offset }
+
         modelContext.insert(newActivity)
 
         // Log creation event
@@ -184,6 +188,9 @@ class ActivityConfigurationViewModel {
         do {
             try modelContext.save()
             print("Activity and HistoryEvent saved successfully!")
+
+            // Schedule notifications
+            NotificationManager.shared.scheduleNotifications(for: newActivity)
         } catch {
             print("Failed to save activity: \(error.localizedDescription)")
         }

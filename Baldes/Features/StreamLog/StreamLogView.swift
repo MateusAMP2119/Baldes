@@ -2,10 +2,13 @@ import SwiftUI
 
 struct StreamLogView: View {
     var body: some View {
-        VStack {
-            // Future content
+        NavigationStack {
+            VStack {
+                Text("Stream Log")
+                    .font(.largeTitle)
+                Text("This is where the user can see their activity stream.")
+            }
         }
-        .navigationTitle("Histórico")
     }
 }
 

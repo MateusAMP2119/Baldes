@@ -13,6 +13,9 @@ struct BaldesApp: App {
     var body: some Scene {
         WindowGroup {
             MainTabView()
+                .onAppear {
+                    NotificationManager.shared.requestAuthorization()
+                }
         }
         .modelContainer(for: [Activity.self, HistoryEvent.self])
     }

@@ -137,9 +137,15 @@ struct DashboardView: View {
                 activity.scheduledMinute = minute
             }
         }
+
+        // Update notifications to reflect schedule changes
+        NotificationManager.shared.updateNotifications(for: activity)
     }
 
     private func deleteActivity(_ activity: Activity) {
+        // Cancel notifications before deleting
+        NotificationManager.shared.cancelNotifications(for: activity)
+
         withAnimation {
             modelContext.delete(activity)
         }
@@ -184,7 +190,7 @@ struct DashboardView: View {
                     )
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.orange)
+                            .fill(Color.accentColor)
                             .offset(x: 4, y: 4)
                     )
                     .contentShape(Rectangle())
