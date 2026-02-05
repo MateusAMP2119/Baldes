@@ -23,7 +23,7 @@ struct ActivityDetailsView: View {
             sort: \.date,
             order: .reverse
         )
-        
+
         // Initialize to current week
         let calendar = Calendar.current
         let today = Date()
@@ -49,15 +49,15 @@ struct ActivityDetailsView: View {
     private var todaysTotalDuration: TimeInterval {
         todaysSessions.reduce(0) { $0 + $1.duration }
     }
-    
+
     private var formattedTodayDuration: String {
         formatDuration(todaysTotalDuration)
     }
-    
+
     private func formatDuration(_ duration: TimeInterval) -> String {
         let hours = Int(duration) / 3600
         let minutes = (Int(duration) % 3600) / 60
-        
+
         if hours > 0 {
             return minutes > 0 ? "\(hours)h \(minutes)m" : "\(hours)h"
         } else if minutes > 0 {
@@ -143,7 +143,7 @@ struct ActivityDetailsView: View {
                             }
                             .foregroundStyle(.secondary)
                         }
-                        
+
                         // Schedule info
                         if let schedule = activity.recurringPlanSummary, !schedule.isEmpty {
                             HStack(spacing: 6) {
@@ -155,9 +155,10 @@ struct ActivityDetailsView: View {
                             }
                             .foregroundStyle(.secondary)
                         }
-                        
+
                         // Scheduled time
-                        if let hour = activity.scheduledHour, let minute = activity.scheduledMinute {
+                        if let hour = activity.scheduledHour, let minute = activity.scheduledMinute
+                        {
                             HStack(spacing: 6) {
                                 Image(systemName: "bell")
                                     .font(.caption)
@@ -203,9 +204,9 @@ struct ActivityDetailsView: View {
                     Text("Today's Sessions")
                         .font(.headline)
                         .foregroundStyle(Color("TextPrimary"))
-                    
+
                     Spacer()
-                    
+
                     if !todaysSessions.isEmpty {
                         Text(formattedTodayDuration)
                             .font(.caption)
@@ -217,7 +218,7 @@ struct ActivityDetailsView: View {
                             .clipShape(Capsule())
                     }
                 }
-                
+
                 if !todaysSessions.isEmpty {
                     VStack(spacing: 8) {
                         ForEach(todaysSessions) { session in
@@ -229,7 +230,7 @@ struct ActivityDetailsView: View {
                         }
                     }
                 }
-                
+
                 // Compact Add Session
                 CompactAddSessionRow(
                     activityColor: activityColor,
@@ -304,31 +305,31 @@ struct ActivityDetailsView: View {
             weekNavigationSection
                 .padding(16)
                 .padding(.horizontal, 4)
-            
+
             Divider()
                 .padding(.horizontal, 16)
-            
+
             // --- Stats Grid ---
             statsGridSection
                 .padding(16)
-            
+
             Divider()
                 .padding(.horizontal, 16)
-            
+
             // --- Chart Section ---
             chartSection
                 .padding(16)
-            
+
             Divider()
                 .padding(.horizontal, 16)
-            
+
             // --- Insights Section ---
             insightsSection
                 .padding(16)
         }
         .padding(.vertical, 12)
     }
-    
+
     private var weekNavigationSection: some View {
         HStack(spacing: 12) {
             // Today button
@@ -363,14 +364,16 @@ struct ActivityDetailsView: View {
                 Button(action: navigateNext) {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(canNavigateNext ? Color("TextPrimary") : .secondary.opacity(0.2))
+                        .foregroundStyle(
+                            canNavigateNext ? Color("TextPrimary") : .secondary.opacity(0.2)
+                        )
                         .frame(width: 32, height: 32)
                 }
                 .disabled(!canNavigateNext)
             }
         }
     }
-    
+
     private var statsGridSection: some View {
         HStack(spacing: 0) {
             // Sessions stat
@@ -378,19 +381,19 @@ struct ActivityDetailsView: View {
                 value: "\(totalSessionsInScope)",
                 label: "Sessions"
             )
-            
+
             Divider()
                 .frame(height: 32)
-            
+
             // Average stat
             statCell(
                 value: averagePerPeriod,
                 label: "Daily Avg"
             )
-            
+
             Divider()
                 .frame(height: 32)
-            
+
             // Active days stat
             statCell(
                 value: "\(activeDaysInScope)/\(totalDaysInScope)",
@@ -398,21 +401,21 @@ struct ActivityDetailsView: View {
             )
         }
     }
-    
+
     private func statCell(value: String, label: String) -> some View {
         VStack(spacing: 4) {
             Text(value)
                 .font(.title3)
                 .fontWeight(.bold)
                 .foregroundStyle(Color("TextPrimary"))
-            
+
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
     }
-    
+
     private var chartSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -463,13 +466,13 @@ struct ActivityDetailsView: View {
             .frame(height: 160)
         }
     }
-    
+
     private var insightsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Insights")
                 .font(.headline)
                 .foregroundStyle(Color("TextPrimary"))
-            
+
             VStack(spacing: 8) {
                 if let bestDay = bestPerformingDay {
                     insightRow(
@@ -553,12 +556,12 @@ struct ActivityDetailsView: View {
         let calendar = Calendar.current
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "pt_PT")
-        
+
         let firstMonth = calendar.component(.month, from: startDate)
         let lastMonth = calendar.component(.month, from: endDate)
         let firstYear = calendar.component(.year, from: startDate)
         let lastYear = calendar.component(.year, from: endDate)
-        
+
         if firstMonth == lastMonth && firstYear == lastYear {
             formatter.dateFormat = "MMM d"
             let monthDay = formatter.string(from: startDate).replacingOccurrences(of: ".", with: "")
@@ -600,7 +603,8 @@ struct ActivityDetailsView: View {
     private var canNavigateNext: Bool {
         let calendar = Calendar.current
         let today = Date()
-        guard let currentWeekStart = calendar.dateInterval(of: .weekOfYear, for: today)?.start else {
+        guard let currentWeekStart = calendar.dateInterval(of: .weekOfYear, for: today)?.start
+        else {
             return false
         }
         return startDate < currentWeekStart
@@ -726,7 +730,7 @@ struct ActivityDetailsView: View {
     private func goToToday() {
         let calendar = Calendar.current
         let today = Date()
-        
+
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             if let weekInterval = calendar.dateInterval(of: .weekOfYear, for: today) {
                 startDate = weekInterval.start
@@ -737,10 +741,11 @@ struct ActivityDetailsView: View {
 
     private func navigatePrevious() {
         let calendar = Calendar.current
-        
+
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             if let newStart = calendar.date(byAdding: .weekOfYear, value: -1, to: startDate),
-               let newEnd = calendar.date(byAdding: .weekOfYear, value: -1, to: endDate) {
+                let newEnd = calendar.date(byAdding: .weekOfYear, value: -1, to: endDate)
+            {
                 startDate = newStart
                 endDate = newEnd
             }
@@ -750,10 +755,11 @@ struct ActivityDetailsView: View {
     private func navigateNext() {
         guard canNavigateNext else { return }
         let calendar = Calendar.current
-        
+
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             if let newStart = calendar.date(byAdding: .weekOfYear, value: 1, to: startDate),
-               let newEnd = calendar.date(byAdding: .weekOfYear, value: 1, to: endDate) {
+                let newEnd = calendar.date(byAdding: .weekOfYear, value: 1, to: endDate)
+            {
                 startDate = newStart
                 endDate = newEnd
             }
@@ -792,7 +798,7 @@ struct ActivityDetailsView: View {
             modelContext.insert(event)
         }
     }
-    
+
     private func deleteSession(_ session: HistoryEvent) {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
             modelContext.delete(session)
@@ -803,76 +809,21 @@ struct ActivityDetailsView: View {
 
 // MARK: - Compact Add Session Row
 
-struct CompactAddSessionRow: View {
-    let activityColor: Color
-    let defaultMinutes: Int
-    let onAdd: (TimeInterval) -> Void
-
-    @State private var selectedDuration: TimeInterval = 30 * 60
-
-    var body: some View {
-        HStack(spacing: 12) {
-            // Native Timer Picker
-            HStack(spacing: 6) {
-                Image(systemName: "clock")
-                    .font(.system(size: 14))
-                    .foregroundStyle(.secondary)
-                
-                DatePicker(
-                    "",
-                    selection: Binding(
-                        get: { Date(timeIntervalSinceReferenceDate: selectedDuration) },
-                        set: { selectedDuration = $0.timeIntervalSinceReferenceDate }
-                    ),
-                    displayedComponents: .hourAndMinute
-                )
-                .labelsHidden()
-                .environment(\.locale, Locale(identifier: "en_GB"))
-            }
-            .padding(.leading, 12)
-            .padding(.trailing, 4)
-
-            // Add Button - fills remaining space
-            Button(action: {
-                onAdd(selectedDuration)
-            }) {
-                HStack(spacing: 6) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 14, weight: .semibold))
-                    Text("Add")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(activityColor)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-            }
-            .buttonStyle(PlainButtonStyle())
-        }
-        .onAppear {
-            let minutes = defaultMinutes > 0 ? defaultMinutes : 30
-            selectedDuration = TimeInterval(minutes * 60)
-        }
-    }
-}
-
 // MARK: - Today Session Row
 
 struct TodaySessionRow: View {
     let session: HistoryEvent
     let color: Color
     let onDelete: () -> Void
-    
+
     private var formattedTime: String {
         session.date.formatted(date: .omitted, time: .shortened)
     }
-    
+
     private var formattedDuration: String {
         let hours = Int(session.duration) / 3600
         let minutes = (Int(session.duration) % 3600) / 60
-        
+
         if hours > 0 {
             return minutes > 0 ? "\(hours)h \(minutes)m" : "\(hours)h"
         } else if minutes > 0 {
@@ -881,24 +832,24 @@ struct TodaySessionRow: View {
             return "< 1m"
         }
     }
-    
+
     var body: some View {
         HStack(spacing: 12) {
             Circle()
                 .fill(color)
                 .frame(width: 8, height: 8)
-            
+
             Text(formattedTime)
                 .font(.subheadline)
                 .foregroundStyle(Color("TextPrimary"))
-            
+
             Spacer()
-            
+
             Text(formattedDuration)
                 .font(.subheadline)
                 .fontWeight(.medium)
                 .foregroundStyle(Color("TextPrimary"))
-            
+
             Button(action: onDelete) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 16))

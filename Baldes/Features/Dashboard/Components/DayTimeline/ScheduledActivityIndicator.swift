@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 struct ScheduledActivityIndicator: View {
@@ -16,8 +17,51 @@ struct ScheduledActivityIndicator: View {
     // Track if we're waiting for model update after drop
     @State private var pendingDropPosition: CGFloat? = nil
 
+    // Fetch history events for this activity to determine completion for selected day.
+    @Query private var history: [HistoryEvent]
+
+    init(
+        activity: Activity,
+        width: CGFloat,
+        selectedDate: Date,
+        onScheduleActivity: @escaping (UUID, Date) -> Void,
+        onUpdateActivityDuration: ((UUID, Int) -> Void)?,
+        draggingActivityId: Binding<UUID?>,
+        dragOffset: Binding<CGFloat>,
+        dragTargetTime: Binding<(hour: Int, minute: Int)?>,
+        resizingActivityId: Binding<UUID?>,
+        resizeOffset: Binding<CGFloat>
+    ) {
+        self.activity = activity
+        self.width = width
+        self.selectedDate = selectedDate
+        self.onScheduleActivity = onScheduleActivity
+        self.onUpdateActivityDuration = onUpdateActivityDuration
+        self._draggingActivityId = draggingActivityId
+        self._dragOffset = dragOffset
+        self._dragTargetTime = dragTargetTime
+        self._resizingActivityId = resizingActivityId
+        self._resizeOffset = resizeOffset
+
+        let id = activity.id
+        _history = Query(
+            filter: #Predicate<HistoryEvent> { event in
+                event.activityId == id
+            },
+            sort: \.date,
+            order: .reverse
+        )
+    }
+
     private var scheduledTime: Date? {
         activity.scheduledTimeFor(date: selectedDate)
+    }
+
+    private var isCompletedOnSelectedDate: Bool {
+        history.first {
+            Calendar.current.isDate($0.date, inSameDayAs: selectedDate)
+                && $0.type == .completed
+        } != nil
     }
 
     private var hour: Int {
@@ -105,6 +149,23 @@ struct ScheduledActivityIndicator: View {
 
                 Text(activity.symbol)
                     .font(.system(size: 12))
+
+                // Completion check badge (top-right)
+                if isCompletedOnSelectedDate {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(Color.white)
+                        .padding(4)
+                        .background(
+                            Circle()
+                                .fill(Color(hex: activity.colorHex))
+                        )
+                        .overlay(
+                            Circle()
+                                .stroke(Color("CardBackground"), lineWidth: 1)
+                        )
+                        .offset(x: fixedSize / 2 - 6, y: -14)
+                }
             }
             .position(x: xPosition, y: 18)
             .overlay {

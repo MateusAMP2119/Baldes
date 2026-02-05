@@ -24,6 +24,11 @@ struct ActivityCardView: View {
         Color(hex: activity.colorHex)
     }
 
+    private var defaultMinutes: Int {
+        let goalMinutes = Int((activity.goalTimeSeconds ?? 0) / 60)
+        return goalMinutes > 0 ? goalMinutes : 30
+    }
+
     // MARK: - Computed State
 
     private var todayEvent: HistoryEvent? {
@@ -32,10 +37,6 @@ struct ActivityCardView: View {
 
     private var isCompletedToday: Bool {
         todayEvent != nil
-    }
-
-    private var isSkippedToday: Bool {
-        history.first { Calendar.current.isDateInToday($0.date) && $0.type == .skipped } != nil
     }
 
     private var goalText: String {
@@ -87,8 +88,13 @@ struct ActivityCardView: View {
 
                 Spacer()
 
-                // Completion controls (X, ✓)
-                completionControls
+                // Log control (duration picker + Add)
+                CompactAddSessionRow(
+                    activityColor: activityColor,
+                    defaultMinutes: defaultMinutes,
+                    addButtonTitle: isCompletedToday ? "Update" : "Add",
+                    onAdd: addSessionFromCard(duration:)
+                )
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
@@ -138,55 +144,18 @@ struct ActivityCardView: View {
         }
     }
 
-    // MARK: - Completion Controls
-
-    private var completionControls: some View {
-        HStack(spacing: 0) {
-            // Skip button (X)
-            Button(action: markSkipped) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(isSkippedToday ? Color("TextPrimary") : Color("TextPrimary").opacity(0.25))
-                    .frame(width: 36, height: 36)
-            }
-            .buttonStyle(PlainButtonStyle())
-
-            // Divider
-            Rectangle()
-                .fill(Color("TextPrimary").opacity(0.1))
-                .frame(width: 1, height: 20)
-
-            // Complete button (✓)
-            Button(action: markCompleted) {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(isCompletedToday ? activityColor : Color("TextPrimary").opacity(0.25))
-                    .frame(width: 36, height: 36)
-            }
-            .buttonStyle(PlainButtonStyle())
-        }
-        .background(Color("TextPrimary").opacity(0.05))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-    }
-
     // MARK: - Actions
 
-    private func markCompleted() {
+    private func addSessionFromCard(duration: TimeInterval) {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-            // If already completed, just clear (toggle off)
-            if isCompletedToday {
-                clearTodayEvents()
-                return
-            }
-
-            // Remove any existing today events first
+            // Ensure we only represent one "completed" session for today from the card UI.
+            // (Clears both skipped + completed to avoid conflicts.)
             clearTodayEvents()
 
-            // Create completed event
             let now = Date()
-            let duration = activity.goalTimeSeconds ?? 0
-            let endDate = duration > 0 ? now.addingTimeInterval(duration) : now
-            
+            let clampedDuration = max(0, duration)
+            let endDate = clampedDuration > 0 ? now.addingTimeInterval(clampedDuration) : now
+
             let event = HistoryEvent(
                 date: now,
                 type: .completed,
@@ -197,35 +166,6 @@ struct ActivityCardView: View {
                 endDate: endDate
             )
             modelContext.insert(event)
-        }
-    }
-
-    private func markSkipped() {
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-            // If already skipped, just clear (toggle off)
-            if isSkippedToday {
-                clearTodayEvents()
-                return
-            }
-
-            // Remove any existing today events first
-            clearTodayEvents()
-
-            // Create skipped event
-            let event = HistoryEvent(
-                type: .skipped,
-                activityId: activity.id,
-                activityName: activity.name,
-                activitySymbol: activity.symbol,
-                activityColorHex: activity.colorHex
-            )
-            modelContext.insert(event)
-        }
-    }
-
-    private func clearToday() {
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-            clearTodayEvents()
         }
     }
 
