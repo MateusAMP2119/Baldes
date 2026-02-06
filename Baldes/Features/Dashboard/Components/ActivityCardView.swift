@@ -29,6 +29,47 @@ struct ActivityCardView: View {
         return goalMinutes > 0 ? goalMinutes : 30
     }
 
+    @State private var selectedDuration: TimeInterval = 30 * 60
+
+    // MARK: - Inline Log Control (compact, no background)
+
+    private var inlineLogControl: some View {
+        HStack(spacing: 8) {
+            // Duration picker
+            HStack(spacing: 4) {
+                Image(systemName: "clock")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+
+                DatePicker(
+                    "",
+                    selection: Binding(
+                        get: { Date(timeIntervalSinceReferenceDate: selectedDuration) },
+                        set: { selectedDuration = $0.timeIntervalSinceReferenceDate }
+                    ),
+                    displayedComponents: .hourAndMinute
+                )
+                .labelsHidden()
+                .environment(\.locale, Locale(identifier: "en_GB"))
+            }
+
+            // Add button (just plus icon, sized to match picker)
+            Button(action: { addSessionFromCard(duration: max(0, selectedDuration)) }) {
+                Image(systemName: "plus")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 36, height: 36)
+                    .background(activityColor)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .onAppear {
+            let minutes = defaultMinutes > 0 ? defaultMinutes : 30
+            selectedDuration = TimeInterval(minutes * 60)
+        }
+    }
+
     // MARK: - Computed State
 
     private var todayEvent: HistoryEvent? {
@@ -88,13 +129,8 @@ struct ActivityCardView: View {
 
                 Spacer()
 
-                // Log control (duration picker + Add)
-                CompactAddSessionRow(
-                    activityColor: activityColor,
-                    defaultMinutes: defaultMinutes,
-                    addButtonTitle: isCompletedToday ? "Update" : "Add",
-                    onAdd: addSessionFromCard(duration:)
-                )
+                // Log control (inline compact version without background)
+                inlineLogControl
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)

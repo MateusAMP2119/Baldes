@@ -17,6 +17,7 @@ struct DayTimelineView: View {
     @State private var dragTargetTime: (hour: Int, minute: Int)? = nil
     @State private var resizingActivityId: UUID? = nil
     @State private var resizeOffset: CGFloat = 0
+    @State private var cachedWidth: CGFloat = 300
 
     // Namespace for matched geometry animations
     @Namespace private var indicatorAnimation
@@ -33,6 +34,24 @@ struct DayTimelineView: View {
         }
     }
 
+    // Calculate dynamic height based on content
+    private func calculateHeight(for width: CGFloat) -> CGFloat {
+        // Use original taller height when no activities are scheduled
+        if scheduledActivities.isEmpty {
+            return 76
+        }
+
+        // Compact height when activities are present
+        let hourLabelsHeight: CGFloat = 16
+        let timelineBarHeight: CGFloat = 36
+        let spacing: CGFloat = 6
+
+        let rows = maxLabelRows(width: width)
+        let labelsHeight = CGFloat(rows) * 18 + 6
+
+        return hourLabelsHeight + timelineBarHeight + spacing + labelsHeight + spacing
+    }
+
     var body: some View {
         GeometryReader { geometry in
             let availableWidth = geometry.size.width - 32
@@ -43,7 +62,7 @@ struct DayTimelineView: View {
                 activityTimeLabelsView(availableWidth: availableWidth)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.vertical, 4)
             .contentShape(Rectangle())
             .onDrop(
                 of: [UTType.plainText],
@@ -55,8 +74,14 @@ struct DayTimelineView: View {
                     dropLocation: $dropLocation
                 )
             )
+            .onAppear {
+                cachedWidth = availableWidth
+            }
+            .onChange(of: geometry.size.width) { _, newWidth in
+                cachedWidth = newWidth - 32
+            }
         }
-        .frame(height: scheduledActivities.isEmpty ? 76 : 120)
+        .frame(height: calculateHeight(for: cachedWidth))
     }
 
     // MARK: - Hour Labels
