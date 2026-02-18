@@ -7,9 +7,13 @@ extension Color {
     static let shadowOrange = Color(hex: "D4581A")
 
     // MARK: - Accent Colors
+    static let accentGreen = Color(hex: "22C55E")
     static let accentTeal = Color(hex: "14B8A6")
     static let accentBlue = Color(hex: "3B82F6")
     static let accentPurple = Color(hex: "8B5CF6")
+    static let accentYellow = Color(hex: "F59E0B")
+    static let accentIndigo = Color(hex: "6366F1")
+    static let accentPink = Color(hex: "F472B6")
 
     // MARK: - Text
     static let textPrimary = Color(hex: "1A1A2E")

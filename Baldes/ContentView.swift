@@ -47,8 +47,7 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showAddScreen) {
             NavigationStack {
-                Text("Add Habit")
-                    .navigationTitle("New Habit")
+                AddHabitView()
             }
         }
     }
