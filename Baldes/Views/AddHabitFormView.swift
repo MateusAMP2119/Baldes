@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AddHabitFormView: View {
-    let habitType: HabitType
+    @State var habitType: HabitType
     @Environment(\.dismiss) private var dismiss
 
     // MARK: - Shared State
@@ -49,6 +49,7 @@ struct AddHabitFormView: View {
     var body: some View {
         ZStack {
             HabitFormBackground(gradientColor: habitType.gradientColor)
+                .animation(.easeInOut(duration: 0.4), value: habitType)
 
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 24) {
@@ -57,6 +58,8 @@ struct AddHabitFormView: View {
                         title: habitType.formTitle,
                         subtitle: habitType.formSubtitle
                     )
+                    .id(habitType)
+                    .transition(.blurReplace)
 
                     formFields
                 }
@@ -64,6 +67,7 @@ struct AddHabitFormView: View {
                 .padding(.bottom, 40)
             }
         }
+        .animation(.spring(duration: 0.35), value: habitType)
         .navigationTitle("New Habit")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -71,6 +75,7 @@ struct AddHabitFormView: View {
                 Button("Done") { dismiss() }
                     .fontWeight(.semibold)
                     .foregroundStyle(habitType.color)
+                    .animation(.easeInOut(duration: 0.3), value: habitType)
             }
         }
     }
@@ -91,12 +96,15 @@ struct AddHabitFormView: View {
                 text: $motivationQuote
             )
 
-            HabitFormCategoryField(type: habitType)
+            HabitFormCategoryField(type: $habitType)
 
             typeSpecificFields
+                .id(habitType)
+                .transition(.blurReplace)
 
             if habitType != .budgets {
                 commonScheduleFields
+                    .transition(.blurReplace)
             }
         }
     }
@@ -129,10 +137,7 @@ struct AddHabitFormView: View {
 
     private var commonScheduleFields: some View {
         VStack(spacing: 16) {
-            HabitFormScheduleTypePicker(
-                accentColor: habitType.color,
-                selectedIndex: $scheduleType
-            )
+            HabitFormScheduleTypePicker(selectedIndex: $scheduleType)
 
             HabitFormActiveDays(
                 accentColor: habitType.color,
@@ -146,7 +151,9 @@ struct AddHabitFormView: View {
                 isOn: $reminderEnabled
             )
 
-            HabitFormPickerField(label: "Send Reminder", value: "15 min before")
+            if reminderEnabled {
+                HabitFormPickerField(label: "Send Reminder", value: "15 min before")
+            }
         }
     }
 }

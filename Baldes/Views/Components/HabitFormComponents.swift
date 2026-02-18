@@ -98,7 +98,7 @@ struct HabitFormQuoteField: View {
 // MARK: - Category Field
 
 struct HabitFormCategoryField: View {
-    let type: HabitType
+    @Binding var type: HabitType
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -106,19 +106,28 @@ struct HabitFormCategoryField: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Color.textPrimary)
 
-            HStack {
-                Text(type.title)
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(Color.textPrimary)
-                Spacer()
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Color.textTertiary)
+            Menu {
+                Picker("Category", selection: $type) {
+                    ForEach(HabitType.allCases) { habitType in
+                        Label(habitType.title, systemImage: habitType.iconName)
+                            .tag(habitType)
+                    }
+                }
+            } label: {
+                HStack {
+                    Text(type.title)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(Color.textPrimary)
+                    Spacer()
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Color.textTertiary)
+                }
+                .padding(.horizontal, 16)
+                .frame(height: 50)
+                .background(Color(hex: "F5F5F5"))
+                .cornerRadius(16)
             }
-            .padding(.horizontal, 16)
-            .frame(height: 50)
-            .background(Color(hex: "F5F5F5"))
-            .cornerRadius(16)
 
             HStack(spacing: 6) {
                 Image(systemName: type.iconName)
@@ -132,6 +141,7 @@ struct HabitFormCategoryField: View {
             .padding(.vertical, 5)
             .background(type.tagBackgroundColor)
             .cornerRadius(12)
+            .animation(.easeInOut(duration: 0.2), value: type)
         }
     }
 }
@@ -188,8 +198,9 @@ struct HabitFormFieldPair<Left: View, Right: View>: View {
 // MARK: - Schedule Type Picker
 
 struct HabitFormScheduleTypePicker: View {
-    let accentColor: Color
     @Binding var selectedIndex: Int
+
+    private let options = ["Scheduled", "Anytime"]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -197,33 +208,12 @@ struct HabitFormScheduleTypePicker: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Color.textPrimary)
 
-            HStack(spacing: 0) {
-                ForEach(["Scheduled", "Anytime"], id: \.self) { option in
-                    let index = option == "Scheduled" ? 0 : 1
-                    let isSelected = selectedIndex == index
-
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedIndex = index
-                        }
-                    } label: {
-                        Text(option)
-                            .font(.system(size: 14, weight: isSelected ? .semibold : .medium))
-                            .foregroundStyle(isSelected ? .white : Color.textSecondary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(
-                                RoundedRectangle(cornerRadius: 7)
-                                    .fill(isSelected ? accentColor : .clear)
-                                    .shadow(color: isSelected ? .black.opacity(0.1) : .clear, radius: 3, y: 1)
-                            )
-                    }
-                    .buttonStyle(.plain)
+            Picker("Schedule Type", selection: $selectedIndex) {
+                ForEach(options.indices, id: \.self) { index in
+                    Text(options[index]).tag(index)
                 }
             }
-            .padding(2)
-            .background(Color(hex: "E9E9EA"))
-            .cornerRadius(9)
+            .pickerStyle(.segmented)
         }
     }
 }
