@@ -7,6 +7,7 @@ struct AddHabitFormView: View {
     // MARK: - Shared State
 
     @State private var habitName = ""
+    @State private var habitEmoji = "⭐"
     @State private var motivationQuote = ""
     @State private var scheduleType = 0
     @State private var selectedDays: Set<Int> = [0, 1, 2, 3, 4]
@@ -84,11 +85,7 @@ struct AddHabitFormView: View {
 
     private var formFields: some View {
         VStack(spacing: 16) {
-            HabitFormTextField(
-                label: "Habit Name",
-                placeholder: "e.g. Morning meditation",
-                text: $habitName
-            )
+            HabitNameField(text: $habitName, emoji: $habitEmoji, accentColor: habitType.color)
 
             HabitFormQuoteField(
                 accentColor: habitType.color,

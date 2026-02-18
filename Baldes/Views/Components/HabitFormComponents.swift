@@ -65,6 +65,119 @@ struct HabitFormTextField: View {
     }
 }
 
+// MARK: - Emoji Keyboard Field (UIViewRepresentable)
+
+private struct EmojiTextField: UIViewRepresentable {
+    @Binding var emoji: String
+    var shouldFocus: Bool
+    var onDismiss: () -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(emoji: $emoji, onDismiss: onDismiss)
+    }
+
+    func makeUIView(context: Context) -> UITextField {
+        let field = EmojiUITextField()
+        field.delegate = context.coordinator
+        field.tintColor = .clear
+        field.textColor = .clear
+        field.backgroundColor = .clear
+        field.alpha = 0.01
+        return field
+    }
+
+    func updateUIView(_ uiView: UITextField, context: Context) {
+        if shouldFocus && !uiView.isFirstResponder {
+            uiView.becomeFirstResponder()
+        } else if !shouldFocus && uiView.isFirstResponder {
+            uiView.resignFirstResponder()
+        }
+    }
+
+    // MARK: Coordinator
+
+    class Coordinator: NSObject, UITextFieldDelegate {
+        @Binding var emoji: String
+        var onDismiss: () -> Void
+
+        init(emoji: Binding<String>, onDismiss: @escaping () -> Void) {
+            self._emoji = emoji
+            self.onDismiss = onDismiss
+        }
+
+        func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+            // Take only the first emoji character
+            if let first = string.first, first.isEmoji {
+                emoji = String(first)
+                textField.text = ""
+                textField.resignFirstResponder()
+                onDismiss()
+            }
+            return false
+        }
+    }
+}
+
+// UITextField subclass that always presents the emoji keyboard
+private class EmojiUITextField: UITextField {
+    override var textInputContextIdentifier: String? { "" }
+    override var textInputMode: UITextInputMode? {
+        UITextInputMode.activeInputModes.first { $0.primaryLanguage == "emoji" }
+    }
+}
+
+private extension Character {
+    var isEmoji: Bool {
+        unicodeScalars.first?.properties.isEmoji ?? false
+    }
+}
+
+// MARK: - Habit Name Field with Emoji Keyboard
+
+struct HabitNameField: View {
+    @Binding var text: String
+    @Binding var emoji: String
+    let accentColor: Color
+    @State private var emojiFieldFocused = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Habit Name")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color.textPrimary)
+
+            HStack(spacing: 0) {
+                ZStack {
+                    EmojiTextField(emoji: $emoji, shouldFocus: emojiFieldFocused) {
+                        emojiFieldFocused = false
+                    }
+                    .frame(width: 50, height: 50)
+
+                    Button {
+                        emojiFieldFocused = true
+                    } label: {
+                        Text(emoji)
+                            .font(.system(size: 22))
+                            .frame(width: 50, height: 50)
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Rectangle()
+                    .fill(Color(hex: "E0E0E0"))
+                    .frame(width: 1, height: 26)
+
+                TextField("e.g. Morning meditation", text: $text)
+                    .font(.system(size: 15))
+                    .padding(.horizontal, 14)
+                    .frame(height: 50)
+            }
+            .background(Color(hex: "F5F5F5"))
+            .cornerRadius(16)
+        }
+    }
+}
+
 // MARK: - Quote / Motivation Field
 
 struct HabitFormQuoteField: View {
