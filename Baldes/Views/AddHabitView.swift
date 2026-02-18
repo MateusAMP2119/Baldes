@@ -111,11 +111,14 @@ struct AddHabitView: View {
         .navigationTitle("New Habit")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") {
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
                     dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.textPrimary)
                 }
-                .foregroundStyle(Color.accentOrange)
             }
         }
     }
@@ -181,10 +184,6 @@ struct HabitTypeCard: View {
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(type.shadowColor)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(Color.borderStrong, lineWidth: 2)
-                )
                 .offset(x: 4, y: 4)
         )
     }
