@@ -72,9 +72,9 @@ struct WeekStripView: View {
                             selectedDate = Date()
                         }
                     } label: {
-                        Image(systemName: "calendar.badge.clock")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundStyle(Color.accentOrange)
+                        Image(systemName: "arrow.backward.to.line")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundStyle(Color.textPrimary)
                     }
                     .transition(.scale.combined(with: .opacity))
                 }
