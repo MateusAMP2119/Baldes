@@ -66,7 +66,7 @@ struct HabitRowView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .background(Color.white.opacity(0.7))
+        .background(Color.white)
     }
 }
 
@@ -115,7 +115,7 @@ struct AnytimeHabitRowView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
-        .background(Color.white.opacity(0.7))
+        .background(Color.white)
     }
 }
 
