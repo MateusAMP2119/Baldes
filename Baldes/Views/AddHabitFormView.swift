@@ -8,7 +8,7 @@ struct AddHabitFormView: View {
 
     @State private var habitName = ""
     @State private var habitEmoji = "⭐"
-    @State private var motivationQuote = ""
+    @State private var motivationQuote = HabitFormQuoteField.initialQuote
     @State private var scheduleType = 0
     @State private var selectedDays: Set<Int> = [0, 1, 2, 3, 4]
     @State private var reminderEnabled = true
@@ -73,9 +73,11 @@ struct AddHabitFormView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button("Done") { dismiss() }
-                    .fontWeight(.semibold)
-                    .foregroundStyle(habitType.color)
+                Button { dismiss() } label: {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(habitType.color)
+                }
                     .animation(.easeInOut(duration: 0.3), value: habitType)
             }
         }
@@ -89,7 +91,6 @@ struct AddHabitFormView: View {
 
             HabitFormQuoteField(
                 accentColor: habitType.color,
-                placeholder: "e.g. Adopt the pace of nature: her secret is patience — Ralph Waldo Emerson",
                 text: $motivationQuote
             )
 
