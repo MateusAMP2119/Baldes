@@ -24,7 +24,7 @@ struct HabitFormDateField: View {
             .padding(.horizontal, 16)
             .frame(height: 50)
             .background(Color(hex: "F5F5F5"))
-            .cornerRadius(16)
+            .cornerRadius(12)
         }
     }
 }
@@ -85,7 +85,7 @@ struct HabitFormDateRangeField: View {
                 .padding(.vertical, 14)
             }
             .background(Color(hex: "F5F5F5"))
-            .cornerRadius(12)
+            .cornerRadius(16)
         }
     }
 }

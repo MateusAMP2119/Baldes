@@ -22,6 +22,8 @@ struct AddHabitFormView: View {
     @State private var trackStartDate = Date()
     @State private var trackDurationType = 1 // 0 = 7 days, 1 = 30 days, 2 = custom
     @State private var trackCustomEndDate = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
+    @State private var timedEndDateEnabled = true
+    @State private var timedEndDate = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
 
     // MARK: - Daily Goals State
 
@@ -108,7 +110,7 @@ struct AddHabitFormView: View {
                 .id(habitType)
                 .transition(.blurReplace)
 
-            if habitType != .budgets {
+            if habitType != .budgets && habitType != .timed {
                 commonScheduleFields
                     .transition(.blurReplace)
             }
@@ -170,7 +172,7 @@ extension AddHabitFormView {
     private var timedFields: some View {
         VStack(spacing: 16) {
             HabitFormTimerTypePicker(selectedIndex: $timerType)
-            
+
             if timerType == 0 {
                 // Countdown mode - show duration picker
                 HabitFormDurationPicker(
@@ -182,12 +184,25 @@ extension AddHabitFormView {
                 .transition(.blurReplace)
             }
 
-            HabitFormTrackDurationField(
-                label: "Track For",
+            TimedScheduleGroupedCard(
+                label: "Track for",
+                accentColor: habitType.color,
                 startDate: $trackStartDate,
-                durationType: $trackDurationType,
-                customEndDate: $trackCustomEndDate
+                scheduleType: $scheduleType,
+                selectedDays: $selectedDays,
+                endDateEnabled: $timedEndDateEnabled,
+                endDate: $timedEndDate,
+                scheduleTime: "9:00 AM"
             )
+
+            HabitFormReminderToggle(
+                accentColor: habitType.color,
+                isOn: $reminderEnabled
+            )
+
+            if reminderEnabled {
+                HabitFormPickerField(label: "Send Reminder", value: "15 min before")
+            }
         }
         .animation(.spring(duration: 0.3), value: timerType)
     }
