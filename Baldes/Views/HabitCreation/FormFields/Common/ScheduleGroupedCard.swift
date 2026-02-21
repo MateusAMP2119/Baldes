@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// A grouped iOS-style card that combines all schedule-related fields
-/// for the Timed habit type into a single unified card.
-struct TimedScheduleGroupedCard: View {
+/// into a single unified card for any habit type.
+struct ScheduleGroupedCard: View {
     let label: String
     let accentColor: Color
     @Binding var startDate: Date
@@ -201,7 +201,7 @@ struct TimedScheduleGroupedCard: View {
         var body: some View {
             ScrollView {
                 VStack(spacing: 20) {
-                    TimedScheduleGroupedCard(
+                    ScheduleGroupedCard(
                         label: "Track for",
                         accentColor: .blue,
                         startDate: $startDate,
@@ -239,7 +239,7 @@ struct TimedScheduleGroupedCard: View {
         var body: some View {
             ScrollView {
                 VStack(spacing: 20) {
-                    TimedScheduleGroupedCard(
+                    ScheduleGroupedCard(
                         label: "Track for",
                         accentColor: .blue,
                         startDate: $startDate,

@@ -12,6 +12,18 @@ struct AddHabitFormView: View {
     @State private var scheduleType = 0
     @State private var selectedDays: Set<Int> = [0, 1, 2, 3, 4]
     @State private var reminderEnabled = true
+    
+    // Common schedule state
+    @State private var commonStartDate = Date()
+    @State private var commonEndDateEnabled = false
+    @State private var commonEndDate = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
+    @State private var commonScheduleTime: Date = {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: Date())
+        components.hour = 9
+        components.minute = 0
+        return calendar.date(from: components) ?? Date()
+    }()
 
     // MARK: - Timed State
 
@@ -34,7 +46,6 @@ struct AddHabitFormView: View {
 
     // MARK: - Daily Goals State
 
-    @State private var target = 8
     @State private var dailyGoalFromDate = Date()
     @State private var dailyGoalToDate = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
 
@@ -152,14 +163,16 @@ struct AddHabitFormView: View {
 
     private var commonScheduleFields: some View {
         VStack(spacing: 16) {
-            HabitFormScheduleTypePicker(selectedIndex: $scheduleType)
-
-            HabitFormActiveDays(
+            ScheduleGroupedCard(
+                label: "Schedule",
                 accentColor: habitType.color,
-                selectedDays: $selectedDays
+                startDate: $commonStartDate,
+                scheduleType: $scheduleType,
+                selectedDays: $selectedDays,
+                endDateEnabled: $commonEndDateEnabled,
+                endDate: $commonEndDate,
+                scheduleTime: $commonScheduleTime
             )
-
-            HabitFormScheduleField(value: "9:00 AM")
 
             HabitFormReminderToggle(
                 accentColor: habitType.color,
@@ -191,7 +204,7 @@ extension AddHabitFormView {
                 .transition(.blurReplace)
             }
 
-            TimedScheduleGroupedCard(
+            ScheduleGroupedCard(
                 label: "Track for",
                 accentColor: habitType.color,
                 startDate: $trackStartDate,
@@ -220,18 +233,7 @@ extension AddHabitFormView {
 extension AddHabitFormView {
     private var dailyGoalFields: some View {
         VStack(spacing: 16) {
-            HabitFormNumberField(
-                label: "Target",
-                unit: "per day",
-                value: $target,
-                range: 1...100
-            )
-
-            HabitFormDateRangeField(
-                label: "Track For",
-                fromDate: $dailyGoalFromDate,
-                toDate: $dailyGoalToDate
-            )
+            EmptyView()
         }
     }
 }
@@ -309,12 +311,6 @@ extension AddHabitFormView {
                     selectedIndex: $routeTypeIndex
                 )
             }
-
-            HabitFormDateRangeField(
-                label: "Track For",
-                fromDate: $startDate,
-                toDate: $endDate
-            )
 
             HabitFormRouteMap(accentColor: habitType.color)
 

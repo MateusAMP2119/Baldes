@@ -29,67 +29,6 @@ struct HabitFormDateField: View {
     }
 }
 
-// MARK: - Date Range Picker (Start / End unified card)
-
-struct HabitFormDateRangeField: View {
-    let label: String
-    @Binding var fromDate: Date
-    @Binding var toDate: Date
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(label)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Color.textPrimary)
-
-            VStack(spacing: 0) {
-                HStack {
-                    Text("Start")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color.textSecondary)
-
-                    Spacer()
-
-                    DatePicker(
-                        "",
-                        selection: $fromDate,
-                        in: ...Date().addingTimeInterval(365 * 24 * 60 * 60),
-                        displayedComponents: .date
-                    )
-                    .datePickerStyle(.compact)
-                    .labelsHidden()
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-
-                Divider()
-                    .padding(.horizontal, 16)
-
-                HStack {
-                    Text("End")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color.textSecondary)
-
-                    Spacer()
-
-                    DatePicker(
-                        "",
-                        selection: $toDate,
-                        in: fromDate...,
-                        displayedComponents: .date
-                    )
-                    .datePickerStyle(.compact)
-                    .labelsHidden()
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-            }
-            .background(Color(hex: "F5F5F5"))
-            .cornerRadius(16)
-        }
-    }
-}
-
 // MARK: - Track Duration Field (Start Date + Duration Menu)
 
 struct HabitFormTrackDurationField: View {
