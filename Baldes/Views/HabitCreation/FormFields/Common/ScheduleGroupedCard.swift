@@ -23,29 +23,30 @@ struct ScheduleGroupedCard: View {
             VStack(spacing: 0) {
                 // MARK: - Start Date Row
                 startDateRow
+                divider
                 
+                // MARK: - Schedule Time
+                scheduleTimeRow
                 divider
                 
                 // MARK: - Schedule Type Segmented Control
                 scheduleTypeRow
+                divider
                 
                 // MARK: - Active Days (only show for Recurrent)
                 if scheduleType == 0 {
                     activeDaysRow
+                    divider
                     
                     // MARK: - End Date Toggle
                     endDateToggleRow
+                    divider
                     
                     // MARK: - End Date Picker (conditional)
                     if endDateEnabled {
                         endDatePickerRow
                     }
                 }
-            
-                divider
-                
-                // MARK: - Schedule Time
-                scheduleTimeRow
             }
             .background(Color(hex: "F5F5F5"))
             .cornerRadius(16)

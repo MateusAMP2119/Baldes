@@ -23,36 +23,6 @@ struct HabitFormTextField: View {
     }
 }
 
-// MARK: - Picker / Dropdown Field
-
-struct HabitFormPickerField: View {
-    let label: String
-    let value: String
-    var trailingIcon: String = "chevron.down"
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(label)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Color.textPrimary)
-
-            HStack {
-                Text(value)
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(Color.textPrimary)
-                Spacer()
-                Image(systemName: trailingIcon)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Color.textTertiary)
-            }
-            .padding(.horizontal, 16)
-            .frame(height: 50)
-            .background(Color(hex: "F5F5F5"))
-            .cornerRadius(16)
-        }
-    }
-}
-
 // MARK: - Field Pair (side-by-side)
 
 struct HabitFormFieldPair<Left: View, Right: View>: View {

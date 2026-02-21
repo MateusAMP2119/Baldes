@@ -12,6 +12,13 @@ struct AddHabitFormView: View {
     @State private var scheduleType = 0
     @State private var selectedDays: Set<Int> = [0, 1, 2, 3, 4]
     @State private var reminderEnabled = true
+    @State private var reminderTime: Date = {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: Date())
+        components.hour = 9
+        components.minute = 0
+        return calendar.date(from: components) ?? Date()
+    }()
     
     // Common schedule state
     @State private var commonStartDate = Date()
@@ -37,6 +44,13 @@ struct AddHabitFormView: View {
     @State private var timedEndDateEnabled = true
     @State private var timedEndDate = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
     @State private var timedScheduleTime: Date = {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: Date())
+        components.hour = 9
+        components.minute = 0
+        return calendar.date(from: components) ?? Date()
+    }()
+    @State private var timedReminderTime: Date = {
         let calendar = Calendar.current
         var components = calendar.dateComponents([.year, .month, .day], from: Date())
         components.hour = 9
@@ -70,6 +84,13 @@ struct AddHabitFormView: View {
     @State private var currencyIndex = 0
     @State private var alertThreshold = 80.0
     @State private var budgetReminder = true
+    @State private var budgetReminderTime: Date = {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: Date())
+        components.hour = 9
+        components.minute = 0
+        return calendar.date(from: components) ?? Date()
+    }()
 
     // MARK: - Notes State
 
@@ -176,12 +197,9 @@ struct AddHabitFormView: View {
 
             HabitFormReminderToggle(
                 accentColor: habitType.color,
-                isOn: $reminderEnabled
+                isOn: $reminderEnabled,
+                reminderTime: $reminderTime
             )
-
-            if reminderEnabled {
-                HabitFormPickerField(label: "Send Reminder", value: "15 min before")
-            }
         }
     }
 }
@@ -217,12 +235,9 @@ extension AddHabitFormView {
 
             HabitFormReminderToggle(
                 accentColor: habitType.color,
-                isOn: $reminderEnabled
+                isOn: $reminderEnabled,
+                reminderTime: $timedReminderTime
             )
-
-            if reminderEnabled {
-                HabitFormPickerField(label: "Send Reminder", value: "15 min before")
-            }
         }
         .animation(.spring(duration: 0.3), value: timerType)
     }
@@ -243,17 +258,6 @@ extension AddHabitFormView {
 extension AddHabitFormView {
     private var metricsFields: some View {
         VStack(spacing: 16) {
-            HabitFormFieldPair {
-                HabitFormNumberField(
-                    label: "Target Value",
-                    unit: "steps",
-                    value: $targetValue,
-                    range: 1...100000
-                )
-            } right: {
-                HabitFormPickerField(label: "Unit", value: "Steps")
-            }
-
             HabitFormDirectionPicker(
                 accentColor: habitType.color,
                 isIncrease: $isIncrease
@@ -365,18 +369,6 @@ extension AddHabitFormView {
 extension AddHabitFormView {
     private var budgetsFields: some View {
         VStack(spacing: 16) {
-            HabitFormFieldPair {
-                HabitFormDecimalField(
-                    label: "Budget Amount",
-                    unit: "$",
-                    value: $budgetAmount,
-                    range: 0...999999,
-                    step: 50
-                )
-            } right: {
-                HabitFormPickerField(label: "Period", value: "Monthly")
-            }
-
             HabitFormCurrencyPicker(
                 accentColor: habitType.color,
                 selectedIndex: $currencyIndex
@@ -391,7 +383,8 @@ extension AddHabitFormView {
             HabitFormReminderToggle(
                 accentColor: habitType.color,
                 label: "Budget Reminder",
-                isOn: $budgetReminder
+                isOn: $budgetReminder,
+                reminderTime: $budgetReminderTime
             )
         }
     }
@@ -420,8 +413,6 @@ extension AddHabitFormView {
                     HabitFormTagChip(label: "Add Tag", color: habitType.color, isFilled: false)
                 }
             }
-
-            HabitFormPickerField(label: "Note Template", value: "Blank Note")
         }
     }
 }

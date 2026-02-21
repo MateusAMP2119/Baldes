@@ -4,6 +4,14 @@ import SwiftUI
 
 struct HabitFormCategoryField: View {
     @Binding var type: HabitType
+    
+    @State private var scheduleTime: Date = {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: Date())
+        components.hour = 9
+        components.minute = 0
+        return calendar.date(from: components) ?? Date()
+    }()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -122,32 +130,56 @@ struct HabitFormReminderToggle: View {
     let accentColor: Color
     let label: String
     @Binding var isOn: Bool
+    @Binding var reminderTime: Date
 
-    init(accentColor: Color, label: String = "Reminder", isOn: Binding<Bool>) {
+    init(accentColor: Color, label: String = "Active", isOn: Binding<Bool>, reminderTime: Binding<Date>) {
         self.accentColor = accentColor
         self.label = label
         self._isOn = isOn
+        self._reminderTime = reminderTime
     }
 
     var body: some View {
-        HStack {
-            HStack(spacing: 12) {
-                Image(systemName: "bell.badge.fill")
-                    .font(.system(size: 18))
-                    .foregroundStyle(accentColor)
-                Text(label)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Color.textPrimary)
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Reminders")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color.textPrimary)
+            
+            VStack {
+                HStack {
+                    HStack(spacing: 12) {
+                        Image(systemName: "bell.badge.fill")
+                            .font(.system(size: 18))
+                            .foregroundStyle(accentColor)
+                        Text(label)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.textSecondary)
+                    }
+                    Spacer()
+                    Toggle("", isOn: $isOn)
+                        .labelsHidden()
+                        .tint(Color(hex: "34C759"))
+                }
+                
+                Divider()
+                    .padding(.horizontal, 16)
+                
+                DatePicker(
+                    selection: $reminderTime,
+                    displayedComponents: .hourAndMinute
+                ) {
+                    Text("Reminder Time")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Color.textSecondary)
+                }
+                .datePickerStyle(.compact)
+                .tint(accentColor)
             }
-            Spacer()
-            Toggle("", isOn: $isOn)
-                .labelsHidden()
-                .tint(Color(hex: "34C759"))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(Color(hex: "F5F5F5"))
+            .cornerRadius(16)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .background(Color(hex: "F5F5F5"))
-        .cornerRadius(16)
     }
 }
 
