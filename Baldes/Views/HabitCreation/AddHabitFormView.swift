@@ -66,8 +66,9 @@ struct AddHabitFormView: View {
 
     // MARK: - Metrics State
 
-    @State private var targetValue = 10000
+    @State private var targetValue = 0
     @State private var isIncrease = true
+    @State private var metricUnit = "Steps"
 
     // MARK: - Todo State
 
@@ -257,9 +258,12 @@ extension AddHabitFormView {
 extension AddHabitFormView {
     private var metricsFields: some View {
         VStack(spacing: 16) {
-            HabitFormDirectionPicker(
+            MetricsGroupedCard(
+                label: "Metric",
                 accentColor: habitType.color,
-                isIncrease: $isIncrease
+                isIncrease: $isIncrease,
+                targetValue: $targetValue,
+                unit: $metricUnit
             )
         }
     }
