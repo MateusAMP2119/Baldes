@@ -9,7 +9,8 @@ struct AddHabitFormView: View {
     @State private var habitName = ""
     @State private var habitEmoji = "⭐"
     @State private var motivationQuote = HabitFormQuoteField.initialQuote
-    @State private var scheduleType = 0
+    @State private var frequency = 2 // 0 = Once, 1 = Daily, 2 = Custom
+    @State private var hasTime = true
     @State private var selectedDays: Set<Int> = [0, 1, 2, 3, 4]
     @State private var reminderEnabled = true
     @State private var reminderTime: Date = {
@@ -188,11 +189,12 @@ struct AddHabitFormView: View {
                 label: "Schedule",
                 accentColor: habitType.color,
                 startDate: $commonStartDate,
-                scheduleType: $scheduleType,
+                frequency: $frequency,
+                hasTime: $hasTime,
+                scheduleTime: $commonScheduleTime,
                 selectedDays: $selectedDays,
                 endDateEnabled: $commonEndDateEnabled,
-                endDate: $commonEndDate,
-                scheduleTime: $commonScheduleTime
+                endDate: $commonEndDate
             )
 
             HabitFormReminderToggle(
@@ -226,11 +228,12 @@ extension AddHabitFormView {
                 label: "Track for",
                 accentColor: habitType.color,
                 startDate: $trackStartDate,
-                scheduleType: $scheduleType,
+                frequency: $frequency,
+                hasTime: $hasTime,
+                scheduleTime: $timedScheduleTime,
                 selectedDays: $selectedDays,
                 endDateEnabled: $timedEndDateEnabled,
-                endDate: $timedEndDate,
-                scheduleTime: $timedScheduleTime
+                endDate: $timedEndDate
             )
 
             HabitFormReminderToggle(
