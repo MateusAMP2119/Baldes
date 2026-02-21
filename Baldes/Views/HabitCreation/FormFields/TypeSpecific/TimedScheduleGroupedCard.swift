@@ -10,7 +10,7 @@ struct TimedScheduleGroupedCard: View {
     @Binding var selectedDays: Set<Int>
     @Binding var endDateEnabled: Bool
     @Binding var endDate: Date
-    let scheduleTime: String
+    @Binding var scheduleTime: Date
 
     private let dayLabels = ["M", "T", "W", "T", "F", "S", "S"]
 
@@ -29,20 +29,19 @@ struct TimedScheduleGroupedCard: View {
                 // MARK: - Schedule Type Segmented Control
                 scheduleTypeRow
                 
-                // MARK: - Active Days
-                activeDaysRow
-                
-                divider
-                
-                // MARK: - End Date Toggle
-                endDateToggleRow
-                
-                // MARK: - End Date Picker (conditional)
-                if endDateEnabled {
-                    divider
-                    endDatePickerRow
+                // MARK: - Active Days (only show for Recurrent)
+                if scheduleType == 0 {
+                    activeDaysRow
+                    
+                    // MARK: - End Date Toggle
+                    endDateToggleRow
+                    
+                    // MARK: - End Date Picker (conditional)
+                    if endDateEnabled {
+                        endDatePickerRow
+                    }
                 }
-                
+            
                 divider
                 
                 // MARK: - Schedule Time
@@ -51,28 +50,25 @@ struct TimedScheduleGroupedCard: View {
             .background(Color(hex: "F5F5F5"))
             .cornerRadius(16)
         }
+        .environment(\.locale, Locale(identifier: "en_GB"))
         .animation(.spring(duration: 0.3), value: endDateEnabled)
+        .animation(.spring(duration: 0.3), value: scheduleType)
     }
 
     // MARK: - Start Date Row
 
     private var startDateRow: some View {
-        HStack {
+        DatePicker(
+            selection: $startDate,
+            in: ...Date().addingTimeInterval(365 * 24 * 60 * 60),
+            displayedComponents: .date
+        ) {
             Text("Start Date")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(Color.textSecondary)
-
-            Spacer()
-
-            DatePicker(
-                "Start Date",
-                selection: $startDate,
-                in: ...Date().addingTimeInterval(365 * 24 * 60 * 60),
-                displayedComponents: .date
-            )
-            .datePickerStyle(.compact)
-            .labelsHidden()
         }
+        .datePickerStyle(.compact)
+        .tint(accentColor)
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
     }
@@ -82,7 +78,7 @@ struct TimedScheduleGroupedCard: View {
     private var scheduleTypeRow: some View {
         Picker("Schedule Type", selection: $scheduleType) {
             Text("Recurrent").tag(0)
-            Text("Any Day").tag(1)
+            Text("Every Day").tag(1)
         }
         .pickerStyle(.segmented)
         .padding(.horizontal, 16)
@@ -145,22 +141,17 @@ struct TimedScheduleGroupedCard: View {
     // MARK: - End Date Picker Row
 
     private var endDatePickerRow: some View {
-        HStack {
+        DatePicker(
+            selection: $endDate,
+            in: startDate...,
+            displayedComponents: .date
+        ) {
             Text("Until")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(Color.textSecondary)
-
-            Spacer()
-
-            DatePicker(
-                "Until",
-                selection: $endDate,
-                in: startDate...,
-                displayedComponents: .date
-            )
-            .datePickerStyle(.compact)
-            .labelsHidden()
         }
+        .datePickerStyle(.compact)
+        .tint(accentColor)
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
         .transition(.opacity.combined(with: .move(edge: .top)))
@@ -169,23 +160,16 @@ struct TimedScheduleGroupedCard: View {
     // MARK: - Schedule Time Row
 
     private var scheduleTimeRow: some View {
-        HStack {
+        DatePicker(
+            selection: $scheduleTime,
+            displayedComponents: .hourAndMinute
+        ) {
             Text("Schedule")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(Color.textSecondary)
-
-            Spacer()
-
-            HStack(spacing: 8) {
-                Text(scheduleTime)
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(Color.textPrimary)
-
-                Image(systemName: "clock")
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(Color.textTertiary)
-            }
         }
+        .datePickerStyle(.compact)
+        .tint(accentColor)
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
     }
@@ -199,13 +183,20 @@ struct TimedScheduleGroupedCard: View {
 }
 // MARK: - Preview
 
-#Preview {
+#Preview("Recurrent") {
     struct PreviewWrapper: View {
         @State private var startDate = Date()
         @State private var scheduleType = 0
         @State private var selectedDays: Set<Int> = [0, 1, 2, 3, 4]
         @State private var endDateEnabled = true
         @State private var endDate = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
+        @State private var scheduleTime: Date = {
+            let calendar = Calendar.current
+            var components = calendar.dateComponents([.year, .month, .day], from: Date())
+            components.hour = 9
+            components.minute = 0
+            return calendar.date(from: components) ?? Date()
+        }()
         
         var body: some View {
             ScrollView {
@@ -218,7 +209,45 @@ struct TimedScheduleGroupedCard: View {
                         selectedDays: $selectedDays,
                         endDateEnabled: $endDateEnabled,
                         endDate: $endDate,
-                        scheduleTime: "9:00 AM"
+                        scheduleTime: $scheduleTime
+                    )
+                    .padding(.horizontal, 24)
+                }
+            }
+            .background(Color(hex: "F8F8F8"))
+        }
+    }
+    
+    return PreviewWrapper()
+}
+
+#Preview("Every Day") {
+    struct PreviewWrapper: View {
+        @State private var startDate = Date()
+        @State private var scheduleType = 1
+        @State private var selectedDays: Set<Int> = [0, 1, 2, 3, 4]
+        @State private var endDateEnabled = false
+        @State private var endDate = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
+        @State private var scheduleTime: Date = {
+            let calendar = Calendar.current
+            var components = calendar.dateComponents([.year, .month, .day], from: Date())
+            components.hour = 9
+            components.minute = 0
+            return calendar.date(from: components) ?? Date()
+        }()
+        
+        var body: some View {
+            ScrollView {
+                VStack(spacing: 20) {
+                    TimedScheduleGroupedCard(
+                        label: "Track for",
+                        accentColor: .blue,
+                        startDate: $startDate,
+                        scheduleType: $scheduleType,
+                        selectedDays: $selectedDays,
+                        endDateEnabled: $endDateEnabled,
+                        endDate: $endDate,
+                        scheduleTime: $scheduleTime
                     )
                     .padding(.horizontal, 24)
                 }

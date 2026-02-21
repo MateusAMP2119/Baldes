@@ -24,6 +24,13 @@ struct AddHabitFormView: View {
     @State private var trackCustomEndDate = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
     @State private var timedEndDateEnabled = true
     @State private var timedEndDate = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
+    @State private var timedScheduleTime: Date = {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: Date())
+        components.hour = 9
+        components.minute = 0
+        return calendar.date(from: components) ?? Date()
+    }()
 
     // MARK: - Daily Goals State
 
@@ -192,7 +199,7 @@ extension AddHabitFormView {
                 selectedDays: $selectedDays,
                 endDateEnabled: $timedEndDateEnabled,
                 endDate: $timedEndDate,
-                scheduleTime: "9:00 AM"
+                scheduleTime: $timedScheduleTime
             )
 
             HabitFormReminderToggle(
