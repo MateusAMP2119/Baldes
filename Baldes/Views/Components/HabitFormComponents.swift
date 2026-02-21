@@ -756,4 +756,467 @@ struct HabitFormTagChip: View {
     }
 }
 
+// MARK: - Timer Type Picker (Countdown / Stopwatch)
+
+struct HabitFormTimerTypePicker: View {
+    @Binding var selectedIndex: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Timer Type")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color.textPrimary)
+
+            Picker("Timer Type", selection: $selectedIndex) {
+                Label("Countdown", systemImage: "timer")
+                    .tag(0)
+                Label("Stopwatch", systemImage: "stopwatch")
+                    .tag(1)
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+}
+
+// MARK: - Duration Picker (Hours / Minutes / Seconds)
+
+struct HabitFormDurationPicker: View {
+    let label: String
+    @Binding var hours: Int
+    @Binding var minutes: Int
+    @Binding var seconds: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(label)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color.textPrimary)
+            ZStack {
+                HStack(spacing: 8) {
+                    // Hours Picker
+                    HStack(spacing: 4) {
+                        Picker("Hours", selection: $hours) {
+                            ForEach(0..<24) { hour in
+                                Text("\(hour)").tag(hour)
+                            }
+                        }
+                        .pickerStyle(.wheel)
+                        .frame(width: 50)
+                        .clipped()
+                        
+                        Text("hr")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.textSecondary)
+                    }
+
+                    // Minutes Picker
+                    HStack(spacing: 4) {
+                        Picker("Minutes", selection: $minutes) {
+                            ForEach(0..<60) { minute in
+                                Text("\(minute)").tag(minute)
+                            }
+                        }
+                        .pickerStyle(.wheel)
+                        .frame(width: 50)
+                        .clipped()
+                        
+                        Text("min")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.textSecondary)
+                    }
+
+                    // Seconds Picker
+                    HStack(spacing: 4) {
+                        Picker("Seconds", selection: $seconds) {
+                            ForEach(0..<60) { second in
+                                Text("\(second)").tag(second)
+                            }
+                        }
+                        .pickerStyle(.wheel)
+                        .frame(width: 50)
+                        .clipped()
+                        
+                        Text("sec")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.textSecondary)
+                    }
+                }
+            }
+            .frame(height: 120)
+            .frame(maxWidth: .infinity)
+            .background(Color(hex: "F5F5F5"))
+            .cornerRadius(12)
+            .onAppear {
+                // Hide the native picker selection indicator backgrounds
+                UIPickerView.appearance().subviews.forEach { subview in
+                    subview.backgroundColor = .clear
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Number Field with Stepper
+
+struct HabitFormNumberField: View {
+    let label: String
+    let unit: String
+    @Binding var value: Int
+    var range: ClosedRange<Int> = 1...999
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(label)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color.textPrimary)
+
+            HStack(spacing: 12) {
+                HStack {
+                    Text("\(value)")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(Color.textPrimary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    Text(unit)
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color.textSecondary)
+                }
+                .padding(.horizontal, 16)
+                .frame(height: 50)
+                .background(Color(hex: "F5F5F5"))
+                .cornerRadius(16)
+
+                VStack(spacing: 4) {
+                    Button {
+                        if value < range.upperBound {
+                            value += 1
+                        }
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Color.textPrimary)
+                            .frame(width: 50, height: 23)
+                            .background(Color(hex: "F5F5F5"))
+                            .cornerRadius(8)
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        if value > range.lowerBound {
+                            value -= 1
+                        }
+                    } label: {
+                        Image(systemName: "minus")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Color.textPrimary)
+                            .frame(width: 50, height: 23)
+                            .background(Color(hex: "F5F5F5"))
+                            .cornerRadius(8)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Decimal Number Field with Stepper
+
+struct HabitFormDecimalField: View {
+    let label: String
+    let unit: String
+    @Binding var value: Double
+    var range: ClosedRange<Double> = 0...999999
+    var step: Double = 1.0
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(label)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color.textPrimary)
+
+            HStack(spacing: 12) {
+                HStack {
+                    Text(String(format: "%.0f", value))
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(Color.textPrimary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    Text(unit)
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color.textSecondary)
+                }
+                .padding(.horizontal, 16)
+                .frame(height: 50)
+                .background(Color(hex: "F5F5F5"))
+                .cornerRadius(16)
+
+                VStack(spacing: 4) {
+                    Button {
+                        if value + step <= range.upperBound {
+                            value += step
+                        }
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Color.textPrimary)
+                            .frame(width: 50, height: 23)
+                            .background(Color(hex: "F5F5F5"))
+                            .cornerRadius(8)
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        if value - step >= range.lowerBound {
+                            value -= step
+                        }
+                    } label: {
+                        Image(systemName: "minus")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Color.textPrimary)
+                            .frame(width: 50, height: 23)
+                            .background(Color(hex: "F5F5F5"))
+                            .cornerRadius(8)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Slider Field for Percentages
+
+struct HabitFormSliderField: View {
+    let label: String
+    @Binding var value: Double
+    var range: ClosedRange<Double> = 0...100
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(label)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color.textPrimary)
+                
+                Spacer()
+                
+                Text("\(Int(value))%")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Color.textPrimary)
+            }
+
+            Slider(value: $value, in: range, step: 5)
+                .tint(Color.accentOrange)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Color(hex: "F5F5F5"))
+                .cornerRadius(16)
+        }
+    }
+}
+
+// MARK: - Date Field with Native DatePicker
+
+struct HabitFormDateField: View {
+    let label: String
+    @Binding var date: Date
+    var trailingIcon: String = "calendar"
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(label)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color.textPrimary)
+
+            DatePicker(
+                "",
+                selection: $date,
+                displayedComponents: .date
+            )
+            .datePickerStyle(.compact)
+            .labelsHidden()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .frame(height: 50)
+            .background(Color(hex: "F5F5F5"))
+            .cornerRadius(16)
+        }
+    }
+}
+
+// MARK: - Date Range Picker (Start / End unified card)
+
+struct HabitFormDateRangeField: View {
+    let label: String
+    @Binding var fromDate: Date
+    @Binding var toDate: Date
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(label)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color.textPrimary)
+
+            VStack(spacing: 0) {
+                HStack {
+                    Text("Start")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Color.textSecondary)
+
+                    Spacer()
+
+                    DatePicker(
+                        "",
+                        selection: $fromDate,
+                        in: ...Date().addingTimeInterval(365 * 24 * 60 * 60),
+                        displayedComponents: .date
+                    )
+                    .datePickerStyle(.compact)
+                    .labelsHidden()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+
+                Divider()
+                    .padding(.horizontal, 16)
+
+                HStack {
+                    Text("End")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Color.textSecondary)
+
+                    Spacer()
+
+                    DatePicker(
+                        "",
+                        selection: $toDate,
+                        in: fromDate...,
+                        displayedComponents: .date
+                    )
+                    .datePickerStyle(.compact)
+                    .labelsHidden()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+            }
+            .background(Color(hex: "F5F5F5"))
+            .cornerRadius(12)
+        }
+    }
+}
+
+// MARK: - Track Duration Field (Start Date + Duration Menu)
+
+struct HabitFormTrackDurationField: View {
+    let label: String
+    @Binding var startDate: Date
+    @Binding var durationType: Int // 0 = 7 days, 1 = 30 days, 2 = custom
+    @Binding var customEndDate: Date
+    
+    private var durationText: String {
+        switch durationType {
+        case 0: return "7 days"
+        case 1: return "30 days"
+        case 2:
+            let formatter = DateFormatter()
+            formatter.dateStyle = .medium
+            return formatter.string(from: customEndDate)
+        default: return "30 days"
+        }
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(label)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color.textPrimary)
+
+            HStack(spacing: 12) {
+                // Start Date
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Start")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Color.textSecondary)
+                    
+                    DatePicker(
+                        "",
+                        selection: $startDate,
+                        in: ...Date().addingTimeInterval(365 * 24 * 60 * 60),
+                        displayedComponents: .date
+                    )
+                    .datePickerStyle(.compact)
+                    .labelsHidden()
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(hex: "F5F5F5"))
+                .cornerRadius(16)
+                
+                // Duration Menu
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Duration")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Color.textSecondary)
+                    
+                    Menu {
+                        Button {
+                            durationType = 0
+                        } label: {
+                            Label("7 days", systemImage: durationType == 0 ? "checkmark" : "")
+                        }
+                        
+                        Button {
+                            durationType = 1
+                        } label: {
+                            Label("30 days", systemImage: durationType == 1 ? "checkmark" : "")
+                        }
+                        
+                        Button {
+                            durationType = 2
+                        } label: {
+                            Label("Custom date", systemImage: durationType == 2 ? "checkmark" : "")
+                        }
+                    } label: {
+                        HStack {
+                            Text(durationText)
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(Color.textPrimary)
+                            Spacer()
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(Color.textTertiary)
+                        }
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .frame(height: 50)
+                .background(Color(hex: "F5F5F5"))
+                .cornerRadius(16)
+            }
+            
+            // Custom end date picker (only shown when custom is selected)
+            if durationType == 2 {
+                DatePicker(
+                    "End Date",
+                    selection: $customEndDate,
+                    in: startDate...,
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.graphical)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(hex: "F5F5F5"))
+                .cornerRadius(16)
+                .transition(.blurReplace)
+            }
+        }
+        .animation(.spring(duration: 0.3), value: durationType)
+    }
+}
+
+
+
+
 

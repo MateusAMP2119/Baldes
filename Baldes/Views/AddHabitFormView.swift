@@ -15,17 +15,23 @@ struct AddHabitFormView: View {
 
     // MARK: - Timed State
 
-    @State private var duration = ""
-    @State private var trackFor = ""
+    @State private var timerType = 0 // 0 = Countdown, 1 = Stopwatch
+    @State private var durationHours = 1
+    @State private var durationMinutes = 30
+    @State private var durationSeconds = 5
+    @State private var trackStartDate = Date()
+    @State private var trackDurationType = 1 // 0 = 7 days, 1 = 30 days, 2 = custom
+    @State private var trackCustomEndDate = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
 
     // MARK: - Daily Goals State
 
-    @State private var target = ""
-    @State private var goalTrackFor = ""
+    @State private var target = 8
+    @State private var dailyGoalFromDate = Date()
+    @State private var dailyGoalToDate = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
 
     // MARK: - Metrics State
 
-    @State private var targetValue = ""
+    @State private var targetValue = 10000
     @State private var isIncrease = true
 
     // MARK: - Todo State
@@ -35,17 +41,19 @@ struct AddHabitFormView: View {
     // MARK: - Routes State
 
     @State private var routeTypeIndex = 0
+    @State private var startDate = Date()
+    @State private var endDate = Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date()
 
     // MARK: - Budgets State
 
-    @State private var budgetAmount = ""
+    @State private var budgetAmount = 500.0
     @State private var currencyIndex = 0
-    @State private var alertThreshold = ""
+    @State private var alertThreshold = 80.0
     @State private var budgetReminder = true
 
     // MARK: - Notes State
 
-    @State private var notesPerDay = ""
+    @State private var notesPerDay = 3
 
     var body: some View {
         ZStack {
@@ -161,14 +169,27 @@ struct AddHabitFormView: View {
 extension AddHabitFormView {
     private var timedFields: some View {
         VStack(spacing: 16) {
-            HabitFormFieldPair {
-                HabitFormTextField(label: "Duration", placeholder: "e.g. 30 min", text: $duration)
-            } right: {
-                HabitFormPickerField(label: "Timer Type", value: "Countdown")
+            HabitFormTimerTypePicker(selectedIndex: $timerType)
+            
+            if timerType == 0 {
+                // Countdown mode - show duration picker
+                HabitFormDurationPicker(
+                    label: "Target Duration",
+                    hours: $durationHours,
+                    minutes: $durationMinutes,
+                    seconds: $durationSeconds
+                )
+                .transition(.blurReplace)
             }
 
-            HabitFormTextField(label: "Track For", placeholder: "e.g. 30 days", text: $trackFor)
+            HabitFormTrackDurationField(
+                label: "Track For",
+                startDate: $trackStartDate,
+                durationType: $trackDurationType,
+                customEndDate: $trackCustomEndDate
+            )
         }
+        .animation(.spring(duration: 0.3), value: timerType)
     }
 }
 
@@ -177,13 +198,18 @@ extension AddHabitFormView {
 extension AddHabitFormView {
     private var dailyGoalFields: some View {
         VStack(spacing: 16) {
-            HabitFormFieldPair {
-                HabitFormTextField(label: "Target", placeholder: "e.g. 8 glasses", text: $target)
-            } right: {
-                HabitFormPickerField(label: "Frequency", value: "Daily")
-            }
+            HabitFormNumberField(
+                label: "Target",
+                unit: "per day",
+                value: $target,
+                range: 1...100
+            )
 
-            HabitFormTextField(label: "Track For", placeholder: "e.g. 30 days", text: $goalTrackFor)
+            HabitFormDateRangeField(
+                label: "Track For",
+                fromDate: $dailyGoalFromDate,
+                toDate: $dailyGoalToDate
+            )
         }
     }
 }
@@ -194,7 +220,12 @@ extension AddHabitFormView {
     private var metricsFields: some View {
         VStack(spacing: 16) {
             HabitFormFieldPair {
-                HabitFormTextField(label: "Target Value", placeholder: "e.g. 10000", text: $targetValue)
+                HabitFormNumberField(
+                    label: "Target Value",
+                    unit: "steps",
+                    value: $targetValue,
+                    range: 1...100000
+                )
             } right: {
                 HabitFormPickerField(label: "Unit", value: "Steps")
             }
@@ -257,11 +288,11 @@ extension AddHabitFormView {
                 )
             }
 
-            HabitFormFieldPair {
-                HabitFormPickerField(label: "Start Date", value: "Mar 01, 2025", trailingIcon: "calendar")
-            } right: {
-                HabitFormPickerField(label: "End Date", value: "Mar 07, 2025", trailingIcon: "calendar")
-            }
+            HabitFormDateRangeField(
+                label: "Track For",
+                fromDate: $startDate,
+                toDate: $endDate
+            )
 
             HabitFormRouteMap(accentColor: habitType.color)
 
@@ -317,7 +348,13 @@ extension AddHabitFormView {
     private var budgetsFields: some View {
         VStack(spacing: 16) {
             HabitFormFieldPair {
-                HabitFormTextField(label: "Budget Amount", placeholder: "e.g. 500", text: $budgetAmount)
+                HabitFormDecimalField(
+                    label: "Budget Amount",
+                    unit: "$",
+                    value: $budgetAmount,
+                    range: 0...999999,
+                    step: 50
+                )
             } right: {
                 HabitFormPickerField(label: "Period", value: "Monthly")
             }
@@ -327,10 +364,10 @@ extension AddHabitFormView {
                 selectedIndex: $currencyIndex
             )
 
-            HabitFormTextField(
+            HabitFormSliderField(
                 label: "Alert Threshold",
-                placeholder: "e.g. 80%",
-                text: $alertThreshold
+                value: $alertThreshold,
+                range: 0...100
             )
 
             HabitFormReminderToggle(
@@ -347,11 +384,12 @@ extension AddHabitFormView {
 extension AddHabitFormView {
     private var notesFields: some View {
         VStack(spacing: 16) {
-            HabitFormFieldPair {
-                HabitFormTextField(label: "Notes Per Day", placeholder: "e.g. 3 notes", text: $notesPerDay)
-            } right: {
-                HabitFormPickerField(label: "Frequency", value: "Daily")
-            }
+            HabitFormNumberField(
+                label: "Notes Per Day",
+                unit: "notes",
+                value: $notesPerDay,
+                range: 1...20
+            )
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Default Tags")
