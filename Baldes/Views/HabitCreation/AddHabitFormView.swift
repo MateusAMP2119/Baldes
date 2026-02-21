@@ -72,7 +72,7 @@ struct AddHabitFormView: View {
 
     // MARK: - Todo State
 
-    @State private var todoItems = ["Morning meditation", "Composter my 3 pots", "Check off any issues"]
+    @State private var todoItems: [String] = []
 
     // MARK: - Routes State
 
@@ -274,25 +274,10 @@ extension AddHabitFormView {
 extension AddHabitFormView {
     private var todoFields: some View {
         VStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Default Checklist Items")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color.textPrimary)
-
-                VStack(spacing: 6) {
-                    ForEach(todoItems, id: \.self) { item in
-                        HabitFormChecklistItem(
-                            placeholder: item,
-                            accentColor: habitType.color
-                        )
-                    }
-                }
-            }
-
-            HabitFormAddButton(
-                label: "Add Item",
+            ChecklistGroupedCard(
+                label: "Checklist",
                 accentColor: habitType.color,
-                shadowColor: habitType.shadowColor
+                items: $todoItems
             )
         }
     }
