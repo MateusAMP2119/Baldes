@@ -211,18 +211,14 @@ struct AddHabitFormView: View {
 extension AddHabitFormView {
     private var timedFields: some View {
         VStack(spacing: 16) {
-            HabitFormTimerTypePicker(selectedIndex: $timerType)
-
-            if timerType == 0 {
-                // Countdown mode - show duration picker
-                HabitFormDurationPicker(
-                    label: "Target Duration",
-                    hours: $durationHours,
-                    minutes: $durationMinutes,
-                    seconds: $durationSeconds
-                )
-                .transition(.blurReplace)
-            }
+            TimerGroupedCard(
+                label: "Timer",
+                accentColor: habitType.color,
+                timerType: $timerType,
+                hours: $durationHours,
+                minutes: $durationMinutes,
+                seconds: $durationSeconds
+            )
 
             ScheduleGroupedCard(
                 label: "Track for",
