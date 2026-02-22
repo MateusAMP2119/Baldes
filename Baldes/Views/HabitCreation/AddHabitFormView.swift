@@ -102,7 +102,8 @@ struct AddHabitFormView: View {
 
     // MARK: - Notes State
 
-    @State private var notesPerDay = 3
+    @State private var noteFormatIndex = 0    // 0=Plain Text, 1=Markdown, 2=Voice Memo
+    @State private var noteTags: [String] = []
 
     var body: some View {
         ZStack {
@@ -337,24 +338,12 @@ extension AddHabitFormView {
 extension AddHabitFormView {
     private var notesFields: some View {
         VStack(spacing: 16) {
-            HabitFormNumberField(
-                label: "Notes Per Day",
-                unit: "notes",
-                value: $notesPerDay,
-                range: 1...20
+            NotesGroupedCard(
+                label: "Notes",
+                accentColor: habitType.color,
+                formatIndex: $noteFormatIndex,
+                tags: $noteTags
             )
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Default Tags")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color.textPrimary)
-
-                HStack(spacing: 8) {
-                    HabitFormTagChip(label: "Ideas", color: habitType.color, isFilled: true)
-                    HabitFormTagChip(label: "Work", color: habitType.color, isFilled: true)
-                    HabitFormTagChip(label: "Add Tag", color: habitType.color, isFilled: false)
-                }
-            }
         }
     }
 }
