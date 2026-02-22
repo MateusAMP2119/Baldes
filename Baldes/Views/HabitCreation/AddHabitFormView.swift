@@ -77,6 +77,7 @@ struct AddHabitFormView: View {
     // MARK: - Routes State
 
     @State private var routeTypeIndex = 0
+    @State private var routeStops: [RouteStop] = []
     @State private var startDate = Date()
     @State private var endDate = Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date()
 
@@ -288,65 +289,11 @@ extension AddHabitFormView {
 extension AddHabitFormView {
     private var routesFields: some View {
         VStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Route Type")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color.textPrimary)
-
-                HabitFormChipRow(
-                    options: [
-                        (label: "One-time", icon: "location"),
-                        (label: "Multi-day", icon: "calendar"),
-                        (label: "Recurring", icon: "arrow.triangle.2.circlepath")
-                    ],
-                    accentColor: habitType.color,
-                    selectedIndex: $routeTypeIndex
-                )
-            }
-
-            HabitFormRouteMap(accentColor: habitType.color)
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Planned Stops")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color.textPrimary)
-
-                VStack(spacing: 0) {
-                    HabitFormStopRow(
-                        index: 0,
-                        name: "Home",
-                        detail: "Starting point",
-                        isStart: true,
-                        isEnd: false,
-                        accentColor: habitType.color
-                    )
-                    Divider()
-                    HabitFormStopRow(
-                        index: 1,
-                        name: "Office",
-                        detail: "8:30 AM – 5:00 PM",
-                        isStart: false,
-                        isEnd: false,
-                        accentColor: habitType.color
-                    )
-                    Divider()
-                    HabitFormStopRow(
-                        index: 2,
-                        name: "Gym",
-                        detail: "6:00 PM – 7:30 PM",
-                        isStart: false,
-                        isEnd: true,
-                        accentColor: habitType.color
-                    )
-                }
-                .background(Color(hex: "F5F5F5"))
-                .cornerRadius(16)
-            }
-
-            HabitFormAddButton(
-                label: "Add Stop",
+            RouteGroupedCard(
+                label: "Route",
                 accentColor: habitType.color,
-                shadowColor: habitType.shadowColor
+                routeTypeIndex: $routeTypeIndex,
+                stops: $routeStops
             )
         }
     }
