@@ -80,6 +80,7 @@ struct NotesGroupedCard: View {
                 if tags.isEmpty {
                     emptyStateRow
                 } else {
+                    divider
                     tagsDisplayRow
                 }
 
