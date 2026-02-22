@@ -86,6 +86,11 @@ struct AddHabitFormView: View {
     @State private var budgetAmount = 500.0
     @State private var currencyIndex = 0
     @State private var alertThreshold = 80.0
+    @State private var budgetType = 1            // 0=One-time, 1=Recurring
+    @State private var budgetPeriodIndex = 1     // 0=Weekly, 1=Monthly, 2=Yearly
+    @State private var budgetStartDate = Date()
+    @State private var budgetEndDateEnabled = false
+    @State private var budgetEndDate = Calendar.current.date(byAdding: .month, value: 6, to: Date()) ?? Date()
     @State private var budgetReminder = true
     @State private var budgetReminderTime: Date = {
         let calendar = Calendar.current
@@ -304,15 +309,17 @@ extension AddHabitFormView {
 extension AddHabitFormView {
     private var budgetsFields: some View {
         VStack(spacing: 16) {
-            HabitFormCurrencyPicker(
+            BudgetGroupedCard(
+                label: "Budget",
                 accentColor: habitType.color,
-                selectedIndex: $currencyIndex
-            )
-
-            HabitFormSliderField(
-                label: "Alert Threshold",
-                value: $alertThreshold,
-                range: 0...100
+                currencyIndex: $currencyIndex,
+                amount: $budgetAmount,
+                budgetType: $budgetType,
+                periodIndex: $budgetPeriodIndex,
+                alertThreshold: $alertThreshold,
+                startDate: $budgetStartDate,
+                endDateEnabled: $budgetEndDateEnabled,
+                endDate: $budgetEndDate
             )
 
             HabitFormReminderToggle(
