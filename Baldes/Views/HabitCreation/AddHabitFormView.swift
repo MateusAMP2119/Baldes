@@ -105,6 +105,13 @@ struct AddHabitFormView: View {
     @State private var noteFormatIndex = 0    // 0=Plain Text, 1=Markdown, 2=Voice Memo
     @State private var noteTags: [String] = []
 
+    // MARK: - Journal State
+
+    @State private var journalPrompt = ""
+    @State private var journalWordGoalEnabled = false
+    @State private var journalWordGoalTarget = 100
+    @State private var journalFeelingsEnabled = true
+
     var body: some View {
         ZStack {
             HabitFormBackground(gradientColor: habitType.gradientColor)
@@ -185,7 +192,7 @@ struct AddHabitFormView: View {
         case .notes:
             notesFields
         case .journal:
-            EmptyView()
+            journalFields
         }
     }
 
@@ -348,6 +355,23 @@ extension AddHabitFormView {
     }
 }
 
+// MARK: - Journal Fields
+
+extension AddHabitFormView {
+    private var journalFields: some View {
+        VStack(spacing: 16) {
+            JournalGroupedCard(
+                label: "Journal",
+                accentColor: habitType.color,
+                prompt: $journalPrompt,
+                wordGoalEnabled: $journalWordGoalEnabled,
+                wordGoalTarget: $journalWordGoalTarget,
+                feelingsLogEnabled: $journalFeelingsEnabled
+            )
+        }
+    }
+}
+
 // MARK: - Previews
 
 #Preview("Timed") {
@@ -389,5 +413,11 @@ extension AddHabitFormView {
 #Preview("Notes") {
     NavigationStack {
         AddHabitFormView(habitType: .notes)
+    }
+}
+
+#Preview("Journal") {
+    NavigationStack {
+        AddHabitFormView(habitType: .journal)
     }
 }
