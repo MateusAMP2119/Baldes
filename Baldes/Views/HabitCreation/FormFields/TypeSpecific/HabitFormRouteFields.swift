@@ -1,6 +1,16 @@
 import MapKit
 import SwiftUI
 
+// MARK: - MKPolyline Coordinates Helper
+
+extension MKPolyline {
+    var coordinates: [CLLocationCoordinate2D] {
+        var coords = [CLLocationCoordinate2D](repeating: CLLocationCoordinate2D(), count: pointCount)
+        getCoordinates(&coords, range: NSRange(location: 0, length: pointCount))
+        return coords
+    }
+}
+
 // MARK: - Route Search Service
 
 @Observable
@@ -80,6 +90,33 @@ final class RouteSearchService: NSObject {
         isSearching = false
         debounceTask?.cancel()
     }
+
+    @MainActor
+    func calculateRoutes(
+        between stops: [RouteStop],
+        transportType: MKDirectionsTransportType
+    ) async -> [MKRoute] {
+        let coordinates = stops.compactMap(\.coordinate)
+        guard coordinates.count >= 2 else { return [] }
+
+        var routes: [MKRoute] = []
+        for i in 0..<(coordinates.count - 1) {
+            let request = MKDirections.Request()
+            request.source = MKMapItem(placemark: MKPlacemark(coordinate: coordinates[i]))
+            request.destination = MKMapItem(placemark: MKPlacemark(coordinate: coordinates[i + 1]))
+            request.transportType = transportType
+
+            do {
+                let response = try await MKDirections(request: request).calculate()
+                if let route = response.routes.first {
+                    routes.append(route)
+                }
+            } catch {
+                // Skip this segment if directions fail
+            }
+        }
+        return routes
+    }
 }
 
 extension RouteSearchService: MKLocalSearchCompleterDelegate {
@@ -100,17 +137,23 @@ extension RouteSearchService: MKLocalSearchCompleterDelegate {
 
 // MARK: - Route Grouped Card
 
-/// A grouped iOS-style card that combines route type selection,
-/// map preview, and planned stops into a single unified card.
+/// A grouped iOS-style card that combines transport mode selection,
+/// interactive map with route polyline, and planned stops with per-stop scheduling.
 struct RouteGroupedCard: View {
     let label: String
     let accentColor: Color
-    @Binding var routeTypeIndex: Int
+    @Binding var transportMode: Int
     @Binding var stops: [RouteStop]
 
     @State private var searchService = RouteSearchService()
     @State private var cameraPosition: MapCameraPosition = .automatic
+    @State private var routes: [MKRoute] = []
+    @State private var routeCalculationTask: Task<Void, Never>?
     @FocusState private var isNewStopFocused: Bool
+
+    private var currentTransportMode: TransportMode {
+        TransportMode(rawValue: transportMode) ?? .walking
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -119,11 +162,10 @@ struct RouteGroupedCard: View {
                 .foregroundStyle(Color.textPrimary)
 
             VStack(spacing: 0) {
-                // MARK: - Route Type Picker
-                Picker("Route Type", selection: $routeTypeIndex) {
-                    Label("One-time", systemImage: "location").tag(0)
-                    Label("Multi-day", systemImage: "calendar").tag(1)
-                    Label("Recurring", systemImage: "arrow.triangle.2.circlepath").tag(2)
+                // MARK: - Transport Mode Picker
+                Picker("Transport Mode", selection: $transportMode) {
+                    Label("Walk", systemImage: "figure.walk").tag(0)
+                    Label("Car", systemImage: "car").tag(1)
                 }
                 .pickerStyle(.segmented)
                 .padding(.horizontal, 16)
@@ -131,29 +173,8 @@ struct RouteGroupedCard: View {
 
                 divider
 
-                // MARK: - Map Preview
-                MapReader { proxy in
-                    Map(position: $cameraPosition) {
-                        ForEach(stops) { stop in
-                            if let coord = stop.coordinate {
-                                Marker(stop.name, coordinate: coord)
-                                    .tint(accentColor)
-                            }
-                        }
-                    }
-                    .frame(height: 180)
-                    .onTapGesture { screenPoint in
-                        guard let coordinate = proxy.convert(screenPoint, from: .local) else {
-                            return
-                        }
-                        Task {
-                            if let stop = await searchService.reverseGeocode(coordinate) {
-                                stops.append(stop)
-                                updateCamera()
-                            }
-                        }
-                    }
-                }
+                // MARK: - Interactive Map
+                mapSection
 
                 divider
 
@@ -199,6 +220,56 @@ struct RouteGroupedCard: View {
         .animation(.spring(duration: 0.3), value: stops.count)
         .onChange(of: stops) {
             updateCamera()
+            recalculateRoutes()
+        }
+        .onChange(of: transportMode) {
+            recalculateRoutes()
+        }
+    }
+
+    // MARK: - Map Section
+
+    private var mapSection: some View {
+        MapReader { proxy in
+            Map(position: $cameraPosition, interactionModes: .all) {
+                ForEach(stops) { stop in
+                    if let coord = stop.coordinate {
+                        Marker(stop.name, coordinate: coord)
+                            .tint(accentColor)
+                    }
+                }
+
+                ForEach(Array(routes.enumerated()), id: \.offset) { _, route in
+                    MapPolyline(coordinates: route.polyline.coordinates)
+                        .stroke(accentColor, lineWidth: 4)
+                }
+            }
+            .frame(height: 220)
+            .onTapGesture { screenPoint in
+                guard let coordinate = proxy.convert(screenPoint, from: .local) else {
+                    return
+                }
+                Task {
+                    if let stop = await searchService.reverseGeocode(coordinate) {
+                        stops.append(stop)
+                        updateCamera()
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Route Calculation
+
+    private func recalculateRoutes() {
+        routeCalculationTask?.cancel()
+        routeCalculationTask = Task {
+            let newRoutes = await searchService.calculateRoutes(
+                between: stops,
+                transportType: currentTransportMode.mkTransportType
+            )
+            guard !Task.isCancelled else { return }
+            routes = newRoutes
         }
     }
 
@@ -208,44 +279,61 @@ struct RouteGroupedCard: View {
         let isFirst = index == 0
         let isLast = index == stops.count - 1
 
-        return HStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .strokeBorder(accentColor, lineWidth: 2)
-                    .frame(width: 28, height: 28)
+        return VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .strokeBorder(accentColor, lineWidth: 2)
+                        .frame(width: 28, height: 28)
 
-                if isFirst {
-                    Image(systemName: "flag.fill")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(accentColor)
-                } else if isLast && stops.count > 1 {
-                    Image(systemName: "mappin")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(accentColor)
-                } else {
-                    Text("\(index + 1)")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(accentColor)
+                    if isFirst {
+                        Image(systemName: "flag.fill")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(accentColor)
+                    } else if isLast && stops.count > 1 {
+                        Image(systemName: "mappin")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(accentColor)
+                    } else {
+                        Text("\(index + 1)")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(accentColor)
+                    }
                 }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    TextField("Stop name", text: $stops[index].name)
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color.textPrimary)
+
+                    DatePicker(
+                        "Date & Time",
+                        selection: Binding(
+                            get: { stops[index].date ?? Date() },
+                            set: { stops[index].date = $0 }
+                        ),
+                        displayedComponents: [.date, .hourAndMinute]
+                    )
+                    .labelsHidden()
+                    .datePickerStyle(.compact)
+                    .font(.system(size: 13))
+                    .tint(accentColor)
+                }
+
+                Spacer()
+
+                Button {
+                    stops.remove(at: index)
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Color.textTertiary)
+                }
+                .buttonStyle(.plain)
             }
-
-            TextField("Stop name", text: $stops[index].name)
-                .font(.system(size: 15))
-                .foregroundStyle(Color.textPrimary)
-
-            Spacer()
-
-            Button {
-                stops.remove(at: index)
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Color.textTertiary)
-            }
-            .buttonStyle(.plain)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
         .transition(.opacity.combined(with: .move(edge: .top)))
     }
 
@@ -418,6 +506,7 @@ struct RouteStop: Equatable, Identifiable {
     var name: String
     var latitude: Double?
     var longitude: Double?
+    var date: Date?
 
     var coordinate: CLLocationCoordinate2D? {
         guard let latitude, let longitude else { return nil }
@@ -425,11 +514,39 @@ struct RouteStop: Equatable, Identifiable {
     }
 }
 
+// MARK: - Transport Mode
+
+enum TransportMode: Int, CaseIterable {
+    case walking = 0
+    case driving = 1
+
+    var label: String {
+        switch self {
+        case .walking: "Walk"
+        case .driving: "Car"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .walking: "figure.walk"
+        case .driving: "car"
+        }
+    }
+
+    var mkTransportType: MKDirectionsTransportType {
+        switch self {
+        case .walking: .walking
+        case .driving: .automobile
+        }
+    }
+}
+
 // MARK: - Previews
 
 #Preview("Empty") {
     struct PreviewWrapper: View {
-        @State private var routeTypeIndex = 0
+        @State private var transportMode = 0
         @State private var stops: [RouteStop] = []
 
         var body: some View {
@@ -437,7 +554,7 @@ struct RouteStop: Equatable, Identifiable {
                 RouteGroupedCard(
                     label: "Route",
                     accentColor: .teal,
-                    routeTypeIndex: $routeTypeIndex,
+                    transportMode: $transportMode,
                     stops: $stops
                 )
                 .padding(.horizontal, 24)
@@ -451,11 +568,25 @@ struct RouteStop: Equatable, Identifiable {
 
 #Preview("With Stops") {
     struct PreviewWrapper: View {
-        @State private var routeTypeIndex = 0
+        @State private var transportMode = 0
         @State private var stops = [
-            RouteStop(name: "Central Park", latitude: 40.7829, longitude: -73.9654),
-            RouteStop(name: "Times Square", latitude: 40.7580, longitude: -73.9855),
-            RouteStop(name: "Brooklyn Bridge", latitude: 40.7061, longitude: -73.9969),
+            RouteStop(
+                name: "Central Park",
+                latitude: 40.7829,
+                longitude: -73.9654,
+                date: Date()
+            ),
+            RouteStop(
+                name: "Times Square",
+                latitude: 40.7580,
+                longitude: -73.9855,
+                date: Calendar.current.date(byAdding: .hour, value: 1, to: Date())
+            ),
+            RouteStop(
+                name: "Brooklyn Bridge",
+                latitude: 40.7061,
+                longitude: -73.9969
+            ),
         ]
 
         var body: some View {
@@ -463,7 +594,7 @@ struct RouteStop: Equatable, Identifiable {
                 RouteGroupedCard(
                     label: "Route",
                     accentColor: .teal,
-                    routeTypeIndex: $routeTypeIndex,
+                    transportMode: $transportMode,
                     stops: $stops
                 )
                 .padding(.horizontal, 24)

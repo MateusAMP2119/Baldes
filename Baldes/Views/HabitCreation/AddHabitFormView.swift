@@ -76,7 +76,7 @@ struct AddHabitFormView: View {
 
     // MARK: - Routes State
 
-    @State private var routeTypeIndex = 0
+    @State private var transportMode = 0
     @State private var routeStops: [RouteStop] = []
     @State private var startDate = Date()
     @State private var endDate = Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date()
@@ -292,7 +292,7 @@ extension AddHabitFormView {
             RouteGroupedCard(
                 label: "Route",
                 accentColor: habitType.color,
-                routeTypeIndex: $routeTypeIndex,
+                transportMode: $transportMode,
                 stops: $routeStops
             )
         }
