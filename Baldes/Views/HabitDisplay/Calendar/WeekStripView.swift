@@ -4,6 +4,7 @@ struct WeekStripView: View {
     @Binding var selectedDate: Date
     @Binding var weekOffset: Int
     let onCalendarTap: () -> Void
+    var dayCompletionCounts: [Date: Int] = [:]
 
     private let calendar = Calendar.current
 
@@ -126,6 +127,8 @@ struct WeekStripView: View {
         let dayLabel = Self.dayFormatter.string(from: date)
         let dayNumber = calendar.component(.day, from: date)
 
+        let dotColor = heatColor(for: date)
+
         return VStack(spacing: 6) {
             Text(dayLabel)
                 .font(.system(size: 12, weight: .semibold))
@@ -167,6 +170,10 @@ struct WeekStripView: View {
                         .foregroundStyle(isToday ? Color.accentOrange : Color.textSecondary)
                 }
             }
+
+            Circle()
+                .fill(dotColor)
+                .frame(width: 5, height: 5)
         }
         .onTapGesture {
             withAnimation(.easeInOut(duration: 0.2)) {
@@ -176,6 +183,18 @@ struct WeekStripView: View {
     }
 
     // MARK: - Helpers
+
+    private func heatColor(for date: Date) -> Color {
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: date)
+        let count = dayCompletionCounts[dayStart] ?? 0
+        switch count {
+        case 0: return .clear
+        case 1: return .heatLevel1
+        case 2: return .heatLevel2
+        default: return .heatLevel3
+        }
+    }
 
     private func selectTodayOrFirstDay() {
         let today = Date()

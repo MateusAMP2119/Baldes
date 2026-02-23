@@ -6,6 +6,20 @@ struct HabitRowView: View {
     let habit: HabitEntry
     let isFirst: Bool
     let isLast: Bool
+    var selectedDate: Date = Date()
+
+    private var completionCount: Int {
+        habit.completionCount(on: selectedDate)
+    }
+
+    private var crescendoOpacity: Double {
+        switch completionCount {
+        case 0: return 0
+        case 1: return 0.05
+        case 2: return 0.10
+        default: return 0.15
+        }
+    }
 
     private var quoteAuthor: String? {
         HabitFormQuoteField.quotes.first(where: { $0.text == habit.motivationQuote })?.author
@@ -29,12 +43,25 @@ struct HabitRowView: View {
                 .fill(habit.accentColor)
                 .frame(width: 2.5, height: 32)
 
-            // Emoji circle
-            Text(habit.emoji)
-                .font(.system(size: 18))
-                .frame(width: 36, height: 36)
-                .background(habit.accentColor.opacity(0.12))
-                .clipShape(Circle())
+            // Emoji circle with completion badge
+            ZStack(alignment: .topTrailing) {
+                Text(habit.emoji)
+                    .font(.system(size: 18))
+                    .frame(width: 36, height: 36)
+                    .background(habit.accentColor.opacity(0.12))
+                    .clipShape(Circle())
+
+                if completionCount > 0 {
+                    Text("\(completionCount)")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 16, height: 16)
+                        .background(habit.accentColor)
+                        .clipShape(Circle())
+                        .overlay(Circle().strokeBorder(.white, lineWidth: 1.5))
+                        .offset(x: 4, y: -4)
+                }
+            }
 
             // Info column
             VStack(alignment: .leading, spacing: 5) {
@@ -82,6 +109,10 @@ struct HabitRowView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .background(Color.white)
+        .background(
+            completionCount > 0
+                ? habit.accentColor.opacity(crescendoOpacity)
+                : Color.white.opacity(1)
+        )
     }
 }

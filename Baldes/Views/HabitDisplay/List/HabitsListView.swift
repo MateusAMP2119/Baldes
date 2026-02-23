@@ -8,6 +8,7 @@ struct HabitsListView: View {
 
     @State private var scheduledCardHeight: CGFloat = 0
     @State private var anytimeCardHeight: CGFloat = 0
+    @State private var habitToEdit: HabitEntry?
 
     private var visibleHabits: [HabitEntry] {
         allHabits.filter { $0.isScheduled(on: selectedDate) }
@@ -37,6 +38,14 @@ struct HabitsListView: View {
             }
         }
         .padding(.horizontal, 24)
+        .sheet(item: $habitToEdit) { habit in
+            NavigationStack {
+                AddHabitFormView(
+                    habitType: habit.habitType,
+                    dismissSheet: { habitToEdit = nil }
+                )
+            }
+        }
     }
 
     // MARK: - Empty State
@@ -66,7 +75,8 @@ struct HabitsListView: View {
                 HabitRowView(
                     habit: habit,
                     isFirst: index == 0,
-                    isLast: index == scheduledHabits.count - 1
+                    isLast: index == scheduledHabits.count - 1,
+                    selectedDate: selectedDate
                 )
                 if index < scheduledHabits.count - 1 {
                     Rectangle().frame(height: 1)
@@ -107,6 +117,13 @@ struct HabitsListView: View {
                             Image(systemName: "checkmark")
                         }
                         .tint(.accentGreen)
+
+                        Button {
+                            habitToEdit = habit
+                        } label: {
+                            Image(systemName: "pencil")
+                        }
+                        .tint(.blue)
                     }
                 }
             }
@@ -153,7 +170,8 @@ struct HabitsListView: View {
                     AnytimeHabitRowView(
                         habit: habit,
                         isFirst: index == 0,
-                        isLast: index == anytimeHabits.count - 1
+                        isLast: index == anytimeHabits.count - 1,
+                        selectedDate: selectedDate
                     )
                     if index < anytimeHabits.count - 1 {
                         Rectangle().frame(height: 1)
@@ -194,6 +212,13 @@ struct HabitsListView: View {
                                 Image(systemName: "checkmark")
                             }
                             .tint(.accentGreen)
+
+                            Button {
+                                habitToEdit = habit
+                            } label: {
+                                Image(systemName: "pencil")
+                            }
+                            .tint(.blue)
                         }
                     }
                 }
@@ -217,9 +242,8 @@ struct HabitsListView: View {
     }
 
     private func completeHabit(_ habit: HabitEntry) {
-        // TODO: Add completion tracking to HabitEntry model
         withAnimation(.spring(duration: 0.3)) {
-            // Will toggle completion state once completedDates is added
+            habit.addCompletion()
         }
     }
 
@@ -260,6 +284,7 @@ private struct HeightKey: PreferenceKey {
             reminderEnabled: false,
             reminderTime: nil
         )
+        scheduled1.completionLogs = [Date(), Date()] // 2 completions
         c.mainContext.insert(scheduled1)
 
         let scheduled2 = HabitEntry(
@@ -277,6 +302,7 @@ private struct HeightKey: PreferenceKey {
             reminderEnabled: false,
             reminderTime: nil
         )
+        scheduled2.completionLogs = [Date()] // 1 completion
         c.mainContext.insert(scheduled2)
 
         let scheduled3 = HabitEntry(
@@ -312,6 +338,7 @@ private struct HeightKey: PreferenceKey {
             reminderEnabled: false,
             reminderTime: nil
         )
+        anytime1.completionLogs = [Date(), Date(), Date()] // 3 completions — max crescendo
         c.mainContext.insert(anytime1)
 
         let anytime2 = HabitEntry(

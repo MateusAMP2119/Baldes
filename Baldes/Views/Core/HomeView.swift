@@ -5,6 +5,27 @@ struct HomeView: View {
     @State private var selectedDate = Date()
     @State private var weekOffset = 0
     @State private var showCalendarPicker = false
+    @Query private var allHabits: [HabitEntry]
+
+    private let calendar = Calendar.current
+
+    private var weekStartDate: Date {
+        let today = Date()
+        let shifted = calendar.date(byAdding: .weekOfYear, value: weekOffset, to: today)!
+        let components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: shifted)
+        return calendar.date(from: components)!
+    }
+
+    private var weekCompletionCounts: [Date: Int] {
+        var counts: [Date: Int] = [:]
+        for dayOffset in 0..<7 {
+            let date = calendar.date(byAdding: .day, value: dayOffset, to: weekStartDate)!
+            let dayStart = calendar.startOfDay(for: date)
+            let total = allHabits.reduce(0) { $0 + $1.completionCount(on: date) }
+            counts[dayStart] = total
+        }
+        return counts
+    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -21,7 +42,8 @@ struct HomeView: View {
                     WeekStripView(
                         selectedDate: $selectedDate,
                         weekOffset: $weekOffset,
-                        onCalendarTap: { showCalendarPicker = true }
+                        onCalendarTap: { showCalendarPicker = true },
+                        dayCompletionCounts: weekCompletionCounts
                     )
                     HabitsListView(selectedDate: selectedDate)
                 }

@@ -24,6 +24,9 @@ final class HabitEntry {
     var reminderEnabled: Bool
     var reminderTime: Date?
 
+    // Completion tracking
+    var completionLogs: [Date] = []
+
     // MARK: - Computed Properties
 
     var habitType: HabitType {
@@ -58,7 +61,36 @@ final class HabitEntry {
     }
 
     var displayLastLogged: String {
-        "Just created"
+        guard let last = completionLogs.max() else { return "Just created" }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        return formatter.localizedString(for: last, relativeTo: Date())
+    }
+
+    func completionCount(on date: Date) -> Int {
+        let calendar = Calendar.current
+        return completionLogs.filter { calendar.isDate($0, inSameDayAs: date) }.count
+    }
+
+    func addCompletion() {
+        completionLogs.append(Date())
+    }
+
+    func removeLastCompletionToday() {
+        let calendar = Calendar.current
+        if let index = completionLogs.lastIndex(where: { calendar.isDateInToday($0) }) {
+            completionLogs.remove(at: index)
+        }
+    }
+
+    func heatLevel(on date: Date) -> Int {
+        let count = completionCount(on: date)
+        switch count {
+        case 0: return 0
+        case 1: return 1
+        case 2: return 2
+        default: return 3
+        }
     }
 
     /// Returns true if this habit is scheduled for the given date.
@@ -107,7 +139,8 @@ final class HabitEntry {
         endDateEnabled: Bool,
         endDate: Date?,
         reminderEnabled: Bool,
-        reminderTime: Date?
+        reminderTime: Date?,
+        completionLogs: [Date] = []
     ) {
         self.id = UUID()
         self.name = name
@@ -124,5 +157,6 @@ final class HabitEntry {
         self.endDate = endDate
         self.reminderEnabled = reminderEnabled
         self.reminderTime = reminderTime
+        self.completionLogs = completionLogs
     }
 }
