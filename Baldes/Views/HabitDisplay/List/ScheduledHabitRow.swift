@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Scheduled Habit Row
 
 struct HabitRowView: View {
-    let habit: Habit
+    let habit: HabitEntry
     let isFirst: Bool
     let isLast: Bool
 
@@ -11,10 +11,10 @@ struct HabitRowView: View {
         HStack(alignment: .center, spacing: 12) {
             // Time column
             VStack(alignment: .center, spacing: 1) {
-                Text(habit.timeStart)
+                Text(habit.displayTimeStart)
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(Color.textPrimary)
-                Text(habit.timeEnd)
+                Text(habit.displayTimeEnd)
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(Color.textTertiary)
             }
@@ -27,24 +27,26 @@ struct HabitRowView: View {
 
             // Info column
             VStack(alignment: .leading, spacing: 4) {
-                Text(habit.title)
+                Text(habit.name)
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(Color.textPrimary)
-                Text("\(habit.duration) · \(habit.category)")
+                Text("\(habit.displayDuration) · \(habit.categoryName)")
                     .font(.system(size: 11))
                     .foregroundStyle(Color.textSecondary)
 
                 // Quote row
-                HStack(alignment: .top, spacing: 4) {
-                    Image(systemName: "quote.opening")
-                        .font(.system(size: 8))
-                        .foregroundStyle(habit.accentColor.opacity(0.7))
-                        .padding(.top, 2)
-                    Text("\(habit.quote) — \(habit.quoteAuthor)")
-                        .font(.system(size: 10))
-                        .italic()
-                        .foregroundStyle(Color.textTertiary)
-                        .lineLimit(2)
+                if !habit.motivationQuote.isEmpty {
+                    HStack(alignment: .top, spacing: 4) {
+                        Image(systemName: "quote.opening")
+                            .font(.system(size: 8))
+                            .foregroundStyle(habit.accentColor.opacity(0.7))
+                            .padding(.top, 2)
+                        Text(habit.motivationQuote)
+                            .font(.system(size: 10))
+                            .italic()
+                            .foregroundStyle(Color.textTertiary)
+                            .lineLimit(2)
+                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -57,25 +59,10 @@ struct HabitRowView: View {
                 Circle()
                     .strokeBorder(habit.accentColor, lineWidth: 2)
                     .frame(width: 26, height: 26)
-                if habit.isCompleted {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(habit.accentColor)
-                }
             }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .background(Color.white)
     }
-}
-
-#Preview {
-    VStack(spacing: 0) {
-        HabitRowView(habit: Habit.sampleScheduled[0], isFirst: true, isLast: false)
-        Divider()
-        HabitRowView(habit: Habit.sampleScheduled[1], isFirst: false, isLast: true)
-    }
-    .background(Color.bgMuted)
-    .padding()
 }

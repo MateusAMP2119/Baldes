@@ -1,8 +1,10 @@
 import SwiftUI
+import SwiftData
 
 struct AddHabitFormView: View {
     @State var habitType: HabitType
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
 
     // MARK: - Shared State
 
@@ -138,12 +140,30 @@ struct AddHabitFormView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button { dismiss() } label: {
+                Button {
+                    let entry = HabitEntry(
+                        name: habitName,
+                        emoji: habitEmoji,
+                        habitTypeRaw: habitType.rawValue,
+                        motivationQuote: motivationQuote,
+                        hasTime: hasTime,
+                        scheduleTime: hasTime ? commonScheduleTime : nil,
+                        frequency: frequency,
+                        selectedDays: Array(selectedDays),
+                        startDate: commonStartDate,
+                        endDateEnabled: commonEndDateEnabled,
+                        endDate: commonEndDateEnabled ? commonEndDate : nil,
+                        reminderEnabled: reminderEnabled,
+                        reminderTime: reminderEnabled ? reminderTime : nil
+                    )
+                    modelContext.insert(entry)
+                    dismiss()
+                } label: {
                     Image(systemName: "checkmark")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(habitType.color)
                 }
-                    .animation(.easeInOut(duration: 0.3), value: habitType)
+                .animation(.easeInOut(duration: 0.3), value: habitType)
             }
         }
     }
@@ -378,46 +398,54 @@ extension AddHabitFormView {
     NavigationStack {
         AddHabitFormView(habitType: .timed)
     }
+    .modelContainer(for: HabitEntry.self, inMemory: true)
 }
 
 #Preview("Daily Goals") {
     NavigationStack {
         AddHabitFormView(habitType: .dailyGoals)
     }
+    .modelContainer(for: HabitEntry.self, inMemory: true)
 }
 
 #Preview("Metrics") {
     NavigationStack {
         AddHabitFormView(habitType: .metrics)
     }
+    .modelContainer(for: HabitEntry.self, inMemory: true)
 }
 
 #Preview("Todo") {
     NavigationStack {
         AddHabitFormView(habitType: .todo)
     }
+    .modelContainer(for: HabitEntry.self, inMemory: true)
 }
 
 #Preview("Routes") {
     NavigationStack {
         AddHabitFormView(habitType: .routes)
     }
+    .modelContainer(for: HabitEntry.self, inMemory: true)
 }
 
 #Preview("Budgets") {
     NavigationStack {
         AddHabitFormView(habitType: .budgets)
     }
+    .modelContainer(for: HabitEntry.self, inMemory: true)
 }
 
 #Preview("Notes") {
     NavigationStack {
         AddHabitFormView(habitType: .notes)
     }
+    .modelContainer(for: HabitEntry.self, inMemory: true)
 }
 
 #Preview("Journal") {
     NavigationStack {
         AddHabitFormView(habitType: .journal)
     }
+    .modelContainer(for: HabitEntry.self, inMemory: true)
 }

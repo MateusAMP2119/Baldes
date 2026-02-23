@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct BaldesApp: App {
@@ -13,5 +14,6 @@ struct BaldesApp: App {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(for: HabitEntry.self)
     }
 }

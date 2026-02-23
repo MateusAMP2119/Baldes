@@ -1,26 +1,65 @@
 import SwiftUI
+import SwiftData
 
 struct HabitsListView: View {
+    @Query private var allHabits: [HabitEntry]
+
+    private var scheduledHabits: [HabitEntry] {
+        allHabits
+            .filter { $0.hasTime }
+            .sorted { ($0.scheduleTime ?? .distantPast) < ($1.scheduleTime ?? .distantPast) }
+    }
+
+    private var anytimeHabits: [HabitEntry] {
+        allHabits.filter { !$0.hasTime }
+    }
+
     var body: some View {
         VStack(spacing: 16) {
-            scheduledHabitsCard
-            anytimeSection
+            if scheduledHabits.isEmpty && anytimeHabits.isEmpty {
+                emptyState
+            } else {
+                if !scheduledHabits.isEmpty {
+                    scheduledHabitsCard
+                }
+                if !anytimeHabits.isEmpty {
+                    anytimeSection
+                }
+            }
         }
         .padding(.horizontal, 24)
+    }
+
+    // MARK: - Empty State
+
+    private var emptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "plus.circle.dashed")
+                .font(.system(size: 40, weight: .light))
+                .foregroundStyle(Color.textTertiary)
+            Text("No habits yet")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Color.textSecondary)
+            Text("Tap + to create your first habit")
+                .font(.system(size: 13))
+                .foregroundStyle(Color.textTertiary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 40)
     }
 
     // MARK: - Scheduled Habits Card
 
     private var scheduledHabitsCard: some View {
         VStack(spacing: 0) {
-            ForEach(Array(Habit.sampleScheduled.enumerated()), id: \.element.id) { index, habit in
+            ForEach(Array(scheduledHabits.enumerated()), id: \.element.id) { index, habit in
                 HabitRowView(
                     habit: habit,
                     isFirst: index == 0,
-                    isLast: index == Habit.sampleScheduled.count - 1
+                    isLast: index == scheduledHabits.count - 1
                 )
 
-                if index < Habit.sampleScheduled.count - 1 {
+                if index < scheduledHabits.count - 1 {
                     Rectangle()
                         .fill(Color.dividerColor)
                         .frame(height: 1)
@@ -53,20 +92,20 @@ struct HabitsListView: View {
                         .foregroundStyle(Color.textPrimary)
                 }
                 Spacer()
-                Text("\(AnytimeHabit.samples.count) habits")
+                Text("\(anytimeHabits.count) habits")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Color.textTertiary)
             }
 
             VStack(spacing: 0) {
-                ForEach(Array(AnytimeHabit.samples.enumerated()), id: \.element.id) { index, habit in
+                ForEach(Array(anytimeHabits.enumerated()), id: \.element.id) { index, habit in
                     AnytimeHabitRowView(
                         habit: habit,
                         isFirst: index == 0,
-                        isLast: index == AnytimeHabit.samples.count - 1
+                        isLast: index == anytimeHabits.count - 1
                     )
 
-                    if index < AnytimeHabit.samples.count - 1 {
+                    if index < anytimeHabits.count - 1 {
                         Rectangle()
                             .fill(Color.dividerColor)
                             .frame(height: 1)
@@ -89,5 +128,6 @@ struct HabitsListView: View {
 
 #Preview {
     HabitsListView()
+        .modelContainer(for: HabitEntry.self, inMemory: true)
         .padding(.vertical)
 }

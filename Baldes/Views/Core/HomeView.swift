@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 struct HomeView: View {
     @State private var selectedDate = Date()
@@ -37,4 +38,5 @@ struct HomeView: View {
 
 #Preview {
     HomeView()
+        .modelContainer(for: HabitEntry.self, inMemory: true)
 }
