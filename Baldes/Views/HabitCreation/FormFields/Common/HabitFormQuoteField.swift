@@ -10,7 +10,7 @@ struct HabitFormQuoteField: View {
     @State private var flipID = 0
     @State private var activeAuthor: String?
 
-    private static let quotes: [(text: String, author: String)] = [
+    static let quotes: [(text: String, author: String)] = [
         ("The unexamined life is not worth living.", "Socrates"),
         ("He who has a why to live can bear almost any how.", "Nietzsche"),
         ("Waste no more time arguing what a good man should be. Be one.", "Marcus Aurelius"),
