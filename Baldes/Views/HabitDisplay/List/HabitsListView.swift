@@ -57,23 +57,32 @@ struct HabitsListView: View {
     // MARK: - Scheduled Habits Card
 
     private var scheduledHabitsCard: some View {
-        VStack(spacing: 0) {
+        List {
             ForEach(Array(scheduledHabits.enumerated()), id: \.element.id) { index, habit in
-                SwipeToDeleteWrapper(onDelete: { deleteHabit(habit) }) {
-                    HabitRowView(
-                        habit: habit,
-                        isFirst: index == 0,
-                        isLast: index == scheduledHabits.count - 1
-                    )
-                }
-
-                if index < scheduledHabits.count - 1 {
-                    Rectangle()
-                        .fill(Color.dividerColor)
-                        .frame(height: 1)
+                HabitRowView(
+                    habit: habit,
+                    isFirst: index == 0,
+                    isLast: index == scheduledHabits.count - 1
+                )
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(index < scheduledHabits.count - 1 ? .visible : .hidden)
+                .listRowSeparatorTint(Color.dividerColor)
+                .listRowBackground(Color.white)
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    Button(role: .destructive) {
+                        deleteHabit(habit)
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .tint(.red)
                 }
             }
         }
+        .listStyle(.plain)
+        .scrollDisabled(true)
+        .scrollContentBackground(.hidden)
+        .background(Color.white)
+        .frame(height: CGFloat(scheduledHabits.count) * 80)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
@@ -105,23 +114,32 @@ struct HabitsListView: View {
                     .foregroundStyle(Color.textTertiary)
             }
 
-            VStack(spacing: 0) {
+            List {
                 ForEach(Array(anytimeHabits.enumerated()), id: \.element.id) { index, habit in
-                    SwipeToDeleteWrapper(onDelete: { deleteHabit(habit) }) {
-                        AnytimeHabitRowView(
-                            habit: habit,
-                            isFirst: index == 0,
-                            isLast: index == anytimeHabits.count - 1
-                        )
-                    }
-
-                    if index < anytimeHabits.count - 1 {
-                        Rectangle()
-                            .fill(Color.dividerColor)
-                            .frame(height: 1)
+                    AnytimeHabitRowView(
+                        habit: habit,
+                        isFirst: index == 0,
+                        isLast: index == anytimeHabits.count - 1
+                    )
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(index < anytimeHabits.count - 1 ? .visible : .hidden)
+                    .listRowSeparatorTint(Color.dividerColor)
+                    .listRowBackground(Color.white)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button(role: .destructive) {
+                            deleteHabit(habit)
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .tint(.red)
                     }
                 }
             }
+            .listStyle(.plain)
+            .scrollDisabled(true)
+            .scrollContentBackground(.hidden)
+            .background(Color.white)
+            .frame(height: CGFloat(anytimeHabits.count) * 70)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
@@ -142,63 +160,49 @@ struct HabitsListView: View {
     }
 }
 
-// MARK: - Swipe to Delete Wrapper
-
-private struct SwipeToDeleteWrapper<Content: View>: View {
-    let onDelete: () -> Void
-    @ViewBuilder let content: () -> Content
-
-    @State private var offset: CGFloat = 0
-    @State private var showDelete = false
-
-    private let deleteWidth: CGFloat = 80
-
-    var body: some View {
-        ZStack(alignment: .trailing) {
-            // Delete button behind the content
-            Button(role: .destructive) {
-                onDelete()
-            } label: {
-                Image(systemName: "trash.fill")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: deleteWidth)
-                    .frame(maxHeight: .infinity)
-                    .background(Color.red)
-            }
-
-            // Main content
-            content()
-                .offset(x: offset)
-                .gesture(
-                    DragGesture(minimumDistance: 20)
-                        .onChanged { value in
-                            let translation = value.translation.width
-                            if translation < 0 {
-                                offset = max(translation, -deleteWidth * 1.2)
-                            } else if showDelete {
-                                offset = min(-deleteWidth + translation, 0)
-                            }
-                        }
-                        .onEnded { value in
-                            withAnimation(.spring(duration: 0.3)) {
-                                if value.translation.width < -deleteWidth / 2 {
-                                    offset = -deleteWidth
-                                    showDelete = true
-                                } else {
-                                    offset = 0
-                                    showDelete = false
-                                }
-                            }
-                        }
-                )
-        }
-        .clipped()
-    }
-}
-
 #Preview {
+    @Previewable @State var container: ModelContainer = {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let c = try! ModelContainer(for: HabitEntry.self, configurations: config)
+
+        let scheduled = HabitEntry(
+            name: "Morning Run",
+            emoji: "🏃",
+            habitTypeRaw: "timed",
+            motivationQuote: "The only true wisdom is in knowing you know nothing.",
+            hasTime: true,
+            scheduleTime: Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: Date()),
+            frequency: 1,
+            selectedDays: [],
+            startDate: Date(),
+            endDateEnabled: false,
+            endDate: nil,
+            reminderEnabled: false,
+            reminderTime: nil
+        )
+        c.mainContext.insert(scheduled)
+
+        let anytime = HabitEntry(
+            name: "Read 20 Pages",
+            emoji: "📖",
+            habitTypeRaw: "common",
+            motivationQuote: "A reader lives a thousand lives.",
+            hasTime: false,
+            scheduleTime: nil,
+            frequency: 1,
+            selectedDays: [],
+            startDate: Date(),
+            endDateEnabled: false,
+            endDate: nil,
+            reminderEnabled: false,
+            reminderTime: nil
+        )
+        c.mainContext.insert(anytime)
+
+        return c
+    }()
+
     HabitsListView(selectedDate: .now)
-        .modelContainer(for: HabitEntry.self, inMemory: true)
+        .modelContainer(container)
         .padding(.vertical)
 }
