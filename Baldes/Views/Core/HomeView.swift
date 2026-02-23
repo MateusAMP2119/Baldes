@@ -23,7 +23,7 @@ struct HomeView: View {
                         weekOffset: $weekOffset,
                         onCalendarTap: { showCalendarPicker = true }
                     )
-                    HabitsListView()
+                    HabitsListView(selectedDate: selectedDate)
                 }
                 .padding(.bottom, 100)
             }

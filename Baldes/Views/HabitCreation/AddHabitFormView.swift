@@ -3,6 +3,7 @@ import SwiftData
 
 struct AddHabitFormView: View {
     @State var habitType: HabitType
+    var dismissSheet: (() -> Void)?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
@@ -141,23 +142,79 @@ struct AddHabitFormView: View {
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button {
+                    // Use the correct start date / end date based on habit type
+                    let resolvedStartDate: Date
+                    let resolvedEndDateEnabled: Bool
+                    let resolvedEndDate: Date?
+                    let resolvedScheduleTime: Date?
+                    let resolvedReminderTime: Date?
+
+                    switch habitType {
+                    case .timed:
+                        resolvedStartDate = trackStartDate
+                        resolvedEndDateEnabled = timedEndDateEnabled
+                        resolvedEndDate = timedEndDateEnabled ? timedEndDate : nil
+                        resolvedScheduleTime = hasTime ? timedScheduleTime : nil
+                        resolvedReminderTime = reminderEnabled ? timedReminderTime : nil
+                    case .budgets:
+                        resolvedStartDate = budgetStartDate
+                        resolvedEndDateEnabled = budgetEndDateEnabled
+                        resolvedEndDate = budgetEndDateEnabled ? budgetEndDate : nil
+                        resolvedScheduleTime = nil
+                        resolvedReminderTime = budgetReminder ? budgetReminderTime : nil
+                    default:
+                        resolvedStartDate = commonStartDate
+                        resolvedEndDateEnabled = commonEndDateEnabled
+                        resolvedEndDate = commonEndDateEnabled ? commonEndDate : nil
+                        resolvedScheduleTime = hasTime ? commonScheduleTime : nil
+                        resolvedReminderTime = reminderEnabled ? reminderTime : nil
+                    }
+
+                    // Clean up frequency-specific fields to avoid stale data
+                    let resolvedSelectedDays: [Int]
+                    let finalEndDateEnabled: Bool
+                    let finalEndDate: Date?
+
+                    switch frequency {
+                    case 0: // Once — no selected days, no end date
+                        resolvedSelectedDays = []
+                        finalEndDateEnabled = false
+                        finalEndDate = nil
+                    case 1: // Daily — no selected days, no end date
+                        resolvedSelectedDays = []
+                        finalEndDateEnabled = false
+                        finalEndDate = nil
+                    case 2: // Custom — all fields relevant
+                        resolvedSelectedDays = Array(selectedDays)
+                        finalEndDateEnabled = resolvedEndDateEnabled
+                        finalEndDate = resolvedEndDate
+                    default:
+                        resolvedSelectedDays = Array(selectedDays)
+                        finalEndDateEnabled = resolvedEndDateEnabled
+                        finalEndDate = resolvedEndDate
+                    }
+
                     let entry = HabitEntry(
                         name: habitName,
                         emoji: habitEmoji,
                         habitTypeRaw: habitType.rawValue,
                         motivationQuote: motivationQuote,
                         hasTime: hasTime,
-                        scheduleTime: hasTime ? commonScheduleTime : nil,
+                        scheduleTime: resolvedScheduleTime,
                         frequency: frequency,
-                        selectedDays: Array(selectedDays),
-                        startDate: commonStartDate,
-                        endDateEnabled: commonEndDateEnabled,
-                        endDate: commonEndDateEnabled ? commonEndDate : nil,
+                        selectedDays: resolvedSelectedDays,
+                        startDate: resolvedStartDate,
+                        endDateEnabled: finalEndDateEnabled,
+                        endDate: finalEndDate,
                         reminderEnabled: reminderEnabled,
-                        reminderTime: reminderEnabled ? reminderTime : nil
+                        reminderTime: resolvedReminderTime
                     )
                     modelContext.insert(entry)
-                    dismiss()
+                    if let dismissSheet {
+                        dismissSheet()
+                    } else {
+                        dismiss()
+                    }
                 } label: {
                     Image(systemName: "checkmark")
                         .font(.system(size: 14, weight: .semibold))

@@ -4,6 +4,7 @@ import SwiftUI
 
 struct AddHabitView: View {
     @Environment(\.dismiss) private var dismiss
+    var dismissSheet: (() -> Void)?
 
     var body: some View {
         ZStack {
@@ -34,7 +35,7 @@ struct AddHabitView: View {
         .navigationTitle("New Habit")
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(for: HabitType.self) { type in
-            AddHabitFormView(habitType: type)
+            AddHabitFormView(habitType: type, dismissSheet: dismissSheet)
         }
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {

@@ -61,6 +61,37 @@ final class HabitEntry {
         "Just created"
     }
 
+    /// Returns true if this habit is scheduled for the given date.
+    func isScheduled(on date: Date) -> Bool {
+        let calendar = Calendar.current
+        let day = calendar.startOfDay(for: date)
+        let start = calendar.startOfDay(for: startDate)
+
+        switch frequency {
+        case 0: // Once — only on the exact start date
+            return calendar.isDate(date, inSameDayAs: startDate)
+
+        case 1: // Daily — every day from start date onward
+            return day >= start
+
+        case 2: // Custom — selected weekdays within date range
+            guard day >= start else { return false }
+
+            if endDateEnabled, let endDate {
+                guard day <= calendar.startOfDay(for: endDate) else { return false }
+            }
+
+            // Calendar weekday: 1=Sun, 2=Mon … 7=Sat
+            // selectedDays uses 0=Mon, 1=Tue … 4=Fri, 5=Sat, 6=Sun
+            let weekday = calendar.component(.weekday, from: date)
+            let mappedDay = (weekday + 5) % 7
+            return selectedDays.contains(mappedDay)
+
+        default:
+            return true
+        }
+    }
+
     // MARK: - Init
 
     init(

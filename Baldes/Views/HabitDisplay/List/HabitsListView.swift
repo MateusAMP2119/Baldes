@@ -2,16 +2,22 @@ import SwiftUI
 import SwiftData
 
 struct HabitsListView: View {
+    var selectedDate: Date
     @Query private var allHabits: [HabitEntry]
+    @Environment(\.modelContext) private var modelContext
+
+    private var visibleHabits: [HabitEntry] {
+        allHabits.filter { $0.isScheduled(on: selectedDate) }
+    }
 
     private var scheduledHabits: [HabitEntry] {
-        allHabits
+        visibleHabits
             .filter { $0.hasTime }
             .sorted { ($0.scheduleTime ?? .distantPast) < ($1.scheduleTime ?? .distantPast) }
     }
 
     private var anytimeHabits: [HabitEntry] {
-        allHabits.filter { !$0.hasTime }
+        visibleHabits.filter { !$0.hasTime }
     }
 
     var body: some View {
@@ -53,11 +59,13 @@ struct HabitsListView: View {
     private var scheduledHabitsCard: some View {
         VStack(spacing: 0) {
             ForEach(Array(scheduledHabits.enumerated()), id: \.element.id) { index, habit in
-                HabitRowView(
-                    habit: habit,
-                    isFirst: index == 0,
-                    isLast: index == scheduledHabits.count - 1
-                )
+                SwipeToDeleteWrapper(onDelete: { deleteHabit(habit) }) {
+                    HabitRowView(
+                        habit: habit,
+                        isFirst: index == 0,
+                        isLast: index == scheduledHabits.count - 1
+                    )
+                }
 
                 if index < scheduledHabits.count - 1 {
                     Rectangle()
@@ -99,11 +107,13 @@ struct HabitsListView: View {
 
             VStack(spacing: 0) {
                 ForEach(Array(anytimeHabits.enumerated()), id: \.element.id) { index, habit in
-                    AnytimeHabitRowView(
-                        habit: habit,
-                        isFirst: index == 0,
-                        isLast: index == anytimeHabits.count - 1
-                    )
+                    SwipeToDeleteWrapper(onDelete: { deleteHabit(habit) }) {
+                        AnytimeHabitRowView(
+                            habit: habit,
+                            isFirst: index == 0,
+                            isLast: index == anytimeHabits.count - 1
+                        )
+                    }
 
                     if index < anytimeHabits.count - 1 {
                         Rectangle()
@@ -124,10 +134,71 @@ struct HabitsListView: View {
             )
         }
     }
+
+    private func deleteHabit(_ habit: HabitEntry) {
+        withAnimation(.spring(duration: 0.3)) {
+            modelContext.delete(habit)
+        }
+    }
+}
+
+// MARK: - Swipe to Delete Wrapper
+
+private struct SwipeToDeleteWrapper<Content: View>: View {
+    let onDelete: () -> Void
+    @ViewBuilder let content: () -> Content
+
+    @State private var offset: CGFloat = 0
+    @State private var showDelete = false
+
+    private let deleteWidth: CGFloat = 80
+
+    var body: some View {
+        ZStack(alignment: .trailing) {
+            // Delete button behind the content
+            Button(role: .destructive) {
+                onDelete()
+            } label: {
+                Image(systemName: "trash.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: deleteWidth)
+                    .frame(maxHeight: .infinity)
+                    .background(Color.red)
+            }
+
+            // Main content
+            content()
+                .offset(x: offset)
+                .gesture(
+                    DragGesture(minimumDistance: 20)
+                        .onChanged { value in
+                            let translation = value.translation.width
+                            if translation < 0 {
+                                offset = max(translation, -deleteWidth * 1.2)
+                            } else if showDelete {
+                                offset = min(-deleteWidth + translation, 0)
+                            }
+                        }
+                        .onEnded { value in
+                            withAnimation(.spring(duration: 0.3)) {
+                                if value.translation.width < -deleteWidth / 2 {
+                                    offset = -deleteWidth
+                                    showDelete = true
+                                } else {
+                                    offset = 0
+                                    showDelete = false
+                                }
+                            }
+                        }
+                )
+        }
+        .clipped()
+    }
 }
 
 #Preview {
-    HabitsListView()
+    HabitsListView(selectedDate: .now)
         .modelContainer(for: HabitEntry.self, inMemory: true)
         .padding(.vertical)
 }
