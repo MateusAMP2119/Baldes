@@ -108,11 +108,15 @@ struct HabitsListView: View {
         .overlay {
             List {
                 ForEach(Array(scheduledHabits.enumerated()), id: \.element.id) { index, habit in
-                    HabitRowView(
-                        habit: habit,
-                        isFirst: index == 0,
-                        isLast: index == scheduledHabits.count - 1
-                    )
+                    ZStack {
+                        NavigationLink(value: habit) { EmptyView() }
+                            .opacity(0)
+                        HabitRowView(
+                            habit: habit,
+                            isFirst: index == 0,
+                            isLast: index == scheduledHabits.count - 1
+                        )
+                    }
                     .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
                     .listRowInsets(EdgeInsets())
                     .listRowSeparator(index < scheduledHabits.count - 1 ? .visible : .hidden)
@@ -210,11 +214,15 @@ struct HabitsListView: View {
             .overlay {
                 List {
                     ForEach(Array(anytimeHabits.enumerated()), id: \.element.id) { index, habit in
-                        AnytimeHabitRowView(
-                            habit: habit,
-                            isFirst: index == 0,
-                            isLast: index == anytimeHabits.count - 1
-                        )
+                        ZStack {
+                            NavigationLink(value: habit) { EmptyView() }
+                                .opacity(0)
+                            AnytimeHabitRowView(
+                                habit: habit,
+                                isFirst: index == 0,
+                                isLast: index == anytimeHabits.count - 1
+                            )
+                        }
                         .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(index < anytimeHabits.count - 1 ? .visible : .hidden)

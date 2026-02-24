@@ -59,6 +59,9 @@ struct HomeView: View {
                     .transition(.identity)
             }
         }
+        .navigationDestination(for: HabitEntry.self) { habit in
+            HabitDetailView(habit: habit, selectedDate: selectedDate)
+        }
         .sheet(isPresented: $showCalendarPicker) {
             CalendarPickerView(selectedDate: $selectedDate, weekOffset: $weekOffset)
                 .presentationDetents([.medium])

@@ -17,8 +17,23 @@ struct ContentView: View {
     @State private var selectedTab: AppTab = .agenda
     @State private var showAddScreen = false
 
+    /// Intercepts the "Add" tab so `selectedTab` never actually changes to `.add`.
+    /// This prevents the NavigationStack from tearing down and losing pushed views.
+    private var tabSelection: Binding<AppTab> {
+        Binding(
+            get: { selectedTab },
+            set: { newValue in
+                if newValue == .add {
+                    showAddScreen = true
+                } else {
+                    selectedTab = newValue
+                }
+            }
+        )
+    }
+
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: tabSelection) {
             Tab("Agenda", systemImage: "text.book.closed", value: AppTab.agenda) {
                 NavigationStack {
                     HomeView()
@@ -39,12 +54,6 @@ struct ContentView: View {
         }
         .environment(\.symbolVariants, .none)
         .tint(.accentOrange)
-        .onChange(of: selectedTab) { oldValue, newValue in
-            if newValue == .add {
-                selectedTab = oldValue
-                showAddScreen = true
-            }
-        }
         .sheet(isPresented: $showAddScreen) {
             NavigationStack {
                 AddHabitView(dismissSheet: { showAddScreen = false })
