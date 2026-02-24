@@ -16,6 +16,7 @@ enum AppTab: Hashable {
 struct ContentView: View {
     @State private var selectedTab: AppTab = .agenda
     @State private var showAddScreen = false
+    @State private var showProfileScreen = false
 
     /// Intercepts the "Add" tab so `selectedTab` never actually changes to `.add`.
     /// This prevents the NavigationStack from tearing down and losing pushed views.
@@ -37,7 +38,7 @@ struct ContentView: View {
             Tab("Agenda", systemImage: "text.book.closed", value: AppTab.agenda) {
                 NavigationStack {
                     HomeView()
-                        .baldesToolbar()
+                        .baldesToolbar(onProfileTap: { showProfileScreen = true })
                 }
             }
 
@@ -48,7 +49,7 @@ struct ContentView: View {
             Tab("Stats", systemImage: "chart.bar", value: AppTab.stats) {
                 NavigationStack {
                     Text("Stats")
-                        .baldesToolbar()
+                        .baldesToolbar(onProfileTap: { showProfileScreen = true })
                 }
             }
         }
@@ -59,17 +60,25 @@ struct ContentView: View {
                 AddHabitView(dismissSheet: { showAddScreen = false })
             }
         }
+        .sheet(isPresented: $showProfileScreen) {
+            NavigationStack {
+                ProfileView()
+            }
+        }
     }
 }
 
 // MARK: - Shared Toolbar
 
 struct BaldesToolbarModifier: ViewModifier {
+    let onProfileTap: () -> Void
+
     func body(content: Content) -> some View {
         content
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
+                        onProfileTap()
                     } label: {
                         Image(systemName: "person.crop.circle")
                             .font(.system(size: 20, weight: .semibold))
@@ -83,8 +92,8 @@ struct BaldesToolbarModifier: ViewModifier {
 }
 
 extension View {
-    func baldesToolbar() -> some View {
-        modifier(BaldesToolbarModifier())
+    func baldesToolbar(onProfileTap: @escaping () -> Void = {}) -> some View {
+        modifier(BaldesToolbarModifier(onProfileTap: onProfileTap))
     }
 }
 

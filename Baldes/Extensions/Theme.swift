@@ -15,6 +15,11 @@ extension Color {
     static let accentIndigo = Color(hex: "6366F1")
     static let accentPink = Color(hex: "F472B6")
 
+    // MARK: - Light Accent Backgrounds
+    static let accentBlueLightBg = Color(hex: "D4E4F7")
+    static let accentPurpleLightBg = Color(hex: "E8DEF5")
+    static let accentGreenLight = Color(hex: "DCFCE7")
+
     // MARK: - Text
     static let textPrimary = Color(hex: "1A1A2E")
     static let textSecondary = Color(hex: "6B7280")
