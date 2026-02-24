@@ -48,7 +48,7 @@ struct ContentView: View {
 
             Tab("Stats", systemImage: "chart.bar", value: AppTab.stats) {
                 NavigationStack {
-                    Text("Stats")
+                    StatsView()
                         .baldesToolbar(onProfileTap: { showProfileScreen = true })
                 }
             }
