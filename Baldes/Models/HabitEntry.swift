@@ -44,12 +44,21 @@ final class HabitEntry {
     /// True when the habit still has unconfigured fields.
     var isIncomplete: Bool {
         if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return true }
-        if emoji == "\u{2B50}" { return true } // default star
         if motivationQuote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return true }
         if hasTime && scheduleTime == nil { return true }
         if frequency == 2 && selectedDays.isEmpty { return true }
         if reminderEnabled && reminderTime == nil { return true }
         return false
+    }
+
+    var incompleteReasons: [String] {
+        var reasons: [String] = []
+        if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { reasons.append("Missing name") }
+        if motivationQuote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { reasons.append("Add a quote") }
+        if hasTime && scheduleTime == nil { reasons.append("Set a time") }
+        if frequency == 2 && selectedDays.isEmpty { reasons.append("Pick active days") }
+        if reminderEnabled && reminderTime == nil { reasons.append("Set reminder time") }
+        return reasons
     }
 
     var categoryName: String {

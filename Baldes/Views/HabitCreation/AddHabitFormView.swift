@@ -14,7 +14,13 @@ struct AddHabitFormView: View {
     // MARK: - Shared State
 
     @State private var habitName = ""
-    @State private var habitEmoji = "⭐"
+    @State private var habitEmoji = Self.randomEmoji()
+
+    private static func randomEmoji() -> String {
+        let emojis = ["🎯", "🔥", "💪", "🌟", "⚡", "🚀", "🧠", "🌈", "✨", "🎨",
+                      "🏆", "💎", "🌻", "🍀", "🦋", "🎵", "📚", "🧘", "🏃", "💧"]
+        return emojis.randomElement() ?? "🎯"
+    }
     @State private var motivationQuote = HabitFormQuoteField.initialQuote
     @State private var frequency = 2  // 0 = Once, 1 = Daily, 2 = Custom
     @State private var hasTime = true

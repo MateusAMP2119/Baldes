@@ -38,14 +38,16 @@ struct HomeView: View {
             .ignoresSafeArea()
 
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 28) {
+                VStack(spacing: 0) {
                     GreetingView()
+                        .padding(.bottom, 28)
                     WeekStripView(
                         selectedDate: $selectedDate,
                         weekOffset: $weekOffset,
                         onCalendarTap: { showCalendarPicker = true },
                         dayCompletionCounts: weekCompletionCounts
                     )
+                    .padding(.bottom, 28)
                     HabitsListView(selectedDate: selectedDate, showConfetti: $showConfetti)
                 }
                 .padding(.bottom, 100)
