@@ -3,10 +3,13 @@ import SwiftUI
 
 struct AddHabitFormView: View {
     @State var habitType: HabitType
+    var existingHabit: HabitEntry?
     var dismissSheet: (() -> Void)?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query private var allHabits: [HabitEntry]
+
+    private var isEditing: Bool { existingHabit != nil }
 
     // MARK: - Shared State
 
@@ -144,8 +147,9 @@ struct AddHabitFormView: View {
             }
         }
         .animation(.spring(duration: 0.35), value: habitType)
-        .navigationTitle("New Habit")
+        .navigationTitle(isEditing ? "Edit Habit" : "New Habit")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear { prefillFromExistingHabit() }
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button {
@@ -201,23 +205,41 @@ struct AddHabitFormView: View {
                         finalEndDate = resolvedEndDate
                     }
 
-                    let entry = HabitEntry(
-                        name: habitName,
-                        emoji: habitEmoji,
-                        habitTypeRaw: habitType.rawValue,
-                        motivationQuote: motivationQuote,
-                        hasTime: hasTime,
-                        scheduleTime: resolvedScheduleTime,
-                        frequency: frequency,
-                        selectedDays: resolvedSelectedDays,
-                        startDate: resolvedStartDate,
-                        endDateEnabled: finalEndDateEnabled,
-                        endDate: finalEndDate,
-                        reminderEnabled: reminderEnabled,
-                        reminderTime: resolvedReminderTime,
-                        sortOrder: allHabits.count
-                    )
-                    modelContext.insert(entry)
+                    if let existing = existingHabit {
+                        // Update existing habit
+                        existing.name = habitName
+                        existing.emoji = habitEmoji
+                        existing.habitTypeRaw = habitType.rawValue
+                        existing.motivationQuote = motivationQuote
+                        existing.hasTime = hasTime
+                        existing.scheduleTime = resolvedScheduleTime
+                        existing.frequency = frequency
+                        existing.selectedDays = resolvedSelectedDays
+                        existing.startDate = resolvedStartDate
+                        existing.endDateEnabled = finalEndDateEnabled
+                        existing.endDate = finalEndDate
+                        existing.reminderEnabled = reminderEnabled
+                        existing.reminderTime = resolvedReminderTime
+                    } else {
+                        // Create new habit
+                        let entry = HabitEntry(
+                            name: habitName,
+                            emoji: habitEmoji,
+                            habitTypeRaw: habitType.rawValue,
+                            motivationQuote: motivationQuote,
+                            hasTime: hasTime,
+                            scheduleTime: resolvedScheduleTime,
+                            frequency: frequency,
+                            selectedDays: resolvedSelectedDays,
+                            startDate: resolvedStartDate,
+                            endDateEnabled: finalEndDateEnabled,
+                            endDate: finalEndDate,
+                            reminderEnabled: reminderEnabled,
+                            reminderTime: resolvedReminderTime,
+                            sortOrder: allHabits.count
+                        )
+                        modelContext.insert(entry)
+                    }
                     if let dismissSheet {
                         dismissSheet()
                     } else {
@@ -230,6 +252,49 @@ struct AddHabitFormView: View {
                 }
                 .animation(.easeInOut(duration: 0.3), value: habitType)
             }
+        }
+    }
+
+    // MARK: - Prefill for Editing
+
+    private func prefillFromExistingHabit() {
+        guard let habit = existingHabit else { return }
+
+        habitName = habit.name
+        habitEmoji = habit.emoji
+        habitType = habit.habitType
+        motivationQuote = habit.motivationQuote
+        frequency = habit.frequency
+        hasTime = habit.hasTime
+        selectedDays = Set(habit.selectedDays)
+        reminderEnabled = habit.reminderEnabled
+
+        if let time = habit.reminderTime {
+            reminderTime = time
+            timedReminderTime = time
+            budgetReminderTime = time
+        }
+
+        // Schedule times
+        if let time = habit.scheduleTime {
+            commonScheduleTime = time
+            timedScheduleTime = time
+        }
+
+        // Dates
+        switch habit.habitType {
+        case .timed:
+            trackStartDate = habit.startDate
+            timedEndDateEnabled = habit.endDateEnabled
+            if let end = habit.endDate { timedEndDate = end }
+        case .budgets:
+            budgetStartDate = habit.startDate
+            budgetEndDateEnabled = habit.endDateEnabled
+            if let end = habit.endDate { budgetEndDate = end }
+        default:
+            commonStartDate = habit.startDate
+            commonEndDateEnabled = habit.endDateEnabled
+            if let end = habit.endDate { commonEndDate = end }
         }
     }
 

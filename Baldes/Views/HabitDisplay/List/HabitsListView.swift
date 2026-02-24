@@ -62,6 +62,7 @@ struct HabitsListView: View {
             NavigationStack {
                 AddHabitFormView(
                     habitType: habit.habitType,
+                    existingHabit: habit,
                     dismissSheet: { habitToEdit = nil }
                 )
             }
