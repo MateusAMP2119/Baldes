@@ -385,7 +385,7 @@ struct HabitsListView: View {
         let countBefore = habit.completionCount(on: selectedDate)
 
         withAnimation(.spring(duration: 0.3)) {
-            habit.addCompletion()
+            habit.addCompletion(on: selectedDate)
         }
 
         // Escalating haptics + sound based on completion count

@@ -100,9 +100,29 @@ final class HabitEntry {
         completionLogs.append(Date())
     }
 
+    /// Add a completion stamped at noon on the given date (for past-date logging).
+    func addCompletion(on date: Date) {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) {
+            completionLogs.append(Date())
+        } else {
+            // Stamp at noon so it sorts cleanly within the day
+            let noon = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date) ?? date
+            completionLogs.append(noon)
+        }
+    }
+
     func removeLastCompletionToday() {
         let calendar = Calendar.current
         if let index = completionLogs.lastIndex(where: { calendar.isDateInToday($0) }) {
+            completionLogs.remove(at: index)
+        }
+    }
+
+    /// Remove the most recent completion on a specific date.
+    func removeLastCompletion(on date: Date) {
+        let calendar = Calendar.current
+        if let index = completionLogs.lastIndex(where: { calendar.isDate($0, inSameDayAs: date) }) {
             completionLogs.remove(at: index)
         }
     }

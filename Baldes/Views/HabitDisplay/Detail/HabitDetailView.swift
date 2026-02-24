@@ -1,11 +1,15 @@
 import SwiftData
 import SwiftUI
+import UIKit
 
 struct HabitDetailView: View {
     let habit: HabitEntry
     let selectedDate: Date
 
     @State private var selectedPeriod = 0
+    @State private var showLogPastSheet = false
+    @State private var pastLogDate = Date()
+    @State private var showCompletionFeedback = false
     private let periods = ["7 Days", "30 Days", "90 Days", "All"]
     private let calendar = Calendar.current
 
@@ -148,6 +152,9 @@ struct HabitDetailView: View {
             }
         }
         .tint(habit.habitType.color)
+        .sheet(isPresented: $showLogPastSheet) {
+            logPastSheet
+        }
     }
 
     // MARK: - Quote Card
@@ -312,17 +319,26 @@ struct HabitDetailView: View {
             let todayCount = habit.completionCount(on: selectedDate)
 
             circularDisplay(
-                value: "0:00",
-                subtitle: "of 45 minutes",
+                value: "\(todayCount)",
+                subtitle: todayCount == 1 ? "session today" : "sessions today",
                 progress: todayCount > 0 ? 1.0 : 0.0
             )
 
             HStack(spacing: 12) {
-                actionCircleButton(icon: "checkmark", filled: true)
-                actionCircleButton(icon: "calendar.badge.plus", filled: false)
+                actionCircleButton(icon: "checkmark", filled: true) {
+                    logCompletion()
+                }
+                actionCircleButton(icon: "calendar.badge.plus", filled: false) {
+                    pastLogDate = selectedDate
+                    showLogPastSheet = true
+                }
             }
 
-            captionRow(icon: "hand.tap", text: "Focus on self-log/tag entry")
+            if todayCount > 0 {
+                undoButton
+            }
+
+            captionRow(icon: "hand.tap", text: "Tap checkmark to log a session")
         }
     }
 
@@ -339,11 +355,20 @@ struct HabitDetailView: View {
             )
 
             HStack(spacing: 12) {
-                actionCircleButton(icon: "checkmark", filled: true)
-                actionCircleButton(icon: "calendar.badge.plus", filled: false)
+                actionCircleButton(icon: "checkmark", filled: true) {
+                    logCompletion()
+                }
+                actionCircleButton(icon: "calendar.badge.plus", filled: false) {
+                    pastLogDate = selectedDate
+                    showLogPastSheet = true
+                }
             }
 
-            captionRow(icon: "square.and.pencil", text: "Prefer to self-log manually")
+            if todayCount > 0 {
+                undoButton
+            }
+
+            captionRow(icon: "square.and.pencil", text: "Tap checkmark to log an entry")
         }
     }
 
@@ -358,17 +383,19 @@ struct HabitDetailView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 56))
                         .foregroundStyle(habit.habitType.color)
-                    Text("Done Today")
+                    Text(dateLabel)
                         .font(.system(size: 20, weight: .bold))
                         .foregroundStyle(habit.habitType.color)
-                    Text("Completed at \(formattedTime(habit.completionLogs.last ?? Date()))")
+                    Text("\(todayCount)\u{00D7} completed")
                         .font(.system(size: 13))
                         .foregroundStyle(Color.textSecondary)
                 }
                 .padding(.vertical, 16)
 
                 HStack(spacing: 12) {
-                    Button {} label: {
+                    Button {
+                        logCompletion()
+                    } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "plus.circle.fill")
                                 .font(.system(size: 14))
@@ -381,7 +408,11 @@ struct HabitDetailView: View {
                         .background(Capsule().fill(habit.habitType.color))
                     }
 
-                    Button {} label: {
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) {
+                            habit.removeLastCompletion(on: selectedDate)
+                        }
+                    } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "arrow.uturn.backward")
                                 .font(.system(size: 14))
@@ -396,6 +427,20 @@ struct HabitDetailView: View {
                         )
                     }
                 }
+
+                Button {
+                    pastLogDate = selectedDate
+                    showLogPastSheet = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "calendar.badge.plus")
+                            .font(.system(size: 13))
+                        Text("Log Past Activity")
+                            .font(.system(size: 13, weight: .medium))
+                    }
+                    .foregroundStyle(habit.habitType.color)
+                }
+                .padding(.top, 4)
             } else {
                 circularDisplay(
                     value: "0",
@@ -403,7 +448,9 @@ struct HabitDetailView: View {
                     progress: 0
                 )
 
-                Button {} label: {
+                Button {
+                    logCompletion()
+                } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 16))
@@ -416,9 +463,22 @@ struct HabitDetailView: View {
                     .background(Capsule().fill(habit.habitType.color))
                 }
                 .padding(.horizontal, 20)
+
+                Button {
+                    pastLogDate = selectedDate
+                    showLogPastSheet = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "calendar.badge.plus")
+                            .font(.system(size: 13))
+                        Text("Log Past Activity")
+                            .font(.system(size: 13, weight: .medium))
+                    }
+                    .foregroundStyle(habit.habitType.color)
+                }
             }
 
-            captionRow(icon: "hand.tap", text: "Prefer to self-log manually")
+            captionRow(icon: "hand.tap", text: "Tap to log completions")
         }
     }
 
@@ -429,73 +489,76 @@ struct HabitDetailView: View {
             let completed = habit.completionCount(on: selectedDate)
 
             HStack {
-                Text("\(completed) of 5 completed")
+                Text("\(completed) completed")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Color.textPrimary)
                 Spacer()
-                Text("Resets daily at 00:00")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.textTertiary)
-            }
-
-            VStack(spacing: 0) {
-                checklistItem(title: "No to do", isCompleted: true)
-                Divider().padding(.leading, 48)
-                checklistItem(title: "Core workout", isCompleted: true)
-                Divider().padding(.leading, 48)
-                checklistItem(title: "Cool-down stretches", isCompleted: false)
-            }
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.white)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(habit.habitType.color.opacity(0.2), lineWidth: 1)
-            )
-
-            Button {} label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "plus.circle.fill")
+                if completed > 0 {
+                    Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 14))
-                    Text("Add Item")
-                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(habit.habitType.color)
+                }
+            }
+
+            HStack(spacing: 12) {
+                Button {
+                    logCompletion()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 14))
+                        Text("Complete Item")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(habit.habitType.color)
+                    )
+                }
+
+                if completed > 0 {
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) {
+                            habit.removeLastCompletion(on: selectedDate)
+                        }
+                    } label: {
+                        Image(systemName: "arrow.uturn.backward")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(habit.habitType.color)
+                            .frame(width: 44, height: 44)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .strokeBorder(habit.habitType.color, lineWidth: 1.5)
+                            )
+                    }
+                }
+            }
+
+            Button {
+                pastLogDate = selectedDate
+                showLogPastSheet = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "calendar.badge.plus")
+                        .font(.system(size: 13))
+                    Text("Log Past Activity")
+                        .font(.system(size: 13, weight: .medium))
                 }
                 .foregroundStyle(habit.habitType.color)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(habit.habitType.color, lineWidth: 1.5)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(habit.habitType.color.opacity(0.05))
-                        )
-                )
             }
         }
     }
 
-    private func checklistItem(title: String, isCompleted: Bool) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
-                .font(.system(size: 20))
-                .foregroundStyle(isCompleted ? habit.habitType.color : Color.textTertiary)
-            Text(title)
-                .font(.system(size: 15))
-                .foregroundStyle(isCompleted ? Color.textSecondary : Color.textPrimary)
-                .strikethrough(isCompleted)
-            Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-    }
 
     // MARK: Route Content
 
     private var routeContent: some View {
         VStack(spacing: 16) {
+            let todayCount = habit.completionCount(on: selectedDate)
+
             RoundedRectangle(cornerRadius: 12)
                 .fill(habit.habitType.gradientColor)
                 .frame(height: 160)
@@ -504,52 +567,48 @@ struct HabitDetailView: View {
                         Image(systemName: "map")
                             .font(.system(size: 32))
                             .foregroundStyle(habit.habitType.color)
-                        Text("Today's Route")
+                        Text(todayCount > 0 ? "\(todayCount) stop\(todayCount == 1 ? "" : "s") logged" : "No stops logged")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(Color.textPrimary)
                     }
                 }
 
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Route Progress")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(Color.textPrimary)
-
-                routeStop(name: "Start Point", status: .completed)
-                routeStop(name: "Dog Park", status: .completed)
-                routeStop(name: "Lake Bridge", status: .current)
-                routeStop(name: "End Point", status: .upcoming)
+            Button {
+                logCompletion()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "mappin.circle.fill")
+                        .font(.system(size: 16))
+                    Text("Log Stop")
+                        .font(.system(size: 15, weight: .semibold))
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(Capsule().fill(habit.habitType.color))
             }
-        }
-    }
+            .padding(.horizontal, 20)
 
-    private enum StopStatus { case completed, current, upcoming }
-
-    private func routeStop(name: String, status: StopStatus) -> some View {
-        HStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(status == .upcoming ? Color.textTertiary.opacity(0.3) : habit.habitType.color)
-                    .frame(width: 12, height: 12)
-                if status == .current {
-                    Circle()
-                        .strokeBorder(habit.habitType.color, lineWidth: 2)
-                        .frame(width: 20, height: 20)
+            HStack(spacing: 16) {
+                if todayCount > 0 {
+                    undoButton
+                }
+                Button {
+                    pastLogDate = selectedDate
+                    showLogPastSheet = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "calendar.badge.plus")
+                            .font(.system(size: 13))
+                        Text("Log Past Activity")
+                            .font(.system(size: 13, weight: .medium))
+                    }
+                    .foregroundStyle(habit.habitType.color)
                 }
             }
-            .frame(width: 20, height: 20)
-
-            Text(name)
-                .font(.system(size: 14, weight: status == .current ? .bold : .medium))
-                .foregroundStyle(status == .upcoming ? Color.textTertiary : Color.textPrimary)
-            Spacer()
-            if status == .completed {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 16))
-                    .foregroundStyle(habit.habitType.color)
-            }
         }
     }
+
 
     // MARK: Budget Content
 
@@ -558,12 +617,14 @@ struct HabitDetailView: View {
             let todayCount = habit.completionCount(on: selectedDate)
 
             circularDisplay(
-                value: "$\(todayCount * 50)",
-                subtitle: "of $5,000 goal",
-                progress: min(Double(todayCount * 50) / 5000.0, 1.0)
+                value: "\(todayCount)",
+                subtitle: todayCount == 1 ? "transaction logged" : "transactions logged",
+                progress: min(Double(todayCount) / 10.0, 1.0)
             )
 
-            Button {} label: {
+            Button {
+                logCompletion()
+            } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "dollarsign.circle.fill")
                         .font(.system(size: 16))
@@ -576,6 +637,24 @@ struct HabitDetailView: View {
                 .background(Capsule().fill(habit.habitType.color))
             }
             .padding(.horizontal, 20)
+
+            HStack(spacing: 16) {
+                if todayCount > 0 {
+                    undoButton
+                }
+                Button {
+                    pastLogDate = selectedDate
+                    showLogPastSheet = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "calendar.badge.plus")
+                            .font(.system(size: 13))
+                        Text("Log Past Activity")
+                            .font(.system(size: 13, weight: .medium))
+                    }
+                    .foregroundStyle(habit.habitType.color)
+                }
+            }
         }
     }
 
@@ -590,22 +669,28 @@ struct HabitDetailView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 56))
                         .foregroundStyle(habit.habitType.color)
-                    Text("Entry Logged")
+                    Text(todayCount == 1 ? "Entry Logged" : "\(todayCount) Entries Logged")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundStyle(habit.habitType.color)
                 }
                 .padding(.vertical, 16)
             }
 
-            Button {} label: {
+            Button {
+                logCompletion()
+            } label: {
                 HStack(spacing: 8) {
                     Image(
                         systemName: habit.habitType == .journal
                             ? "book.closed.fill" : "note.text.badge.plus"
                     )
                     .font(.system(size: 16))
-                    Text(habit.habitType == .journal ? "Write Entry" : "Add Note")
-                        .font(.system(size: 15, weight: .semibold))
+                    Text(
+                        todayCount > 0
+                            ? (habit.habitType == .journal ? "Write Another Entry" : "Add Another Note")
+                            : (habit.habitType == .journal ? "Write Entry" : "Add Note")
+                    )
+                    .font(.system(size: 15, weight: .semibold))
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
@@ -613,6 +698,24 @@ struct HabitDetailView: View {
                 .background(Capsule().fill(habit.habitType.color))
             }
             .padding(.horizontal, 20)
+
+            HStack(spacing: 16) {
+                if todayCount > 0 {
+                    undoButton
+                }
+                Button {
+                    pastLogDate = selectedDate
+                    showLogPastSheet = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "calendar.badge.plus")
+                            .font(.system(size: 13))
+                        Text("Log Past Activity")
+                            .font(.system(size: 13, weight: .medium))
+                    }
+                    .foregroundStyle(habit.habitType.color)
+                }
+            }
         }
     }
 
@@ -645,8 +748,8 @@ struct HabitDetailView: View {
         .padding(.vertical, 8)
     }
 
-    private func actionCircleButton(icon: String, filled: Bool) -> some View {
-        Button {} label: {
+    private func actionCircleButton(icon: String, filled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(filled ? .white : habit.habitType.color)
@@ -669,6 +772,118 @@ struct HabitDetailView: View {
                 .font(.system(size: 12))
                 .foregroundStyle(Color.textTertiary)
         }
+    }
+
+    // MARK: - Actions
+
+    private func logCompletion() {
+        withAnimation(.spring(duration: 0.3)) {
+            habit.addCompletion(on: selectedDate)
+        }
+        let impact = UIImpactFeedbackGenerator(style: .medium)
+        impact.impactOccurred()
+    }
+
+    private var undoButton: some View {
+        Button {
+            withAnimation(.spring(duration: 0.3)) {
+                habit.removeLastCompletion(on: selectedDate)
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "arrow.uturn.backward")
+                    .font(.system(size: 13))
+                Text("Undo")
+                    .font(.system(size: 13, weight: .semibold))
+            }
+            .foregroundStyle(habit.habitType.color)
+        }
+    }
+
+    private var dateLabel: String {
+        if calendar.isDateInToday(selectedDate) {
+            return "Done Today"
+        } else if calendar.isDateInYesterday(selectedDate) {
+            return "Done Yesterday"
+        } else {
+            return "Done on \(formattedDate(selectedDate))"
+        }
+    }
+
+    // MARK: - Log Past Activity Sheet
+
+    private var logPastSheet: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                VStack(spacing: 8) {
+                    Text(habit.emoji)
+                        .font(.system(size: 40))
+                    Text("Log Past Activity")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(Color.textPrimary)
+                    Text("Select a date to log a completion for \(habit.name)")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color.textSecondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.top, 8)
+
+                DatePicker(
+                    "Date",
+                    selection: $pastLogDate,
+                    in: habit.startDate...Date(),
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.graphical)
+                .tint(habit.habitType.color)
+
+                let pastCount = habit.completionCount(on: pastLogDate)
+                if pastCount > 0 {
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(habit.habitType.color)
+                        Text("Already \(pastCount)\u{00D7} logged on this date")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(Color.textSecondary)
+                    }
+                }
+
+                Button {
+                    withAnimation(.spring(duration: 0.3)) {
+                        habit.addCompletion(on: pastLogDate)
+                    }
+                    let impact = UIImpactFeedbackGenerator(style: .medium)
+                    impact.impactOccurred()
+                    showLogPastSheet = false
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 16))
+                        Text("Log Completion")
+                            .font(.system(size: 15, weight: .semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Capsule().fill(habit.habitType.color))
+                }
+                .padding(.horizontal, 20)
+
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        showLogPastSheet = false
+                    }
+                }
+            }
+        }
+        .presentationDetents([.large])
+        .presentationBackground(Color.bgPage)
     }
 
     // MARK: - Period Selector
