@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct HabitsListView: View {
     var selectedDate: Date
@@ -242,14 +243,40 @@ struct HabitsListView: View {
     }
 
     private func completeHabit(_ habit: HabitEntry) {
+        let countBefore = habit.completionCount(on: selectedDate)
+
         withAnimation(.spring(duration: 0.3)) {
             habit.addCompletion()
+        }
+
+        // Escalating haptics based on completion count
+        switch countBefore {
+        case 0:
+            // 1st completion — medium impact + success notification
+            let impact = UIImpactFeedbackGenerator(style: .medium)
+            impact.impactOccurred()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                let notification = UINotificationFeedbackGenerator()
+                notification.notificationOccurred(.success)
+            }
+        case 1:
+            // 2nd completion — heavy impact
+            let impact = UIImpactFeedbackGenerator(style: .heavy)
+            impact.impactOccurred(intensity: 0.85)
+        default:
+            // 3rd+ completion — double-tap burst
+            let heavy = UIImpactFeedbackGenerator(style: .heavy)
+            heavy.impactOccurred()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                let rigid = UIImpactFeedbackGenerator(style: .rigid)
+                rigid.impactOccurred()
+            }
         }
     }
 
     private func deleteHabit(_ habit: HabitEntry) {
         withAnimation(.spring(duration: 0.3)) {
-            modelContext.delete(habit)
+            habit.archivedDate = Date()
         }
     }
 }

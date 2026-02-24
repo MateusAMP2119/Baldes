@@ -27,6 +27,9 @@ final class HabitEntry {
     // Completion tracking
     var completionLogs: [Date] = []
 
+    // Soft delete
+    var archivedDate: Date?
+
     // MARK: - Computed Properties
 
     var habitType: HabitType {
@@ -97,6 +100,14 @@ final class HabitEntry {
     func isScheduled(on date: Date) -> Bool {
         let calendar = Calendar.current
         let day = calendar.startOfDay(for: date)
+
+        // Archived habits are hidden from the archive date onward
+        if let archivedDate {
+            if day >= calendar.startOfDay(for: archivedDate) {
+                return false
+            }
+        }
+
         let start = calendar.startOfDay(for: startDate)
 
         switch frequency {
