@@ -97,13 +97,14 @@ struct HabitDetailView: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 20) {
+                mascotHeroCard
                 quoteCard
                 infoRows
-                mainContent
+                mainContentCard
                 periodSelector
                 statsGrid
-                weeklyChart
-                recentActivitySection
+                weeklyChartCard
+                recentActivityCard
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
@@ -157,6 +158,45 @@ struct HabitDetailView: View {
         }
     }
 
+    // MARK: - Mascot Hero Card
+
+    private var mascotHeroCard: some View {
+        let todayCount = habit.completionCount(on: selectedDate)
+        return NeoCard(shadowColor: habit.habitType.shadowColor) {
+            HStack(spacing: 14) {
+                Image(habit.habitType.mascotImageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 64, height: 64)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(mascotTitle(count: todayCount))
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(Color.textPrimary)
+                    Text(mascotSubtitle(count: todayCount))
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.textSecondary)
+                }
+                Spacer()
+            }
+            .padding(18)
+        }
+    }
+
+    private func mascotTitle(count: Int) -> String {
+        if count >= 3 { return "On fire!" }
+        if count >= 1 { return "Nice work!" }
+        if streakCount >= 3 { return "Keep the streak!" }
+        return "Ready to go?"
+    }
+
+    private func mascotSubtitle(count: Int) -> String {
+        if count >= 3 { return "\(count) logged today. You're crushing it." }
+        if count >= 1 { return "\(count) done so far. Keep going!" }
+        if streakCount >= 3 { return "You have a \(streakCount)-day streak going." }
+        return "Tap below to log your first entry."
+    }
+
     // MARK: - Quote Card
 
     private var quoteCard: some View {
@@ -164,8 +204,12 @@ struct HabitDetailView: View {
             Text(habit.emoji)
                 .font(.system(size: 22))
                 .frame(width: 44, height: 44)
-                .background(habit.habitType.color.opacity(0.12))
+                .background(habit.habitType.color.opacity(0.15))
                 .clipShape(Circle())
+                .overlay(
+                    Circle()
+                        .strokeBorder(Color.borderStrong, lineWidth: 1.5)
+                )
 
             if !habit.motivationQuote.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
@@ -179,7 +223,7 @@ struct HabitDetailView: View {
                         $0.text == habit.motivationQuote
                     })?.author {
                         Text("— \(author)")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(habit.habitType.color)
                     }
                 }
@@ -188,19 +232,29 @@ struct HabitDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(habit.habitType.color.opacity(0.08))
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.white)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .strokeBorder(Color.borderStrong, lineWidth: 2)
         )
         .overlay(alignment: .leading) {
             UnevenRoundedRectangle(
-                topLeadingRadius: 12,
-                bottomLeadingRadius: 12,
+                topLeadingRadius: 14,
+                bottomLeadingRadius: 14,
                 bottomTrailingRadius: 0,
                 topTrailingRadius: 0
             )
             .fill(habit.habitType.color)
-            .frame(width: 4)
+            .frame(width: 5)
         }
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(habit.habitType.shadowColor)
+                .offset(x: 4, y: 4)
+        )
     }
 
     // MARK: - Info Rows
@@ -292,8 +346,15 @@ struct HabitDetailView: View {
 
     // MARK: - Main Content (Type-Specific)
 
+    private var mainContentCard: some View {
+        NeoCard(shadowColor: habit.habitType.shadowColor) {
+            mainContentInner
+                .padding(20)
+        }
+    }
+
     @ViewBuilder
-    private var mainContent: some View {
+    private var mainContentInner: some View {
         switch habit.habitType {
         case .timed:
             timedContent
@@ -392,55 +453,13 @@ struct HabitDetailView: View {
                 }
                 .padding(.vertical, 16)
 
-                HStack(spacing: 12) {
-                    Button {
-                        logCompletion()
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 14))
-                            Text("Log Another")
-                                .font(.system(size: 14, weight: .semibold))
-                        }
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
-                        .background(Capsule().fill(habit.habitType.color))
-                    }
-
-                    Button {
-                        withAnimation(.spring(duration: 0.3)) {
-                            habit.removeLastCompletion(on: selectedDate)
-                        }
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "arrow.uturn.backward")
-                                .font(.system(size: 14))
-                            Text("Undo")
-                                .font(.system(size: 14, weight: .semibold))
-                        }
-                        .foregroundStyle(habit.habitType.color)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
-                        .background(
-                            Capsule().strokeBorder(habit.habitType.color, lineWidth: 1.5)
-                        )
-                    }
+                neoCTAButton(icon: "plus.circle.fill", label: "Log Another") {
+                    logCompletion()
                 }
 
-                Button {
-                    pastLogDate = selectedDate
-                    showLogPastSheet = true
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "calendar.badge.plus")
-                            .font(.system(size: 13))
-                        Text("Log Past Activity")
-                            .font(.system(size: 13, weight: .medium))
-                    }
-                    .foregroundStyle(habit.habitType.color)
-                }
-                .padding(.top, 4)
+                undoButton
+
+                logPastLink
             } else {
                 circularDisplay(
                     value: "0",
@@ -448,34 +467,11 @@ struct HabitDetailView: View {
                     progress: 0
                 )
 
-                Button {
+                neoCTAButton(icon: "checkmark.circle.fill", label: "Mark Complete") {
                     logCompletion()
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 16))
-                        Text("Mark Complete")
-                            .font(.system(size: 15, weight: .semibold))
-                    }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(Capsule().fill(habit.habitType.color))
                 }
-                .padding(.horizontal, 20)
 
-                Button {
-                    pastLogDate = selectedDate
-                    showLogPastSheet = true
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "calendar.badge.plus")
-                            .font(.system(size: 13))
-                        Text("Log Past Activity")
-                            .font(.system(size: 13, weight: .medium))
-                    }
-                    .foregroundStyle(habit.habitType.color)
-                }
+                logPastLink
             }
 
             captionRow(icon: "hand.tap", text: "Tap to log completions")
@@ -500,55 +496,15 @@ struct HabitDetailView: View {
                 }
             }
 
-            HStack(spacing: 12) {
-                Button {
-                    logCompletion()
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 14))
-                        Text("Complete Item")
-                            .font(.system(size: 14, weight: .semibold))
-                    }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(habit.habitType.color)
-                    )
-                }
-
-                if completed > 0 {
-                    Button {
-                        withAnimation(.spring(duration: 0.3)) {
-                            habit.removeLastCompletion(on: selectedDate)
-                        }
-                    } label: {
-                        Image(systemName: "arrow.uturn.backward")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(habit.habitType.color)
-                            .frame(width: 44, height: 44)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .strokeBorder(habit.habitType.color, lineWidth: 1.5)
-                            )
-                    }
-                }
+            neoCTAButton(icon: "checkmark.circle.fill", label: "Complete Item") {
+                logCompletion()
             }
 
-            Button {
-                pastLogDate = selectedDate
-                showLogPastSheet = true
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "calendar.badge.plus")
-                        .font(.system(size: 13))
-                    Text("Log Past Activity")
-                        .font(.system(size: 13, weight: .medium))
-                }
-                .foregroundStyle(habit.habitType.color)
+            if completed > 0 {
+                undoButton
             }
+
+            logPastLink
         }
     }
 
@@ -573,39 +529,14 @@ struct HabitDetailView: View {
                     }
                 }
 
-            Button {
+            neoCTAButton(icon: "mappin.circle.fill", label: "Log Stop") {
                 logCompletion()
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "mappin.circle.fill")
-                        .font(.system(size: 16))
-                    Text("Log Stop")
-                        .font(.system(size: 15, weight: .semibold))
-                }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(Capsule().fill(habit.habitType.color))
             }
-            .padding(.horizontal, 20)
 
-            HStack(spacing: 16) {
-                if todayCount > 0 {
-                    undoButton
-                }
-                Button {
-                    pastLogDate = selectedDate
-                    showLogPastSheet = true
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "calendar.badge.plus")
-                            .font(.system(size: 13))
-                        Text("Log Past Activity")
-                            .font(.system(size: 13, weight: .medium))
-                    }
-                    .foregroundStyle(habit.habitType.color)
-                }
+            if todayCount > 0 {
+                undoButton
             }
+            logPastLink
         }
     }
 
@@ -622,39 +553,14 @@ struct HabitDetailView: View {
                 progress: min(Double(todayCount) / 10.0, 1.0)
             )
 
-            Button {
+            neoCTAButton(icon: "dollarsign.circle.fill", label: "Log Transaction") {
                 logCompletion()
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "dollarsign.circle.fill")
-                        .font(.system(size: 16))
-                    Text("Log Transaction")
-                        .font(.system(size: 15, weight: .semibold))
-                }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(Capsule().fill(habit.habitType.color))
             }
-            .padding(.horizontal, 20)
 
-            HStack(spacing: 16) {
-                if todayCount > 0 {
-                    undoButton
-                }
-                Button {
-                    pastLogDate = selectedDate
-                    showLogPastSheet = true
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "calendar.badge.plus")
-                            .font(.system(size: 13))
-                        Text("Log Past Activity")
-                            .font(.system(size: 13, weight: .medium))
-                    }
-                    .foregroundStyle(habit.habitType.color)
-                }
+            if todayCount > 0 {
+                undoButton
             }
+            logPastLink
         }
     }
 
@@ -676,46 +582,19 @@ struct HabitDetailView: View {
                 .padding(.vertical, 16)
             }
 
-            Button {
+            neoCTAButton(
+                icon: habit.habitType == .journal ? "book.closed.fill" : "note.text.badge.plus",
+                label: todayCount > 0
+                    ? (habit.habitType == .journal ? "Write Another Entry" : "Add Another Note")
+                    : (habit.habitType == .journal ? "Write Entry" : "Add Note")
+            ) {
                 logCompletion()
-            } label: {
-                HStack(spacing: 8) {
-                    Image(
-                        systemName: habit.habitType == .journal
-                            ? "book.closed.fill" : "note.text.badge.plus"
-                    )
-                    .font(.system(size: 16))
-                    Text(
-                        todayCount > 0
-                            ? (habit.habitType == .journal ? "Write Another Entry" : "Add Another Note")
-                            : (habit.habitType == .journal ? "Write Entry" : "Add Note")
-                    )
-                    .font(.system(size: 15, weight: .semibold))
-                }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(Capsule().fill(habit.habitType.color))
             }
-            .padding(.horizontal, 20)
 
-            HStack(spacing: 16) {
-                if todayCount > 0 {
-                    undoButton
-                }
-                Button {
-                    pastLogDate = selectedDate
-                    showLogPastSheet = true
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "calendar.badge.plus")
-                            .font(.system(size: 13))
-                        Text("Log Past Activity")
-                            .font(.system(size: 13, weight: .medium))
-                    }
-                    .foregroundStyle(habit.habitType.color)
-                }
+            if todayCount > 0 {
+                undoButton
             }
+            logPastLink
         }
     }
 
@@ -753,13 +632,54 @@ struct HabitDetailView: View {
             Image(systemName: icon)
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(filled ? .white : habit.habitType.color)
-                .frame(width: 44, height: 44)
+                .frame(width: 48, height: 48)
                 .background(
                     filled
                         ? AnyShapeStyle(habit.habitType.color)
                         : AnyShapeStyle(habit.habitType.color.opacity(0.12))
                 )
                 .clipShape(Circle())
+                .overlay(
+                    Circle()
+                        .strokeBorder(Color.borderStrong, lineWidth: 2)
+                )
+                .background(
+                    Circle()
+                        .fill(filled ? habit.habitType.shadowColor : Color.borderStrong.opacity(0.15))
+                        .offset(x: 3, y: 3)
+                )
+        }
+    }
+
+    /// Neobrutalist full-width CTA button with thick border + offset shadow.
+    private func neoCTAButton(
+        icon: String,
+        label: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .bold))
+                Text(label)
+                    .font(.system(size: 15, weight: .bold))
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(habit.habitType.color)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(Color.borderStrong, lineWidth: 2)
+            )
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(habit.habitType.shadowColor)
+                    .offset(x: 3, y: 3)
+            )
         }
     }
 
@@ -782,6 +702,21 @@ struct HabitDetailView: View {
         }
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()
+    }
+
+    private var logPastLink: some View {
+        Button {
+            pastLogDate = selectedDate
+            showLogPastSheet = true
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "calendar.badge.plus")
+                    .font(.system(size: 13))
+                Text("Log Past Activity")
+                    .font(.system(size: 13, weight: .medium))
+            }
+            .foregroundStyle(habit.habitType.color)
+        }
     }
 
     private var undoButton: some View {
@@ -924,101 +859,136 @@ struct HabitDetailView: View {
     // MARK: - Stats Grid
 
     private var statsGrid: some View {
-        HStack(spacing: 0) {
-            statItem(value: "\(streakCount)", label: "Streak", unit: "Days")
-            statItem(value: "\(thisWeekRate)%", label: "This Week", unit: "Rate")
-            statItem(value: "\(totalCompletions)", label: "Total", unit: "Done")
-            statItem(value: "\(bestStreak)", label: "Best", unit: "Streak")
+        HStack(spacing: 10) {
+            neoStatPill(value: "\(streakCount)", label: "Streak", icon: "flame.fill")
+            neoStatPill(value: "\(thisWeekRate)%", label: "This Week", icon: "chart.bar.fill")
+            neoStatPill(value: "\(totalCompletions)", label: "Total", icon: "checkmark.circle.fill")
+            neoStatPill(value: "\(bestStreak)", label: "Best", icon: "trophy.fill")
         }
     }
 
-    private func statItem(value: String, label: String, unit: String) -> some View {
-        VStack(spacing: 4) {
+    private func neoStatPill(value: String, label: String, icon: String) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(habit.habitType.color)
             Text(value)
-                .font(.system(size: 20, weight: .bold))
+                .font(.system(size: 18, weight: .black))
                 .foregroundStyle(Color.textPrimary)
-            Text(label)
-                .font(.system(size: 11, weight: .medium))
+            Text(label.uppercased())
+                .font(.system(size: 9, weight: .heavy))
+                .tracking(0.5)
                 .foregroundStyle(Color.textSecondary)
         }
         .frame(maxWidth: .infinity)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(Color.borderStrong, lineWidth: 2)
+        )
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(habit.habitType.shadowColor.opacity(0.3))
+                .offset(x: 3, y: 3)
+        )
     }
 
     // MARK: - Weekly Chart
 
-    private var weeklyChart: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("This Week")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(Color.textPrimary)
-
-            HStack(alignment: .bottom, spacing: 8) {
-                ForEach(Array(weeklyData.enumerated()), id: \.offset) { _, data in
-                    let maxVal = max(weeklyData.map(\.1).max() ?? 1, 1)
-                    let height = max(CGFloat(data.1) / CGFloat(maxVal) * 60, 4)
-
-                    VStack(spacing: 6) {
-                        Capsule()
-                            .fill(
-                                data.1 > 0
-                                    ? habit.habitType.color
-                                    : habit.habitType.color.opacity(0.15)
-                            )
-                            .frame(width: 24, height: height)
-
-                        Text(data.0)
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(Color.textTertiary)
+    private var weeklyChartCard: some View {
+        NeoCard(shadowColor: habit.habitType.shadowColor) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Label {
+                        Text("This Week")
+                            .font(.system(size: 16, weight: .heavy))
+                            .foregroundStyle(Color.textPrimary)
+                    } icon: {
+                        Image(systemName: "chart.bar.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(habit.habitType.color)
                     }
-                    .frame(maxWidth: .infinity)
+                    Spacer()
                 }
+
+                HStack(alignment: .bottom, spacing: 8) {
+                    ForEach(Array(weeklyData.enumerated()), id: \.offset) { _, data in
+                        let maxVal = max(weeklyData.map(\.1).max() ?? 1, 1)
+                        let barHeight = max(CGFloat(data.1) / CGFloat(maxVal) * 60, 4)
+
+                        VStack(spacing: 6) {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(
+                                    data.1 > 0
+                                        ? habit.habitType.color
+                                        : habit.habitType.color.opacity(0.15)
+                                )
+                                .frame(width: 28, height: barHeight)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .strokeBorder(
+                                            data.1 > 0 ? Color.borderStrong : Color.clear,
+                                            lineWidth: 1.5
+                                        )
+                                )
+
+                            Text(data.0)
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color.textTertiary)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                .frame(height: 80, alignment: .bottom)
             }
-            .frame(height: 80, alignment: .bottom)
+            .padding(18)
         }
     }
 
     // MARK: - Recent Activity
 
-    private var recentActivitySection: some View {
-        VStack(spacing: 12) {
-            HStack {
-                Text(recentSectionTitle)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(Color.textPrimary)
-                Spacer()
-                Button {} label: {
-                    Text("See All")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(habit.habitType.color)
-                }
-            }
-
-            if recentSessions.isEmpty {
+    private var recentActivityCard: some View {
+        NeoCard(shadowColor: habit.habitType.shadowColor) {
+            VStack(spacing: 12) {
                 HStack {
-                    Text("No activity yet")
-                        .font(.system(size: 14))
-                        .foregroundStyle(Color.textTertiary)
+                    Label {
+                        Text(recentSectionTitle)
+                            .font(.system(size: 16, weight: .heavy))
+                            .foregroundStyle(Color.textPrimary)
+                    } icon: {
+                        Image(systemName: sessionIcon)
+                            .font(.system(size: 14))
+                            .foregroundStyle(habit.habitType.color)
+                    }
                     Spacer()
                 }
-                .padding(.vertical, 12)
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(Array(recentSessions.enumerated()), id: \.offset) { index, session in
-                        recentSessionRow(date: session.0, count: session.1)
-                        if index < recentSessions.count - 1 {
-                            Divider().padding(.leading, 56)
+                .padding(.horizontal, 18)
+                .padding(.top, 16)
+
+                if recentSessions.isEmpty {
+                    HStack {
+                        Text("No activity yet — start logging!")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.textTertiary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.bottom, 16)
+                } else {
+                    VStack(spacing: 0) {
+                        ForEach(Array(recentSessions.enumerated()), id: \.offset) { index, session in
+                            recentSessionRow(date: session.0, count: session.1)
+                            if index < recentSessions.count - 1 {
+                                Divider().padding(.leading, 62)
+                            }
                         }
                     }
+                    .padding(.bottom, 8)
                 }
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.white)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(Color.dividerColor, lineWidth: 1)
-                )
             }
         }
     }
@@ -1081,59 +1051,51 @@ struct HabitDetailView: View {
 }
 
 #Preview {
-    @Previewable @State var container: ModelContainer = {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let c = try! ModelContainer(for: HabitEntry.self, configurations: config)
-        let habit = HabitEntry(
-            name: "Morning Run",
-            emoji: "\u{1F3C3}",
-            habitTypeRaw: "timed",
-            motivationQuote: "The only true wisdom is in knowing you know nothing.",
-            hasTime: true,
-            scheduleTime: Calendar.current.date(
-                bySettingHour: 7, minute: 0, second: 0, of: Date()),
-            frequency: 1,
-            selectedDays: [],
-            startDate: Date(),
-            endDateEnabled: false,
-            endDate: nil,
-            reminderEnabled: false,
-            reminderTime: nil,
-            completionLogs: [
-                Date(),
-                Date(),
-                Calendar.current.date(byAdding: .day, value: -1, to: Date())!,
-                Calendar.current.date(byAdding: .day, value: -2, to: Date())!,
-            ]
-        )
-        c.mainContext.insert(habit)
-        return c
-    }()
+    struct PreviewWrapper: View {
+        @State private var habit: HabitEntry?
+        let container: ModelContainer
 
-    NavigationStack {
-        HabitDetailView(habit: {
+        init() {
             let config = ModelConfiguration(isStoredInMemoryOnly: true)
             let c = try! ModelContainer(for: HabitEntry.self, configurations: config)
-            let habit = HabitEntry(
-                name: "Morning Run",
-                emoji: "\u{1F3C3}",
-                habitTypeRaw: "timed",
-                motivationQuote: "The only true wisdom is in knowing you know nothing.",
-                hasTime: true,
-                scheduleTime: Calendar.current.date(
-                    bySettingHour: 7, minute: 0, second: 0, of: Date()),
-                frequency: 1,
-                selectedDays: [],
-                startDate: Date(),
-                endDateEnabled: false,
-                endDate: nil,
-                reminderEnabled: false,
-                reminderTime: nil,
-                completionLogs: [Date(), Date()]
-            )
-            c.mainContext.insert(habit)
-            return habit
-        }(), selectedDate: .now)
+            self.container = c
+        }
+
+        var body: some View {
+            NavigationStack {
+                if let habit {
+                    HabitDetailView(habit: habit, selectedDate: .now)
+                }
+            }
+            .modelContainer(container)
+            .onAppear {
+                let h = HabitEntry(
+                    name: "Morning Run",
+                    emoji: "\u{1F3C3}",
+                    habitTypeRaw: "timed",
+                    motivationQuote: "The only true wisdom is in knowing you know nothing.",
+                    hasTime: true,
+                    scheduleTime: Calendar.current.date(
+                        bySettingHour: 7, minute: 0, second: 0, of: Date()),
+                    frequency: 1,
+                    selectedDays: [],
+                    startDate: Calendar.current.date(byAdding: .month, value: -1, to: Date())!,
+                    endDateEnabled: false,
+                    endDate: nil,
+                    reminderEnabled: false,
+                    reminderTime: nil,
+                    completionLogs: [
+                        Date(),
+                        Date(),
+                        Calendar.current.date(byAdding: .day, value: -1, to: Date())!,
+                        Calendar.current.date(byAdding: .day, value: -2, to: Date())!,
+                    ]
+                )
+                container.mainContext.insert(h)
+                habit = h
+            }
+        }
     }
-    .modelContainer(container)
+
+    return PreviewWrapper()
 }
