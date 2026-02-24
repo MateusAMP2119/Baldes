@@ -5,6 +5,7 @@ struct HomeView: View {
     @State private var selectedDate = Date()
     @State private var weekOffset = 0
     @State private var showCalendarPicker = false
+    @State private var showConfetti = false
     @Query private var allHabits: [HabitEntry]
 
     private let calendar = Calendar.current
@@ -45,9 +46,17 @@ struct HomeView: View {
                         onCalendarTap: { showCalendarPicker = true },
                         dayCompletionCounts: weekCompletionCounts
                     )
-                    HabitsListView(selectedDate: selectedDate)
+                    HabitsListView(selectedDate: selectedDate, showConfetti: $showConfetti)
                 }
                 .padding(.bottom, 100)
+            }
+        }
+        .overlay {
+            if showConfetti {
+                ConfettiView()
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+                    .transition(.identity)
             }
         }
         .sheet(isPresented: $showCalendarPicker) {

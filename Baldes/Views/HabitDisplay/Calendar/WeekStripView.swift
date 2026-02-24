@@ -154,7 +154,9 @@ struct WeekStripView: View {
                             .rotationEffect(.degrees(-0.19))
                     }
                 }
-                .frame(width: 45, height: 45)
+                .frame(width: 42, height: 42)
+                .padding(.trailing, 3)
+                .padding(.bottom, 3)
             } else {
                 ZStack {
                     Circle()

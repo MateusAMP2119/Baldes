@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import AudioToolbox
 
 struct HabitsListView: View {
     var selectedDate: Date
@@ -10,6 +11,7 @@ struct HabitsListView: View {
     @State private var scheduledCardHeight: CGFloat = 0
     @State private var anytimeCardHeight: CGFloat = 0
     @State private var habitToEdit: HabitEntry?
+    @Binding var showConfetti: Bool
 
     private var visibleHabits: [HabitEntry] {
         allHabits.filter { $0.isScheduled(on: selectedDate) }
@@ -249,34 +251,57 @@ struct HabitsListView: View {
             habit.addCompletion()
         }
 
-        // Escalating haptics based on completion count
+        // Escalating haptics + sound based on completion count
         switch countBefore {
         case 0:
-            // 1st completion — medium impact + success notification
+            // 1st completion of the day — confetti + crisp tap + bright chime
+            triggerConfetti()
             let impact = UIImpactFeedbackGenerator(style: .medium)
             impact.impactOccurred()
+            AudioServicesPlaySystemSound(1004) // tap
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 let notification = UINotificationFeedbackGenerator()
                 notification.notificationOccurred(.success)
+                AudioServicesPlaySystemSound(1025) // send swoosh
             }
         case 1:
-            // 2nd completion — heavy impact
+            // 2nd completion — heavier hit, haptic only
             let impact = UIImpactFeedbackGenerator(style: .heavy)
             impact.impactOccurred(intensity: 0.85)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                let soft = UIImpactFeedbackGenerator(style: .soft)
+                soft.impactOccurred(intensity: 0.6)
+            }
         default:
-            // 3rd+ completion — double-tap burst
+            // 3rd+ completion — double-tap burst, haptic only
             let heavy = UIImpactFeedbackGenerator(style: .heavy)
             heavy.impactOccurred()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 let rigid = UIImpactFeedbackGenerator(style: .rigid)
                 rigid.impactOccurred()
             }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                let light = UIImpactFeedbackGenerator(style: .light)
+                light.impactOccurred(intensity: 0.5)
+            }
         }
     }
 
     private func deleteHabit(_ habit: HabitEntry) {
+        // Mail-style delete swoosh + warning haptic
+        let notification = UINotificationFeedbackGenerator()
+        notification.notificationOccurred(.warning)
+        AudioServicesPlaySystemSound(1001) // mail delete swoosh
+
         withAnimation(.spring(duration: 0.3)) {
             habit.archivedDate = Date()
+        }
+    }
+
+    private func triggerConfetti() {
+        showConfetti = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            showConfetti = false
         }
     }
 }
@@ -405,7 +430,7 @@ private struct HeightKey: PreferenceKey {
         return c
     }()
 
-    HabitsListView(selectedDate: .now)
+    HabitsListView(selectedDate: .now, showConfetti: .constant(false))
         .modelContainer(container)
         .padding(.vertical)
 }
