@@ -10,11 +10,12 @@ final class HabitEntry {
     var habitTypeRaw: String
     var motivationQuote: String
     var createdAt: Date
+    var sortOrder: Int = 0
 
     // Schedule
     var hasTime: Bool
     var scheduleTime: Date?
-    var frequency: Int // 0=Once, 1=Daily, 2=Custom
+    var frequency: Int  // 0=Once, 1=Daily, 2=Custom
     var selectedDays: [Int]
     var startDate: Date
     var endDateEnabled: Bool
@@ -53,7 +54,7 @@ final class HabitEntry {
 
     var displayTimeEnd: String {
         guard let time = scheduleTime else { return "" }
-        let endTime = time.addingTimeInterval(30 * 60) // default 30 min
+        let endTime = time.addingTimeInterval(30 * 60)  // default 30 min
         let formatter = DateFormatter()
         formatter.dateFormat = "H:mm"
         return formatter.string(from: endTime)
@@ -111,13 +112,13 @@ final class HabitEntry {
         let start = calendar.startOfDay(for: startDate)
 
         switch frequency {
-        case 0: // Once — only on the exact start date
+        case 0:  // Once — only on the exact start date
             return calendar.isDate(date, inSameDayAs: startDate)
 
-        case 1: // Daily — every day from start date onward
+        case 1:  // Daily — every day from start date onward
             return day >= start
 
-        case 2: // Custom — selected weekdays within date range
+        case 2:  // Custom — selected weekdays within date range
             guard day >= start else { return false }
 
             if endDateEnabled, let endDate {
@@ -151,7 +152,8 @@ final class HabitEntry {
         endDate: Date?,
         reminderEnabled: Bool,
         reminderTime: Date?,
-        completionLogs: [Date] = []
+        completionLogs: [Date] = [],
+        sortOrder: Int = 0
     ) {
         self.id = UUID()
         self.name = name
@@ -159,6 +161,7 @@ final class HabitEntry {
         self.habitTypeRaw = habitTypeRaw
         self.motivationQuote = motivationQuote
         self.createdAt = Date()
+        self.sortOrder = sortOrder
         self.hasTime = hasTime
         self.scheduleTime = scheduleTime
         self.frequency = frequency

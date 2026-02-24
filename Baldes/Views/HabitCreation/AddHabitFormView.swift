@@ -1,18 +1,19 @@
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 struct AddHabitFormView: View {
     @State var habitType: HabitType
     var dismissSheet: (() -> Void)?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Query private var allHabits: [HabitEntry]
 
     // MARK: - Shared State
 
     @State private var habitName = ""
     @State private var habitEmoji = "⭐"
     @State private var motivationQuote = HabitFormQuoteField.initialQuote
-    @State private var frequency = 2 // 0 = Once, 1 = Daily, 2 = Custom
+    @State private var frequency = 2  // 0 = Once, 1 = Daily, 2 = Custom
     @State private var hasTime = true
     @State private var selectedDays: Set<Int> = [0, 1, 2, 3, 4]
     @State private var reminderEnabled = true
@@ -23,11 +24,12 @@ struct AddHabitFormView: View {
         components.minute = 0
         return calendar.date(from: components) ?? Date()
     }()
-    
+
     // Common schedule state
     @State private var commonStartDate = Date()
     @State private var commonEndDateEnabled = false
-    @State private var commonEndDate = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
+    @State private var commonEndDate =
+        Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
     @State private var commonScheduleTime: Date = {
         let calendar = Calendar.current
         var components = calendar.dateComponents([.year, .month, .day], from: Date())
@@ -38,15 +40,17 @@ struct AddHabitFormView: View {
 
     // MARK: - Timed State
 
-    @State private var timerType = 0 // 0 = Countdown, 1 = Stopwatch
+    @State private var timerType = 0  // 0 = Countdown, 1 = Stopwatch
     @State private var durationHours = 1
     @State private var durationMinutes = 30
     @State private var durationSeconds = 5
     @State private var trackStartDate = Date()
-    @State private var trackDurationType = 1 // 0 = 7 days, 1 = 30 days, 2 = custom
-    @State private var trackCustomEndDate = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
+    @State private var trackDurationType = 1  // 0 = 7 days, 1 = 30 days, 2 = custom
+    @State private var trackCustomEndDate =
+        Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
     @State private var timedEndDateEnabled = true
-    @State private var timedEndDate = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
+    @State private var timedEndDate =
+        Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
     @State private var timedScheduleTime: Date = {
         let calendar = Calendar.current
         var components = calendar.dateComponents([.year, .month, .day], from: Date())
@@ -65,7 +69,8 @@ struct AddHabitFormView: View {
     // MARK: - Daily Goals State
 
     @State private var dailyGoalFromDate = Date()
-    @State private var dailyGoalToDate = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
+    @State private var dailyGoalToDate =
+        Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
 
     // MARK: - Metrics State
 
@@ -82,18 +87,20 @@ struct AddHabitFormView: View {
     @State private var transportMode = 0
     @State private var routeStops: [RouteStop] = []
     @State private var startDate = Date()
-    @State private var endDate = Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date()
+    @State private var endDate =
+        Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date()
 
     // MARK: - Budgets State
 
     @State private var budgetAmount = 500.0
     @State private var currencyIndex = 0
     @State private var alertThreshold = 80.0
-    @State private var budgetType = 1            // 0=One-time, 1=Recurring
-    @State private var budgetPeriodIndex = 1     // 0=Weekly, 1=Monthly, 2=Yearly
+    @State private var budgetType = 1  // 0=One-time, 1=Recurring
+    @State private var budgetPeriodIndex = 1  // 0=Weekly, 1=Monthly, 2=Yearly
     @State private var budgetStartDate = Date()
     @State private var budgetEndDateEnabled = false
-    @State private var budgetEndDate = Calendar.current.date(byAdding: .month, value: 6, to: Date()) ?? Date()
+    @State private var budgetEndDate =
+        Calendar.current.date(byAdding: .month, value: 6, to: Date()) ?? Date()
     @State private var budgetReminder = true
     @State private var budgetReminderTime: Date = {
         let calendar = Calendar.current
@@ -105,7 +112,7 @@ struct AddHabitFormView: View {
 
     // MARK: - Notes State
 
-    @State private var noteFormatIndex = 0    // 0=Plain Text, 1=Markdown, 2=Voice Memo
+    @State private var noteFormatIndex = 0  // 0=Plain Text, 1=Markdown, 2=Voice Memo
     @State private var noteTags: [String] = []
 
     // MARK: - Journal State
@@ -176,15 +183,15 @@ struct AddHabitFormView: View {
                     let finalEndDate: Date?
 
                     switch frequency {
-                    case 0: // Once — no selected days, no end date
+                    case 0:  // Once — no selected days, no end date
                         resolvedSelectedDays = []
                         finalEndDateEnabled = false
                         finalEndDate = nil
-                    case 1: // Daily — no selected days, no end date
+                    case 1:  // Daily — no selected days, no end date
                         resolvedSelectedDays = []
                         finalEndDateEnabled = false
                         finalEndDate = nil
-                    case 2: // Custom — all fields relevant
+                    case 2:  // Custom — all fields relevant
                         resolvedSelectedDays = Array(selectedDays)
                         finalEndDateEnabled = resolvedEndDateEnabled
                         finalEndDate = resolvedEndDate
@@ -207,7 +214,8 @@ struct AddHabitFormView: View {
                         endDateEnabled: finalEndDateEnabled,
                         endDate: finalEndDate,
                         reminderEnabled: reminderEnabled,
-                        reminderTime: resolvedReminderTime
+                        reminderTime: resolvedReminderTime,
+                        sortOrder: allHabits.count
                     )
                     modelContext.insert(entry)
                     if let dismissSheet {

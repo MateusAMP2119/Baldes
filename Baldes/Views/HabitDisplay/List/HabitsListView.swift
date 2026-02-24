@@ -1,7 +1,7 @@
-import SwiftUI
-import SwiftData
-import UIKit
 import AudioToolbox
+import SwiftData
+import SwiftUI
+import UIKit
 
 struct HabitsListView: View {
     var selectedDate: Date
@@ -20,11 +20,23 @@ struct HabitsListView: View {
     private var scheduledHabits: [HabitEntry] {
         visibleHabits
             .filter { $0.hasTime }
-            .sorted { ($0.scheduleTime ?? .distantPast) < ($1.scheduleTime ?? .distantPast) }
+            .sorted {
+                if $0.sortOrder != $1.sortOrder {
+                    return $0.sortOrder < $1.sortOrder
+                }
+                return ($0.scheduleTime ?? .distantPast) < ($1.scheduleTime ?? .distantPast)
+            }
     }
 
     private var anytimeHabits: [HabitEntry] {
-        visibleHabits.filter { !$0.hasTime }
+        visibleHabits
+            .filter { !$0.hasTime }
+            .sorted {
+                if $0.sortOrder != $1.sortOrder {
+                    return $0.sortOrder < $1.sortOrder
+                }
+                return $0.createdAt < $1.createdAt
+            }
     }
 
     var body: some View {
@@ -101,10 +113,14 @@ struct HabitsListView: View {
                         isFirst: index == 0,
                         isLast: index == scheduledHabits.count - 1
                     )
+                    .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
                     .listRowInsets(EdgeInsets())
                     .listRowSeparator(index < scheduledHabits.count - 1 ? .visible : .hidden)
                     .listRowSeparatorTint(Color.dividerColor)
-                    .listRowBackground(Color.white)
+                    .listRowBackground(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.white)
+                    )
                     .swipeActions(edge: .leading, allowsFullSwipe: true) {
                         Button(role: .destructive) {
                             deleteHabit(habit)
@@ -128,6 +144,9 @@ struct HabitsListView: View {
                         }
                         .tint(.blue)
                     }
+                }
+                .onMove { source, destination in
+                    moveHabits(from: source, to: destination, in: scheduledHabits)
                 }
             }
             .listStyle(.plain)
@@ -196,10 +215,14 @@ struct HabitsListView: View {
                             isFirst: index == 0,
                             isLast: index == anytimeHabits.count - 1
                         )
+                        .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(index < anytimeHabits.count - 1 ? .visible : .hidden)
                         .listRowSeparatorTint(Color.dividerColor)
-                        .listRowBackground(Color.white)
+                        .listRowBackground(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.white)
+                        )
                         .swipeActions(edge: .leading, allowsFullSwipe: true) {
                             Button(role: .destructive) {
                                 deleteHabit(habit)
@@ -223,6 +246,9 @@ struct HabitsListView: View {
                             }
                             .tint(.blue)
                         }
+                    }
+                    .onMove { source, destination in
+                        moveHabits(from: source, to: destination, in: anytimeHabits)
                     }
                 }
                 .listStyle(.plain)
@@ -258,11 +284,11 @@ struct HabitsListView: View {
             triggerConfetti()
             let impact = UIImpactFeedbackGenerator(style: .medium)
             impact.impactOccurred()
-            AudioServicesPlaySystemSound(1004) // tap
+            AudioServicesPlaySystemSound(1004)  // tap
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 let notification = UINotificationFeedbackGenerator()
                 notification.notificationOccurred(.success)
-                AudioServicesPlaySystemSound(1025) // send swoosh
+                AudioServicesPlaySystemSound(1025)  // send swoosh
             }
         case 1:
             // 2nd completion — heavier hit, haptic only
@@ -291,7 +317,7 @@ struct HabitsListView: View {
         // Mail-style delete swoosh + warning haptic
         let notification = UINotificationFeedbackGenerator()
         notification.notificationOccurred(.warning)
-        AudioServicesPlaySystemSound(1001) // mail delete swoosh
+        AudioServicesPlaySystemSound(1001)  // mail delete swoosh
 
         withAnimation(.spring(duration: 0.3)) {
             habit.archivedDate = Date()
@@ -302,6 +328,14 @@ struct HabitsListView: View {
         showConfetti = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             showConfetti = false
+        }
+    }
+
+    private func moveHabits(from source: IndexSet, to destination: Int, in habits: [HabitEntry]) {
+        var reordered = habits
+        reordered.move(fromOffsets: source, toOffset: destination)
+        for (index, habit) in reordered.enumerated() {
+            habit.sortOrder = index
         }
     }
 }
@@ -336,16 +370,18 @@ private struct HeightKey: PreferenceKey {
             reminderEnabled: false,
             reminderTime: nil
         )
-        scheduled1.completionLogs = [Date(), Date()] // 2 completions
+        scheduled1.completionLogs = [Date(), Date()]  // 2 completions
         c.mainContext.insert(scheduled1)
 
         let scheduled2 = HabitEntry(
             name: "Meditation",
             emoji: "🧘",
             habitTypeRaw: "timed",
-            motivationQuote: "You have power over your mind, not outside events. Realize this, and you will find strength.",
+            motivationQuote:
+                "You have power over your mind, not outside events. Realize this, and you will find strength.",
             hasTime: true,
-            scheduleTime: Calendar.current.date(bySettingHour: 8, minute: 30, second: 0, of: Date()),
+            scheduleTime: Calendar.current.date(
+                bySettingHour: 8, minute: 30, second: 0, of: Date()),
             frequency: 1,
             selectedDays: [],
             startDate: Date(),
@@ -354,7 +390,7 @@ private struct HeightKey: PreferenceKey {
             reminderEnabled: false,
             reminderTime: nil
         )
-        scheduled2.completionLogs = [Date()] // 1 completion
+        scheduled2.completionLogs = [Date()]  // 1 completion
         c.mainContext.insert(scheduled2)
 
         let scheduled3 = HabitEntry(
@@ -363,7 +399,8 @@ private struct HeightKey: PreferenceKey {
             habitTypeRaw: "timed",
             motivationQuote: "We are what we repeatedly do. Excellence is not an act, but a habit.",
             hasTime: true,
-            scheduleTime: Calendar.current.date(bySettingHour: 10, minute: 0, second: 0, of: Date()),
+            scheduleTime: Calendar.current.date(
+                bySettingHour: 10, minute: 0, second: 0, of: Date()),
             frequency: 1,
             selectedDays: [],
             startDate: Date(),
@@ -390,7 +427,7 @@ private struct HeightKey: PreferenceKey {
             reminderEnabled: false,
             reminderTime: nil
         )
-        anytime1.completionLogs = [Date(), Date(), Date()] // 3 completions — max crescendo
+        anytime1.completionLogs = [Date(), Date(), Date()]  // 3 completions — max crescendo
         c.mainContext.insert(anytime1)
 
         let anytime2 = HabitEntry(
