@@ -160,6 +160,10 @@ struct HabitsListView: View {
             .frame(height: scheduledCardHeight)
         }
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white)
+        )
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .strokeBorder(Color.borderStrong, lineWidth: 2)
@@ -266,6 +270,10 @@ struct HabitsListView: View {
                 .frame(height: anytimeCardHeight)
             }
             .clipShape(RoundedRectangle(cornerRadius: 12))
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white)
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
                     .strokeBorder(Color.borderStrong, lineWidth: 2)
@@ -327,7 +335,7 @@ struct HabitsListView: View {
         notification.notificationOccurred(.warning)
         AudioServicesPlaySystemSound(1001)  // mail delete swoosh
 
-        withAnimation(.spring(duration: 0.3)) {
+        withAnimation(.easeOut(duration: 0.35)) {
             habit.archivedDate = Date()
         }
     }
