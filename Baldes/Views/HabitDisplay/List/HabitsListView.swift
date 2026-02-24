@@ -44,6 +44,11 @@ struct HabitsListView: View {
             if scheduledHabits.isEmpty && anytimeHabits.isEmpty {
                 emptyState
             } else {
+                // Incomplete setup warning
+                if visibleHabits.contains(where: { $0.isIncomplete }) {
+                    incompleteWarningBanner
+                }
+
                 if !scheduledHabits.isEmpty {
                     scheduledHabitsCard
                 }
@@ -61,6 +66,37 @@ struct HabitsListView: View {
                 )
             }
         }
+    }
+
+    // MARK: - Incomplete Warning Banner
+
+    private var incompleteWarningBanner: some View {
+        let count = visibleHabits.filter { $0.isIncomplete }.count
+        return HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color.accentYellow)
+
+            Text(count == 1
+                 ? "1 habit needs finishing setup"
+                 : "\(count) habits need finishing setup")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.textPrimary)
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.textTertiary)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(Color.accentYellow.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(Color.accentYellow.opacity(0.3), lineWidth: 1)
+        )
     }
 
     // MARK: - Empty State

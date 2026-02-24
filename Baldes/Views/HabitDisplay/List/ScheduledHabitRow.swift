@@ -41,15 +41,28 @@ struct HabitRowView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 10) {
                     // Emoji
-                    Text(habit.emoji)
-                        .font(.system(size: 22))
-                        .frame(width: 42, height: 42)
-                        .background(habit.habitType.tagBackgroundColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .strokeBorder(habit.accentColor.opacity(0.3), lineWidth: 1.5)
-                        )
+                    ZStack(alignment: .topTrailing) {
+                        Text(habit.emoji)
+                            .font(.system(size: 22))
+                            .frame(width: 42, height: 42)
+                            .background(habit.habitType.tagBackgroundColor)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .strokeBorder(habit.accentColor.opacity(0.3), lineWidth: 1.5)
+                            )
+
+                        if habit.isIncomplete {
+                            Image(systemName: "exclamationmark")
+                                .font(.system(size: 8, weight: .black))
+                                .foregroundStyle(.white)
+                                .frame(width: 16, height: 16)
+                                .background(Color.accentYellow)
+                                .clipShape(Circle())
+                                .overlay(Circle().strokeBorder(.white, lineWidth: 1.5))
+                                .offset(x: 4, y: -4)
+                        }
+                    }
 
                     // Name + type icon
                     VStack(alignment: .leading, spacing: 3) {

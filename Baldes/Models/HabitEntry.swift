@@ -41,6 +41,17 @@ final class HabitEntry {
         habitType.color
     }
 
+    /// True when the habit still has unconfigured fields.
+    var isIncomplete: Bool {
+        if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return true }
+        if emoji == "\u{2B50}" { return true } // default star
+        if motivationQuote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return true }
+        if hasTime && scheduleTime == nil { return true }
+        if frequency == 2 && selectedDays.isEmpty { return true }
+        if reminderEnabled && reminderTime == nil { return true }
+        return false
+    }
+
     var categoryName: String {
         habitType.categoryName
     }
