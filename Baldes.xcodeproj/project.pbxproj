@@ -29,9 +29,22 @@
 		A796999D2F45DBE7004B9522 /* BaldesUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BaldesUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A74282BE2F4EF95C00ED3CD8 /* Exceptions for "Baldes" folder in "Baldes" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A79699852F45DBE6004B9522 /* Baldes */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A79699882F45DBE6004B9522 /* Baldes */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A74282BE2F4EF95C00ED3CD8 /* Exceptions for "Baldes" folder in "Baldes" target */,
+			);
 			path = Baldes;
 			sourceTree = "<group>";
 		};
@@ -401,7 +414,9 @@
 				DEVELOPMENT_TEAM = SC8X3XN7R6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Baldes/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Baldes;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -441,7 +456,9 @@
 				DEVELOPMENT_TEAM = SC8X3XN7R6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Baldes/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Baldes;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
