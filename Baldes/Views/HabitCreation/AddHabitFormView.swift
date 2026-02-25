@@ -11,6 +11,8 @@ struct AddHabitFormView: View {
 
     private var isEditing: Bool { existingHabit != nil }
 
+    @State private var showNotificationDeniedAlert = false
+
     // MARK: - Shared State
 
     @State private var habitName = ""
@@ -226,6 +228,14 @@ struct AddHabitFormView: View {
                         existing.endDate = finalEndDate
                         existing.reminderEnabled = reminderEnabled
                         existing.reminderTime = resolvedReminderTime
+
+                        if existing.reminderEnabled {
+                            NotificationManager.shared.ensurePermissionAndSchedule(for: existing) {
+                                showNotificationDeniedAlert = true
+                            }
+                        } else {
+                            NotificationManager.shared.cancelNotifications(for: existing)
+                        }
                     } else {
                         // Create new habit
                         let entry = HabitEntry(
@@ -245,6 +255,12 @@ struct AddHabitFormView: View {
                             sortOrder: allHabits.count
                         )
                         modelContext.insert(entry)
+
+                        if entry.reminderEnabled {
+                            NotificationManager.shared.ensurePermissionAndSchedule(for: entry) {
+                                showNotificationDeniedAlert = true
+                            }
+                        }
                     }
                     if let dismissSheet {
                         dismissSheet()
@@ -258,6 +274,16 @@ struct AddHabitFormView: View {
                 }
                 .animation(.easeInOut(duration: 0.3), value: habitType)
             }
+        }
+        .alert("Notifications Disabled", isPresented: $showNotificationDeniedAlert) {
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            Button("Not Now", role: .cancel) {}
+        } message: {
+            Text("You set a reminder for this habit, but notifications are turned off. Enable them in Settings so you don't miss it.")
         }
     }
 

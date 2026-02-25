@@ -443,6 +443,8 @@ struct HabitsListView: View {
         notification.notificationOccurred(.warning)
         AudioServicesPlaySystemSound(1001)  // mail delete swoosh
 
+        NotificationManager.shared.cancelNotifications(for: habit)
+
         withAnimation(.easeOut(duration: 0.35)) {
             habit.archivedDate = Date()
         }
