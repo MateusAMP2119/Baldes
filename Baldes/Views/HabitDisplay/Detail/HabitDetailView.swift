@@ -97,14 +97,27 @@ struct HabitDetailView: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 20) {
-                mascotHeroCard
-                quoteCard
+                if habit.habitType != .todo {
+                    mascotHeroCard
+                    quoteCard
+                } else {
+                    todoQuoteWithMascot
+                }
                 infoRows
                 mainContentCard
-                periodSelector
-                statsGrid
-                weeklyChartCard
-                recentActivityCard
+
+                if habit.habitType == .todo {
+                    // One-time todos: no stats at all
+                    // Recurring todos: adapted stats
+                    if habit.frequency != 0 {
+                        todoStatsGrid
+                    }
+                } else {
+                    periodSelector
+                    statsGrid
+                    weeklyChartCard
+                    recentActivityCard
+                }
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
@@ -201,15 +214,6 @@ struct HabitDetailView: View {
 
     private var quoteCard: some View {
         HStack(spacing: 12) {
-            Text(habit.emoji)
-                .font(.system(size: 22))
-                .frame(width: 44, height: 44)
-                .background(habit.habitType.color.opacity(0.15))
-                .clipShape(Circle())
-                .overlay(
-                    Circle()
-                        .strokeBorder(Color.borderStrong, lineWidth: 1.5)
-                )
 
             if !habit.motivationQuote.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
@@ -240,21 +244,25 @@ struct HabitDetailView: View {
             RoundedRectangle(cornerRadius: 14)
                 .strokeBorder(Color.borderStrong, lineWidth: 2)
         )
-        .overlay(alignment: .leading) {
-            UnevenRoundedRectangle(
-                topLeadingRadius: 14,
-                bottomLeadingRadius: 14,
-                bottomTrailingRadius: 0,
-                topTrailingRadius: 0
-            )
-            .fill(habit.habitType.color)
-            .frame(width: 5)
-        }
         .background(
             RoundedRectangle(cornerRadius: 14)
                 .fill(habit.habitType.shadowColor)
                 .offset(x: 4, y: 4)
         )
+    }
+
+    // MARK: - Todo Quote With Mascot
+
+    private var todoQuoteWithMascot: some View {
+        HStack(alignment: .bottom, spacing: 0) {
+            Image(habit.habitType.mascotImageName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 86, height: 86)
+                .offset(y: 4)
+
+            quoteCard
+        }
     }
 
     // MARK: - Info Rows
@@ -297,6 +305,30 @@ struct HabitDetailView: View {
     }
 
     private var scheduleDescription: String {
+        // Todo-specific descriptions
+        if habit.habitType == .todo {
+            switch habit.frequency {
+            case 0:
+                return "One-time list"
+            case 1:
+                if habit.hasTime, let time = habit.scheduleTime {
+                    return "Resets daily at \(formattedTime(time))"
+                }
+                return "Resets daily"
+            case 2:
+                let dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                let selected = habit.selectedDays.sorted().compactMap {
+                    $0 < dayNames.count ? dayNames[$0] : nil
+                }
+                if habit.hasTime, let time = habit.scheduleTime {
+                    return "Resets \(selected.joined(separator: ", ")) at \(formattedTime(time))"
+                }
+                return "Resets on \(selected.joined(separator: ", "))"
+            default:
+                return "Resets daily"
+            }
+        }
+
         switch habit.frequency {
         case 0:
             return "Once on \(formattedDate(habit.startDate))"
@@ -321,15 +353,24 @@ struct HabitDetailView: View {
 
     private var targetDescription: String {
         switch habit.habitType {
-        case .timed: "Target: 45 minutes"
-        case .metrics: "Target: 10,000 steps"
-        case .dailyGoals: "Target: 3 goals completed"
-        case .todo: "5 items to complete"
-        case .routes: "Target: 10 km/h"
-        case .budgets: "Monthly budget: $600"
-        case .notes: "Capture daily notes"
-        case .journal: "Write daily entries"
+        case .timed: return "Target: 45 minutes"
+        case .metrics: return "Target: 10,000 steps"
+        case .dailyGoals: return "Target: 3 goals completed"
+        case .todo: return todoTargetDescription
+        case .routes: return "Target: 10 km/h"
+        case .budgets: return "Monthly budget: $600"
+        case .notes: return "Capture daily notes"
+        case .journal: return "Write daily entries"
         }
+    }
+
+    private var todoTargetDescription: String {
+        let count = habit.activeTodoItems.count
+        let deadlineCount = habit.activeTodoItems.filter { $0.deadline != nil }.count
+        if deadlineCount > 0 {
+            return "\(count) item\(count == 1 ? "" : "s") (\(deadlineCount) with deadline\(deadlineCount == 1 ? "" : "s"))"
+        }
+        return "\(count) item\(count == 1 ? "" : "s") to complete"
     }
 
     private func formattedTime(_ date: Date) -> String {
@@ -480,32 +521,211 @@ struct HabitDetailView: View {
 
     // MARK: Checklist Content
 
-    private var checklistContent: some View {
-        VStack(spacing: 12) {
-            let completed = habit.completionCount(on: selectedDate)
+    private var isOneTimeTodo: Bool {
+        habit.habitType == .todo && habit.frequency == 0
+    }
 
+    private func todoIsCompleted(item: TodoItem) -> Bool {
+        if isOneTimeTodo {
+            return habit.isTodoItemCompletedGlobally(item: item)
+        }
+        return habit.isTodoItemCompleted(item: item, on: selectedDate)
+    }
+
+    private var todoCompletedCount: Int {
+        habit.activeTodoItems.filter { todoIsCompleted(item: $0) }.count
+    }
+
+    /// Sort: uncompleted first (overdue at top, then by deadline, then no-deadline), completed last.
+    private var sortedTodoItems: [TodoItem] {
+        let items = habit.activeTodoItems
+        let now = Date()
+        return items.sorted { a, b in
+            let aCompleted = todoIsCompleted(item: a)
+            let bCompleted = todoIsCompleted(item: b)
+            // Completed items sink to the bottom
+            if aCompleted != bCompleted { return !aCompleted }
+            // Among uncompleted: overdue first
+            let aOverdue = a.deadline.map { $0 < now } ?? false
+            let bOverdue = b.deadline.map { $0 < now } ?? false
+            if aOverdue != bOverdue { return aOverdue }
+            // Then sort by deadline (soonest first), no-deadline last
+            switch (a.deadline, b.deadline) {
+            case (let ad?, let bd?): return ad < bd
+            case (.some, nil): return true
+            case (nil, .some): return false
+            case (nil, nil): return false
+            }
+        }
+    }
+
+    private var checklistContent: some View {
+        VStack(spacing: 16) {
+            let items = habit.activeTodoItems
+            let completedCount = todoCompletedCount
+            let totalCount = items.count
+
+            // Progress header
             HStack {
-                Text("\(completed) completed")
+                Text("\(completedCount) of \(totalCount) done")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Color.textPrimary)
                 Spacer()
-                if completed > 0 {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(habit.habitType.color)
+                if completedCount == totalCount && totalCount > 0 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 14))
+                        Text("All done!")
+                            .font(.system(size: 13, weight: .bold))
+                    }
+                    .foregroundStyle(habit.habitType.color)
                 }
             }
 
-            neoCTAButton(icon: "checkmark.circle.fill", label: "Complete Item") {
-                logCompletion()
+            // Progress bar
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(habit.habitType.color.opacity(0.15))
+                        .frame(height: 6)
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(habit.habitType.color)
+                        .frame(
+                            width: totalCount > 0
+                                ? geo.size.width * CGFloat(completedCount) / CGFloat(totalCount)
+                                : 0,
+                            height: 6
+                        )
+                        .animation(.spring(duration: 0.3), value: completedCount)
+                }
+            }
+            .frame(height: 6)
+
+            // Overdue warning
+            let overdueCount = habit.overdueItems.count
+            if overdueCount > 0 {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 12))
+                    Text("\(overdueCount) overdue item\(overdueCount == 1 ? "" : "s")")
+                        .font(.system(size: 12, weight: .semibold))
+                }
+                .foregroundStyle(.red)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            if completed > 0 {
-                undoButton
+            // Todo items
+            if items.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "checklist")
+                        .font(.system(size: 28))
+                        .foregroundStyle(Color.textTertiary)
+                    Text("No to-do items yet")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color.textTertiary)
+                    Text("Edit this habit to add items")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.textTertiary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(Array(sortedTodoItems.enumerated()), id: \.element.id) { index, item in
+                        if index > 0 {
+                            Divider().padding(.leading, 42)
+                        }
+                        todoItemRow(item: item)
+                    }
+                }
             }
-
-            logPastLink
         }
+    }
+
+    private func todoItemRow(item: TodoItem) -> some View {
+        let isCompleted = todoIsCompleted(item: item)
+        let isOverdue = item.deadline.map { $0 < Date() && !isCompleted } ?? false
+
+        return Button {
+            withAnimation(.spring(duration: 0.3)) {
+                habit.toggleTodoItem(item: item, on: selectedDate)
+            }
+            let impact = UIImpactFeedbackGenerator(style: .light)
+            impact.impactOccurred()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundStyle(
+                        isCompleted ? habit.habitType.color :
+                        isOverdue ? .red : Color.textTertiary
+                    )
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.title)
+                        .font(.system(size: 15, weight: isCompleted ? .medium : .regular))
+                        .foregroundStyle(
+                            isCompleted ? Color.textTertiary :
+                            isOverdue ? .red : Color.textPrimary
+                        )
+                        .strikethrough(isCompleted, color: Color.textTertiary)
+
+                    if let deadline = item.deadline {
+                        HStack(spacing: 4) {
+                            Image(systemName: "clock")
+                                .font(.system(size: 10))
+                            Text(formattedDeadline(deadline))
+                                .font(.system(size: 11, weight: .medium))
+                        }
+                        .foregroundStyle(
+                            isCompleted ? Color.textTertiary :
+                            isOverdue ? .red : Color.textSecondary
+                        )
+                    }
+                }
+
+                Spacer()
+            }
+            .padding(.vertical, 10)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func formattedDeadline(_ date: Date) -> String {
+        let calendar = Calendar.current
+        if date < Date() {
+            let components = calendar.dateComponents([.day, .hour], from: date, to: Date())
+            if let days = components.day, days > 0 {
+                return "Overdue by \(days)d"
+            }
+            if let hours = components.hour, hours > 0 {
+                return "Overdue by \(hours)h"
+            }
+            return "Overdue"
+        }
+
+        if calendar.isDateInToday(date) {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "'Today' h:mm a"
+            return formatter.string(from: date)
+        }
+        if calendar.isDateInTomorrow(date) {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "'Tomorrow' h:mm a"
+            return formatter.string(from: date)
+        }
+
+        let days = calendar.dateComponents([.day], from: Date(), to: date).day ?? 0
+        if days <= 7 {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "EEEE h:mm a"
+            return formatter.string(from: date)
+        }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d"
+        return formatter.string(from: date)
     }
 
 
@@ -867,6 +1087,52 @@ struct HabitDetailView: View {
         }
     }
 
+    // MARK: - Todo Stats (recurring only)
+
+    private var todoCompletionStreak: Int {
+        guard !habit.activeTodoItems.isEmpty else { return 0 }
+        let today = calendar.startOfDay(for: Date())
+        var streak = 0
+        var checkDate = today
+
+        while true {
+            if habit.allTodosCompleted(on: checkDate) {
+                streak += 1
+                checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
+            } else {
+                break
+            }
+        }
+        return streak
+    }
+
+    private var todoDaysFullyCompleted: Int {
+        guard !habit.activeTodoItems.isEmpty else { return 0 }
+        let allDates = Set(habit.activeTodoCompletions.compactMap { entry -> Date? in
+            let parts = entry.split(separator: ":")
+            guard parts.count == 2 else { return nil }
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            return formatter.date(from: String(parts[0]))
+        })
+        return allDates.filter { habit.allTodosCompleted(on: $0) }.count
+    }
+
+    private var todoStatsGrid: some View {
+        HStack(spacing: 10) {
+            neoStatPill(
+                value: "\(todoCompletionStreak)",
+                label: "Streak",
+                icon: "flame.fill"
+            )
+            neoStatPill(
+                value: "\(todoDaysFullyCompleted)",
+                label: "Completed",
+                icon: "checkmark.circle.fill"
+            )
+        }
+    }
+
     private func neoStatPill(value: String, label: String, icon: String) -> some View {
         VStack(spacing: 6) {
             Image(systemName: icon)
@@ -997,7 +1263,7 @@ struct HabitDetailView: View {
         switch habit.habitType {
         case .timed: "Recent Sessions"
         case .budgets: "Recent Transactions"
-        case .todo: "Recent Sessions"
+        case .todo: "Recent Activity"
         default: "Recent Activity"
         }
     }

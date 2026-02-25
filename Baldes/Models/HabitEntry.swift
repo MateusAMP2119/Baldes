@@ -25,11 +25,60 @@ final class HabitEntry {
     var reminderEnabled: Bool
     var reminderTime: Date?
 
+    // Todo — legacy fields (kept for automatic migration)
+    var todoItems: [String] = []
+    var todoCompletions: [String] = []
+
+    // Todo — V2 fields (UUID-based, with deadlines)
+    var todoItemsData: [TodoItem] = []
+    var todoCompletionsV2: [String] = []  // "yyyy-MM-dd:uuid"
+
     // Completion tracking
     var completionLogs: [Date] = []
 
     // Soft delete
     var archivedDate: Date?
+
+    // MARK: - Lazy Migration
+
+    /// Transparently migrates legacy [String] todo items to [TodoItem] on first access.
+    var activeTodoItems: [TodoItem] {
+        if !todoItems.isEmpty && todoItemsData.isEmpty {
+            migrateToV2()
+        }
+        return todoItemsData
+    }
+
+    /// Active completions — uses V2 if available, otherwise falls back to legacy.
+    var activeTodoCompletions: [String] {
+        get {
+            if !todoItems.isEmpty && todoItemsData.isEmpty {
+                migrateToV2()
+            }
+            return todoCompletionsV2
+        }
+        set {
+            todoCompletionsV2 = newValue
+        }
+    }
+
+    private func migrateToV2() {
+        let newItems = todoItems.map { TodoItem(title: $0) }
+
+        var migratedCompletions: [String] = []
+        for completion in todoCompletions {
+            let parts = completion.split(separator: ":")
+            guard parts.count == 2,
+                  let index = Int(parts[1]),
+                  index < newItems.count else { continue }
+            migratedCompletions.append("\(parts[0]):\(newItems[index].id.uuidString)")
+        }
+
+        todoItemsData = newItems
+        todoCompletionsV2 = migratedCompletions
+        todoItems = []
+        todoCompletions = []
+    }
 
     // MARK: - Computed Properties
 
@@ -48,6 +97,7 @@ final class HabitEntry {
         if hasTime && scheduleTime == nil { return true }
         if frequency == 2 && selectedDays.isEmpty { return true }
         if reminderEnabled && reminderTime == nil { return true }
+        if habitType == .todo && activeTodoItems.isEmpty { return true }
         return false
     }
 
@@ -58,6 +108,7 @@ final class HabitEntry {
         if hasTime && scheduleTime == nil { reasons.append("Set a time") }
         if frequency == 2 && selectedDays.isEmpty { reasons.append("Pick active days") }
         if reminderEnabled && reminderTime == nil { reasons.append("Set reminder time") }
+        if habitType == .todo && activeTodoItems.isEmpty { reasons.append("Add to-do items") }
         return reasons
     }
 
@@ -127,6 +178,91 @@ final class HabitEntry {
         }
     }
 
+    // MARK: - Todo Completion Helpers
+
+    private static let todoDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
+    func isTodoItemCompleted(item: TodoItem, on date: Date) -> Bool {
+        let key = "\(Self.todoDateFormatter.string(from: date)):\(item.id.uuidString)"
+        return activeTodoCompletions.contains(key)
+    }
+
+    func toggleTodoItem(item: TodoItem, on date: Date) {
+        let key = "\(Self.todoDateFormatter.string(from: date)):\(item.id.uuidString)"
+        if let existing = todoCompletionsV2.firstIndex(of: key) {
+            todoCompletionsV2.remove(at: existing)
+        } else {
+            todoCompletionsV2.append(key)
+        }
+    }
+
+    func completedTodoCount(on date: Date) -> Int {
+        let prefix = Self.todoDateFormatter.string(from: date) + ":"
+        return activeTodoCompletions.filter { $0.hasPrefix(prefix) }.count
+    }
+
+    var allTodosCompleted: Bool {
+        let items = activeTodoItems
+        guard habitType == .todo, !items.isEmpty else { return false }
+        let prefix = Self.todoDateFormatter.string(from: Date()) + ":"
+        let todayCount = activeTodoCompletions.filter { $0.hasPrefix(prefix) }.count
+        return todayCount >= items.count
+    }
+
+    func allTodosCompleted(on date: Date) -> Bool {
+        let items = activeTodoItems
+        guard habitType == .todo, !items.isEmpty else { return false }
+        return completedTodoCount(on: date) >= items.count
+    }
+
+    /// For one-time (frequency=0) todos: true when every item has been completed on ANY day.
+    var allTodosCompletedGlobally: Bool {
+        let items = activeTodoItems
+        guard habitType == .todo, !items.isEmpty else { return false }
+        let completedIDs = Set(activeTodoCompletions.compactMap { entry -> String? in
+            let parts = entry.split(separator: ":")
+            guard parts.count == 2 else { return nil }
+            return String(parts[1])
+        })
+        return items.allSatisfy { completedIDs.contains($0.id.uuidString) }
+    }
+
+    /// For one-time todos: was this item completed on any date?
+    func isTodoItemCompletedGlobally(item: TodoItem) -> Bool {
+        activeTodoCompletions.contains { $0.hasSuffix(":\(item.id.uuidString)") }
+    }
+
+    /// Returns todo items with upcoming deadlines (within next 24h) that are not yet completed.
+    var upcomingDeadlineItems: [TodoItem] {
+        let now = Date()
+        let tomorrow = now.addingTimeInterval(24 * 60 * 60)
+        return activeTodoItems.filter { item in
+            guard let deadline = item.deadline else { return false }
+            guard deadline > now && deadline <= tomorrow else { return false }
+            if frequency == 0 {
+                return !isTodoItemCompletedGlobally(item: item)
+            }
+            return !isTodoItemCompleted(item: item, on: now)
+        }
+    }
+
+    /// Returns overdue todo items (deadline passed, not completed).
+    var overdueItems: [TodoItem] {
+        let now = Date()
+        return activeTodoItems.filter { item in
+            guard let deadline = item.deadline else { return false }
+            guard deadline < now else { return false }
+            if frequency == 0 {
+                return !isTodoItemCompletedGlobally(item: item)
+            }
+            return !isTodoItemCompleted(item: item, on: now)
+        }
+    }
+
     func heatLevel(on date: Date) -> Int {
         let count = completionCount(on: date)
         switch count {
@@ -152,7 +288,13 @@ final class HabitEntry {
         let start = calendar.startOfDay(for: startDate)
 
         switch frequency {
-        case 0:  // Once — only on the exact start date
+        case 0:
+            // One-time todos persist every day from start until all items are done
+            if habitType == .todo {
+                guard day >= start else { return false }
+                return !allTodosCompletedGlobally
+            }
+            // Non-todo one-time habits: only on the exact start date
             return calendar.isDate(date, inSameDayAs: startDate)
 
         case 1:  // Daily — every day from start date onward
@@ -192,6 +334,7 @@ final class HabitEntry {
         endDate: Date?,
         reminderEnabled: Bool,
         reminderTime: Date?,
+        todoItems: [TodoItem] = [],
         completionLogs: [Date] = [],
         sortOrder: Int = 0
     ) {
@@ -211,6 +354,7 @@ final class HabitEntry {
         self.endDate = endDate
         self.reminderEnabled = reminderEnabled
         self.reminderTime = reminderTime
+        self.todoItemsData = todoItems
         self.completionLogs = completionLogs
     }
 }

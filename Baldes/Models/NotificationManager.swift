@@ -124,6 +124,53 @@ final class NotificationManager {
         default:
             break
         }
+
+        // Schedule deadline notifications for todo items
+        if habit.habitType == .todo {
+            scheduleDeadlineNotifications(for: habit)
+        }
+    }
+
+    // MARK: - Deadline Notifications
+
+    /// Schedules a notification 1 hour before each todo item's deadline.
+    func scheduleDeadlineNotifications(for habit: HabitEntry) {
+        cancelDeadlineNotifications(for: habit)
+
+        guard habit.habitType == .todo else { return }
+
+        let now = Date()
+        for item in habit.activeTodoItems {
+            guard let deadline = item.deadline, deadline > now else { continue }
+
+            // Schedule 1 hour before deadline
+            let reminderDate = deadline.addingTimeInterval(-3600)
+            guard reminderDate > now else { continue }
+
+            let content = UNMutableNotificationContent()
+            content.title = "\(habit.emoji) \(habit.name)"
+            content.body = "\"\(item.title)\" is due in 1 hour"
+            content.sound = .default
+
+            let components = Calendar.current.dateComponents(
+                [.year, .month, .day, .hour, .minute], from: reminderDate
+            )
+            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+            let request = UNNotificationRequest(
+                identifier: "habit-\(habit.id.uuidString)-deadline-\(item.id.uuidString)",
+                content: content,
+                trigger: trigger
+            )
+            UNUserNotificationCenter.current().add(request)
+        }
+    }
+
+    func cancelDeadlineNotifications(for habit: HabitEntry) {
+        let ids = habit.activeTodoItems.map {
+            "habit-\(habit.id.uuidString)-deadline-\($0.id.uuidString)"
+        }
+        guard !ids.isEmpty else { return }
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
     }
 
     // MARK: - Cancel
@@ -138,6 +185,9 @@ final class NotificationManager {
             ids.append(notificationID(for: habit, suffix: "day\(day)"))
         }
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
+
+        // Also cancel any deadline notifications
+        cancelDeadlineNotifications(for: habit)
     }
 
     // MARK: - Helpers

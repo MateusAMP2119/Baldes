@@ -11,7 +11,7 @@ struct HabitsListView: View {
     @State private var scheduledCardHeight: CGFloat = 0
     @State private var anytimeCardHeight: CGFloat = 0
     @State private var habitToEdit: HabitEntry?
-    @State private var incompleteBannerExpanded = false
+    @State private var incompleteBannerExpanded = true
     @Binding var showConfetti: Bool
 
     private var visibleHabits: [HabitEntry] {
@@ -105,6 +105,7 @@ struct HabitsListView: View {
                 .padding(.horizontal, 14)
                 .padding(.top, 0)
                 .padding(.vertical, 10)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
@@ -143,6 +144,7 @@ struct HabitsListView: View {
                             }
                             .padding(.horizontal, 14)
                             .padding(.vertical, 8)
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                     }

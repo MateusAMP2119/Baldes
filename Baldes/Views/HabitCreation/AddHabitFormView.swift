@@ -91,7 +91,17 @@ struct AddHabitFormView: View {
 
     // MARK: - Todo State
 
-    @State private var todoItems: [String] = []
+    @State private var todoItems: [TodoItem] = []
+    @State private var todoRecurring = false
+    @State private var todoSelectedDays: Set<Int> = [0, 1, 2, 3, 4]
+    @State private var todoHasTime = false
+    @State private var todoScheduleTime: Date = {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: Date())
+        components.hour = 9
+        components.minute = 0
+        return calendar.date(from: components) ?? Date()
+    }()
 
     // MARK: - Routes State
 
@@ -181,6 +191,12 @@ struct AddHabitFormView: View {
                         resolvedEndDate = budgetEndDateEnabled ? budgetEndDate : nil
                         resolvedScheduleTime = nil
                         resolvedReminderTime = budgetReminder ? budgetReminderTime : nil
+                    case .todo:
+                        resolvedStartDate = Date()
+                        resolvedEndDateEnabled = false
+                        resolvedEndDate = nil
+                        resolvedScheduleTime = (todoRecurring && todoHasTime) ? todoScheduleTime : nil
+                        resolvedReminderTime = reminderEnabled ? reminderTime : nil
                     default:
                         resolvedStartDate = commonStartDate
                         resolvedEndDateEnabled = commonEndDateEnabled
@@ -190,27 +206,52 @@ struct AddHabitFormView: View {
                     }
 
                     // Clean up frequency-specific fields to avoid stale data
+                    let resolvedFrequency: Int
                     let resolvedSelectedDays: [Int]
                     let finalEndDateEnabled: Bool
                     let finalEndDate: Date?
+                    let resolvedHasTime: Bool
 
-                    switch frequency {
-                    case 0:  // Once — no selected days, no end date
-                        resolvedSelectedDays = []
+                    if habitType == .todo {
+                        // Todo uses its own recurring toggle instead of the generic frequency picker
+                        if todoRecurring {
+                            if todoSelectedDays.count == 7 {
+                                resolvedFrequency = 1  // Daily
+                                resolvedSelectedDays = []
+                            } else {
+                                resolvedFrequency = 2  // Custom days
+                                resolvedSelectedDays = Array(todoSelectedDays)
+                            }
+                            resolvedHasTime = todoHasTime
+                        } else {
+                            resolvedFrequency = 0  // Once (one-time list)
+                            resolvedSelectedDays = []
+                            resolvedHasTime = false
+                        }
                         finalEndDateEnabled = false
                         finalEndDate = nil
-                    case 1:  // Daily — no selected days, no end date
-                        resolvedSelectedDays = []
-                        finalEndDateEnabled = false
-                        finalEndDate = nil
-                    case 2:  // Custom — all fields relevant
-                        resolvedSelectedDays = Array(selectedDays)
-                        finalEndDateEnabled = resolvedEndDateEnabled
-                        finalEndDate = resolvedEndDate
-                    default:
-                        resolvedSelectedDays = Array(selectedDays)
-                        finalEndDateEnabled = resolvedEndDateEnabled
-                        finalEndDate = resolvedEndDate
+                    } else {
+                        resolvedFrequency = frequency
+                        resolvedHasTime = hasTime
+
+                        switch frequency {
+                        case 0:  // Once — no selected days, no end date
+                            resolvedSelectedDays = []
+                            finalEndDateEnabled = false
+                            finalEndDate = nil
+                        case 1:  // Daily — no selected days, no end date
+                            resolvedSelectedDays = []
+                            finalEndDateEnabled = false
+                            finalEndDate = nil
+                        case 2:  // Custom — all fields relevant
+                            resolvedSelectedDays = Array(selectedDays)
+                            finalEndDateEnabled = resolvedEndDateEnabled
+                            finalEndDate = resolvedEndDate
+                        default:
+                            resolvedSelectedDays = Array(selectedDays)
+                            finalEndDateEnabled = resolvedEndDateEnabled
+                            finalEndDate = resolvedEndDate
+                        }
                     }
 
                     if let existing = existingHabit {
@@ -219,15 +260,16 @@ struct AddHabitFormView: View {
                         existing.emoji = habitEmoji
                         existing.habitTypeRaw = habitType.rawValue
                         existing.motivationQuote = motivationQuote
-                        existing.hasTime = hasTime
+                        existing.hasTime = resolvedHasTime
                         existing.scheduleTime = resolvedScheduleTime
-                        existing.frequency = frequency
+                        existing.frequency = resolvedFrequency
                         existing.selectedDays = resolvedSelectedDays
                         existing.startDate = resolvedStartDate
                         existing.endDateEnabled = finalEndDateEnabled
                         existing.endDate = finalEndDate
                         existing.reminderEnabled = reminderEnabled
                         existing.reminderTime = resolvedReminderTime
+                        existing.todoItemsData = todoItems
 
                         if existing.reminderEnabled {
                             NotificationManager.shared.ensurePermissionAndSchedule(for: existing) {
@@ -236,6 +278,11 @@ struct AddHabitFormView: View {
                         } else {
                             NotificationManager.shared.cancelNotifications(for: existing)
                         }
+
+                        // Schedule deadline notifications for todo items (independent of reminders)
+                        if habitType == .todo {
+                            NotificationManager.shared.scheduleDeadlineNotifications(for: existing)
+                        }
                     } else {
                         // Create new habit
                         let entry = HabitEntry(
@@ -243,15 +290,16 @@ struct AddHabitFormView: View {
                             emoji: habitEmoji,
                             habitTypeRaw: habitType.rawValue,
                             motivationQuote: motivationQuote,
-                            hasTime: hasTime,
+                            hasTime: resolvedHasTime,
                             scheduleTime: resolvedScheduleTime,
-                            frequency: frequency,
+                            frequency: resolvedFrequency,
                             selectedDays: resolvedSelectedDays,
                             startDate: resolvedStartDate,
                             endDateEnabled: finalEndDateEnabled,
                             endDate: finalEndDate,
                             reminderEnabled: reminderEnabled,
                             reminderTime: resolvedReminderTime,
+                            todoItems: todoItems,
                             sortOrder: allHabits.count
                         )
                         modelContext.insert(entry)
@@ -260,6 +308,11 @@ struct AddHabitFormView: View {
                             NotificationManager.shared.ensurePermissionAndSchedule(for: entry) {
                                 showNotificationDeniedAlert = true
                             }
+                        }
+
+                        // Schedule deadline notifications for todo items (independent of reminders)
+                        if habitType == .todo {
+                            NotificationManager.shared.scheduleDeadlineNotifications(for: entry)
                         }
                     }
                     if let dismissSheet {
@@ -313,6 +366,21 @@ struct AddHabitFormView: View {
             timedScheduleTime = time
         }
 
+        // Todo items & recurring state
+        todoItems = habit.activeTodoItems
+        if habit.habitType == .todo {
+            todoRecurring = habit.frequency != 0
+            todoHasTime = habit.hasTime
+            if let time = habit.scheduleTime {
+                todoScheduleTime = time
+            }
+            if habit.frequency == 2 {
+                todoSelectedDays = Set(habit.selectedDays)
+            } else if habit.frequency == 1 {
+                todoSelectedDays = Set(0...6) // Daily = all days
+            }
+        }
+
         // Dates
         switch habit.habitType {
         case .timed:
@@ -347,7 +415,7 @@ struct AddHabitFormView: View {
                 .id(habitType)
                 .transition(.blurReplace)
 
-            if habitType != .budgets && habitType != .timed {
+            if habitType != .budgets && habitType != .timed && habitType != .todo {
                 commonScheduleFields
                     .transition(.blurReplace)
             }
@@ -475,7 +543,132 @@ extension AddHabitFormView {
                 accentColor: habitType.color,
                 items: $todoItems
             )
+
+            todoScheduleCard
+
+            HabitFormReminderToggle(
+                accentColor: habitType.color,
+                isOn: $reminderEnabled,
+                reminderTime: $reminderTime
+            )
         }
+    }
+
+    private var todoScheduleCard: some View {
+        let dayLabels = ["M", "T", "W", "T", "F", "S", "S"]
+
+        return VStack(alignment: .leading, spacing: 8) {
+            Text("Schedule")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color.textPrimary)
+
+            VStack(spacing: 0) {
+                // Recurring toggle
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Recurring")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.textSecondary)
+                        Text(todoRecurring ? "Resets on scheduled days" : "One-time list")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.textTertiary)
+                    }
+
+                    Spacer()
+
+                    Toggle("Recurring", isOn: $todoRecurring)
+                        .labelsHidden()
+                        .tint(habitType.color)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+
+                if todoRecurring {
+                    Divider().padding(.horizontal, 16)
+
+                    // Day picker
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Active days")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(Color.textTertiary)
+
+                        HStack(spacing: 8) {
+                            ForEach(0..<7, id: \.self) { index in
+                                let isSelected = todoSelectedDays.contains(index)
+
+                                Button {
+                                    if isSelected {
+                                        todoSelectedDays.remove(index)
+                                    } else {
+                                        todoSelectedDays.insert(index)
+                                    }
+                                } label: {
+                                    ZStack {
+                                        Circle()
+                                            .fill(isSelected ? habitType.color : .white)
+                                            .frame(width: 38, height: 38)
+
+                                        Text(dayLabels[index])
+                                            .font(.system(size: 13, weight: isSelected ? .bold : .semibold))
+                                            .foregroundStyle(isSelected ? .white : Color.textTertiary)
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                                .frame(maxWidth: .infinity)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+
+                    Divider().padding(.horizontal, 16)
+
+                    // Set time toggle
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Set Time")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(Color.textSecondary)
+                            Text(todoHasTime ? "Shows in Scheduled section" : "Shows in Anytime section")
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.textTertiary)
+                        }
+
+                        Spacer()
+
+                        Toggle("Set Time", isOn: $todoHasTime)
+                            .labelsHidden()
+                            .tint(habitType.color)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+
+                    if todoHasTime {
+                        Divider().padding(.horizontal, 16)
+
+                        DatePicker(
+                            selection: $todoScheduleTime,
+                            displayedComponents: .hourAndMinute
+                        ) {
+                            Text("Time")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(Color.textSecondary)
+                        }
+                        .datePickerStyle(.compact)
+                        .tint(habitType.color)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+                }
+            }
+            .background(Color(hex: "F5F5F5"))
+            .cornerRadius(16)
+        }
+        .animation(.spring(duration: 0.3), value: todoRecurring)
+        .animation(.spring(duration: 0.3), value: todoHasTime)
     }
 }
 
