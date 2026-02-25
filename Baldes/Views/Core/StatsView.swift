@@ -143,13 +143,21 @@ struct StatsView: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text("This Week")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Color.textSecondary)
-            Text("Your Stats")
-                .font(.system(size: 26, weight: .black))
-                .foregroundStyle(Color.textPrimary)
+        HStack(spacing: 12) {
+            Image("logo")
+                .resizable()
+                .scaledToFill()
+                .frame(width: 44, height: 44)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("This Week")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Color.textSecondary)
+                Text("Your Stats")
+                    .font(.system(size: 26, weight: .black))
+                    .foregroundStyle(Color.textPrimary)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

@@ -35,25 +35,30 @@ struct ContentView: View {
 
     var body: some View {
         TabView(selection: tabSelection) {
-            Tab("Agenda", systemImage: "text.book.closed", value: AppTab.agenda) {
+            Tab(value: AppTab.agenda) {
                 NavigationStack {
                     HomeView()
                         .baldesToolbar(onProfileTap: { showProfileScreen = true })
                 }
+            } label: {
+                Label("Agenda", systemImage: selectedTab == .agenda ? "text.book.closed.fill" : "text.book.closed")
+                    .environment(\.symbolVariants, .none)
             }
 
             Tab("Add", systemImage: "plus", value: AppTab.add, role: .search) {
                 Color.clear
             }
 
-            Tab("Stats", systemImage: "chart.bar", value: AppTab.stats) {
+            Tab(value: AppTab.stats) {
                 NavigationStack {
                     StatsView()
                         .baldesToolbar(onProfileTap: { showProfileScreen = true })
                 }
+            } label: {
+                Label("Stats", systemImage: selectedTab == .stats ? "chart.bar.fill" : "chart.bar")
+                    .environment(\.symbolVariants, .none)
             }
         }
-        .environment(\.symbolVariants, .none)
         .tint(.accentOrange)
         .sheet(isPresented: $showAddScreen) {
             NavigationStack {

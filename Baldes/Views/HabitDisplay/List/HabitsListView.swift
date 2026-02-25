@@ -161,19 +161,32 @@ struct HabitsListView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "plus.circle.dashed")
-                .font(.system(size: 40, weight: .light))
-                .foregroundStyle(Color.textTertiary)
-            Text("No habits yet")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color.textSecondary)
-            Text("Tap + to create your first habit")
-                .font(.system(size: 13))
-                .foregroundStyle(Color.textTertiary)
+        VStack(spacing: 16) {
+            Image("empty")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 120, height: 120)
+                .padding(.bottom, 4)
+
+            VStack(spacing: 6) {
+                Text("No habits yet")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(Color.textSecondary)
+                HStack(spacing: 4) {
+                    Text("Tap")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color.textTertiary)
+                    Image(systemName: "plus.circle.dashed")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Color.textTertiary)
+                    Text("to create a new habit")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color.textTertiary)
+                }
+            }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
+        .padding(.vertical, 48)
     }
 
     // MARK: - Scheduled Habits Card
