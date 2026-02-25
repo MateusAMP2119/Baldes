@@ -12,6 +12,7 @@ struct HabitsListView: View {
     @State private var anytimeCardHeight: CGFloat = 0
     @State private var habitToEdit: HabitEntry?
     @State private var incompleteBannerExpanded = true
+    @State private var completedSectionExpanded = false
     @Binding var showConfetti: Bool
 
     private var visibleHabits: [HabitEntry] {
@@ -20,7 +21,7 @@ struct HabitsListView: View {
 
     private var scheduledHabits: [HabitEntry] {
         visibleHabits
-            .filter { $0.hasTime }
+            .filter { $0.hasTime && !$0.isCompleted }
             .sorted {
                 if $0.sortOrder != $1.sortOrder {
                     return $0.sortOrder < $1.sortOrder
@@ -31,7 +32,7 @@ struct HabitsListView: View {
 
     private var anytimeHabits: [HabitEntry] {
         visibleHabits
-            .filter { !$0.hasTime }
+            .filter { !$0.hasTime && !$0.isCompleted }
             .sorted {
                 if $0.sortOrder != $1.sortOrder {
                     return $0.sortOrder < $1.sortOrder
@@ -40,9 +41,15 @@ struct HabitsListView: View {
             }
     }
 
+    private var completedHabits: [HabitEntry] {
+        visibleHabits
+            .filter { $0.isCompleted }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
     var body: some View {
         VStack(spacing: 16) {
-            if scheduledHabits.isEmpty && anytimeHabits.isEmpty {
+            if scheduledHabits.isEmpty && anytimeHabits.isEmpty && completedHabits.isEmpty {
                 emptyState
             } else {
                 // Incomplete setup warning
@@ -56,6 +63,9 @@ struct HabitsListView: View {
                 }
                 if !anytimeHabits.isEmpty {
                     anytimeSection
+                }
+                if !completedHabits.isEmpty {
+                    completedSection
                 }
             }
         }
@@ -89,11 +99,13 @@ struct HabitsListView: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Color.accentYellow)
 
-                    Text(count == 1
-                         ? "1 habit needs finishing setup"
-                         : "\(count) habits need finishing setup")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Color.textPrimary)
+                    Text(
+                        count == 1
+                            ? "1 habit needs finishing setup"
+                            : "\(count) habits need finishing setup"
+                    )
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.textPrimary)
 
                     Spacer()
 
@@ -394,6 +406,101 @@ struct HabitsListView: View {
                     .offset(x: 4, y: 4)
             )
         }
+    }
+
+    // MARK: - Completed Section
+
+    private var completedSection: some View {
+        VStack(spacing: 12) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    completedSectionExpanded.toggle()
+                }
+            } label: {
+                HStack {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.textTertiary)
+                        Text("Completed")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.textTertiary)
+                    }
+                    Spacer()
+                    Text("\(completedHabits.count)")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Color.textTertiary)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(Color.textTertiary)
+                        .rotationEffect(.degrees(completedSectionExpanded ? 90 : 0))
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if completedSectionExpanded {
+                VStack(spacing: 0) {
+                    ForEach(Array(completedHabits.enumerated()), id: \.element.id) { index, habit in
+                        HStack(spacing: 12) {
+                            NavigationLink(value: habit) {
+                                HStack(spacing: 12) {
+                                    Text(habit.emoji)
+                                        .font(.system(size: 20))
+                                        .opacity(0.6)
+
+                                    Text(habit.name)
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundStyle(Color.textTertiary)
+                                        .strikethrough(true, color: Color.textTertiary.opacity(0.5))
+                                }
+                            }
+                            .buttonStyle(.plain)
+
+                            Spacer()
+
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.25)) {
+                                    restoreCompletedTodo(habit)
+                                }
+                            } label: {
+                                Image(systemName: "arrow.uturn.backward")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(Color.textTertiary)
+                                    .frame(width: 28, height: 28)
+                                    .background(
+                                        Circle().fill(Color.textTertiary.opacity(0.08))
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+
+                        if index < completedHabits.count - 1 {
+                            Rectangle()
+                                .fill(Color.dividerColor.opacity(0.5))
+                                .frame(height: 1)
+                                .padding(.horizontal, 16)
+                        }
+                    }
+                }
+                .background(Color.bgPage)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(Color.dividerColor, lineWidth: 1.5)
+                )
+                .transition(.opacity)
+            }
+        }
+    }
+
+    private func restoreCompletedTodo(_ habit: HabitEntry) {
+        // Clear all completions so the todo returns to active
+        habit.activeTodoCompletions = []
+        let impact = UIImpactFeedbackGenerator(style: .light)
+        impact.impactOccurred()
     }
 
     private func completeHabit(_ habit: HabitEntry) {

@@ -9,7 +9,7 @@ struct ProfileView: View {
 
                 // MARK: - Profile Banner
                 ProfileBannerSection()
-                    .padding(.bottom, 48) // room for the overlapping avatar
+                    .padding(.bottom, 48)  // room for the overlapping avatar
 
                 // MARK: - Stats Strip
                 StatsStripView()
@@ -125,7 +125,7 @@ struct ProfileView: View {
                             .rotationEffect(.degrees(1.5))
                         }
                         .padding(.horizontal, 4)
-                        .padding(.vertical, 10) // room for rotated cards
+                        .padding(.vertical, 10)  // room for rotated cards
                     }
                 }
                 .padding(.horizontal, 20)
@@ -167,6 +167,15 @@ struct ProfileView: View {
                                 iconColor: .accentGreen,
                                 iconBg: .accentGreenLight
                             )
+                            NeoDivider()
+                            SettingsRow(
+                                iconName: "archivebox.fill",
+                                title: "Archived",
+                                iconColor: .accentOrange,
+                                iconBg: .accentOrangeLight
+                            ) {
+                                ArchivedHabitsView()
+                            }
                             NeoDivider()
                             SettingsRow(
                                 iconName: "questionmark.circle.fill",
@@ -238,10 +247,16 @@ struct ProfileView: View {
                         let rows = min(Int(size.height / spacing) + 1, 12)
                         for row in 0..<rows {
                             for col in 0..<cols {
-                                let x = CGFloat(col) * spacing + (row.isMultiple(of: 2) ? spacing / 2 : 0)
+                                let x =
+                                    CGFloat(col) * spacing
+                                    + (row.isMultiple(of: 2) ? spacing / 2 : 0)
                                 let y = CGFloat(row) * spacing
-                                let rect = CGRect(x: x - dotSize/2, y: y - dotSize/2, width: dotSize, height: dotSize)
-                                context.fill(Circle().path(in: rect), with: .color(.accentOrange.opacity(0.06)))
+                                let rect = CGRect(
+                                    x: x - dotSize / 2, y: y - dotSize / 2, width: dotSize,
+                                    height: dotSize)
+                                context.fill(
+                                    Circle().path(in: rect),
+                                    with: .color(.accentOrange.opacity(0.06)))
                             }
                         }
                     }
@@ -282,7 +297,8 @@ private struct ProfileBannerSection: View {
                                     var path = Path()
                                     path.move(to: CGPoint(x: x, y: size.height))
                                     path.addLine(to: CGPoint(x: x + size.height, y: 0))
-                                    path.addLine(to: CGPoint(x: x + size.height + stripeWidth, y: 0))
+                                    path.addLine(
+                                        to: CGPoint(x: x + size.height + stripeWidth, y: 0))
                                     path.addLine(to: CGPoint(x: x + stripeWidth, y: size.height))
                                     path.closeSubpath()
                                     context.fill(path, with: .color(.white.opacity(0.1)))
@@ -367,9 +383,15 @@ private struct ProfileBannerSection: View {
 private struct StatsStripView: View {
     var body: some View {
         HStack(spacing: 10) {
-            StatPill(value: "24", label: "Day Streak", icon: "flame.fill", color: .accentOrange, tint: .accentOrangeLight, rotation: -1.5)
-            StatPill(value: "142", label: "Completed", icon: "checkmark.circle.fill", color: .accentGreen, tint: .accentGreenLight, rotation: 1)
-            StatPill(value: "87%", label: "This Month", icon: "chart.line.uptrend.xyaxis", color: .accentBlue, tint: .accentBlueLightBg, rotation: -0.8)
+            StatPill(
+                value: "24", label: "Day Streak", icon: "flame.fill", color: .accentOrange,
+                tint: .accentOrangeLight, rotation: -1.5)
+            StatPill(
+                value: "142", label: "Completed", icon: "checkmark.circle.fill",
+                color: .accentGreen, tint: .accentGreenLight, rotation: 1)
+            StatPill(
+                value: "87%", label: "This Month", icon: "chart.line.uptrend.xyaxis",
+                color: .accentBlue, tint: .accentBlueLightBg, rotation: -0.8)
         }
     }
 }

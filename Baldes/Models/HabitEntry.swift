@@ -69,8 +69,9 @@ final class HabitEntry {
         for completion in todoCompletions {
             let parts = completion.split(separator: ":")
             guard parts.count == 2,
-                  let index = Int(parts[1]),
-                  index < newItems.count else { continue }
+                let index = Int(parts[1]),
+                index < newItems.count
+            else { continue }
             migratedCompletions.append("\(parts[0]):\(newItems[index].id.uuidString)")
         }
 
@@ -103,8 +104,12 @@ final class HabitEntry {
 
     var incompleteReasons: [String] {
         var reasons: [String] = []
-        if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { reasons.append("Missing name") }
-        if motivationQuote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { reasons.append("Add a quote") }
+        if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            reasons.append("Missing name")
+        }
+        if motivationQuote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            reasons.append("Add a quote")
+        }
         if hasTime && scheduleTime == nil { reasons.append("Set a time") }
         if frequency == 2 && selectedDays.isEmpty { reasons.append("Pick active days") }
         if reminderEnabled && reminderTime == nil { reasons.append("Set reminder time") }
@@ -223,11 +228,12 @@ final class HabitEntry {
     var allTodosCompletedGlobally: Bool {
         let items = activeTodoItems
         guard habitType == .todo, !items.isEmpty else { return false }
-        let completedIDs = Set(activeTodoCompletions.compactMap { entry -> String? in
-            let parts = entry.split(separator: ":")
-            guard parts.count == 2 else { return nil }
-            return String(parts[1])
-        })
+        let completedIDs = Set(
+            activeTodoCompletions.compactMap { entry -> String? in
+                let parts = entry.split(separator: ":")
+                guard parts.count == 2 else { return nil }
+                return String(parts[1])
+            })
         return items.allSatisfy { completedIDs.contains($0.id.uuidString) }
     }
 
@@ -289,10 +295,10 @@ final class HabitEntry {
 
         switch frequency {
         case 0:
-            // One-time todos persist every day from start until all items are done
+            // One-time todos persist every day from start (even after completion,
+            // the UI separates them into a "Completed" section)
             if habitType == .todo {
-                guard day >= start else { return false }
-                return !allTodosCompletedGlobally
+                return day >= start
             }
             // Non-todo one-time habits: only on the exact start date
             return calendar.isDate(date, inSameDayAs: startDate)
@@ -316,6 +322,21 @@ final class HabitEntry {
         default:
             return true
         }
+    }
+
+    // MARK: - Archive Helpers
+
+    /// Restores an archived habit back to the active list.
+    func unarchive() {
+        archivedDate = nil
+    }
+
+    /// Whether this habit is effectively "done" and should appear in the completed section.
+    var isCompleted: Bool {
+        if habitType == .todo && frequency == 0 {
+            return allTodosCompletedGlobally
+        }
+        return false
     }
 
     // MARK: - Init

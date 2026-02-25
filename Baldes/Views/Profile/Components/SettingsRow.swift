@@ -1,61 +1,108 @@
 import SwiftUI
 
-struct SettingsRow: View {
+struct SettingsRow<Destination: View>: View {
     let iconName: String
     let title: String
     var iconColor: Color = .textSecondary
     var iconBg: Color = .bgMuted
     var subtitle: String? = nil
+    var destination: Destination?
 
     @State private var isPressed = false
 
+    init(
+        iconName: String,
+        title: String,
+        iconColor: Color = .textSecondary,
+        iconBg: Color = .bgMuted,
+        subtitle: String? = nil
+    ) where Destination == Never {
+        self.iconName = iconName
+        self.title = title
+        self.iconColor = iconColor
+        self.iconBg = iconBg
+        self.subtitle = subtitle
+        self.destination = nil
+    }
+
+    init(
+        iconName: String,
+        title: String,
+        iconColor: Color = .textSecondary,
+        iconBg: Color = .bgMuted,
+        subtitle: String? = nil,
+        @ViewBuilder destination: () -> Destination
+    ) {
+        self.iconName = iconName
+        self.title = title
+        self.iconColor = iconColor
+        self.iconBg = iconBg
+        self.subtitle = subtitle
+        self.destination = destination()
+    }
+
     var body: some View {
-        Button {
-            // Navigate
-        } label: {
-            HStack(spacing: 14) {
-                // Colored icon pill with neo border
-                ZStack {
-                    RoundedRectangle(cornerRadius: 9)
-                        .fill(iconBg)
-                        .frame(width: 36, height: 36)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 9)
-                                .strokeBorder(iconColor.opacity(0.2), lineWidth: 1)
-                        )
-
-                    Image(systemName: iconName)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(iconColor)
+        Group {
+            if let destination {
+                NavigationLink {
+                    destination
+                } label: {
+                    rowContent
                 }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(.textPrimary)
-
-                    if let subtitle {
-                        Text(subtitle)
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(.textTertiary)
-                    }
+                .buttonStyle(SettingsButtonStyle(isPressed: $isPressed))
+            } else {
+                Button {
+                    // Navigate
+                } label: {
+                    rowContent
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(.textTertiary)
-                    .frame(width: 20, height: 20)
-                    .background(
-                        Circle().fill(Color.bgMuted.opacity(0.6))
-                    )
+                .buttonStyle(SettingsButtonStyle(isPressed: $isPressed))
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 13)
-            .background(isPressed ? Color.bgMuted.opacity(0.4) : Color.clear)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(SettingsButtonStyle(isPressed: $isPressed))
+    }
+
+    private var rowContent: some View {
+        HStack(spacing: 14) {
+            // Colored icon pill with neo border
+            ZStack {
+                RoundedRectangle(cornerRadius: 9)
+                    .fill(iconBg)
+                    .frame(width: 36, height: 36)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 9)
+                            .strokeBorder(iconColor.opacity(0.2), lineWidth: 1)
+                    )
+
+                Image(systemName: iconName)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(iconColor)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(.textPrimary)
+
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.textTertiary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.textTertiary)
+                .frame(width: 20, height: 20)
+                .background(
+                    Circle().fill(Color.bgMuted.opacity(0.6))
+                )
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 13)
+        .background(isPressed ? Color.bgMuted.opacity(0.4) : Color.clear)
+        .contentShape(Rectangle())
     }
 }
 
