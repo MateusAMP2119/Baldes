@@ -10,6 +10,11 @@ struct HabitDetailView: View {
     @State private var showLogPastSheet = false
     @State private var pastLogDate = Date()
     @State private var showCompletionFeedback = false
+    @State private var showEditSheet = false
+    @State private var showArchiveConfirm = false
+    @State private var refreshToken = UUID()
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     private let periods = ["7 Days", "30 Days", "90 Days", "All"]
     private let calendar = Calendar.current
 
@@ -43,7 +48,8 @@ struct HabitDetailView: View {
         let components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())
         guard let weekStart = calendar.date(from: components) else { return 0 }
         let today = calendar.startOfDay(for: Date())
-        let daysSoFar = max(calendar.dateComponents([.day], from: weekStart, to: today).day ?? 0, 0) + 1
+        let daysSoFar =
+            max(calendar.dateComponents([.day], from: weekStart, to: today).day ?? 0, 0) + 1
         let daysWithCompletion = Set(
             habit.completionLogs
                 .filter { $0 >= weekStart }
@@ -122,6 +128,7 @@ struct HabitDetailView: View {
             .padding(.horizontal, 20)
             .padding(.top, 8)
             .padding(.bottom, 40)
+            .id(refreshToken)
         }
         .background(
             LinearGradient(
@@ -149,13 +156,18 @@ struct HabitDetailView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button {} label: {
+                    Button {
+                        showEditSheet = true
+                    } label: {
                         Label("Edit", systemImage: "pencil")
                     }
-                    Button {} label: {
+                    Button {
+                    } label: {
                         Label("Share", systemImage: "square.and.arrow.up")
                     }
-                    Button(role: .destructive) {} label: {
+                    Button(role: .destructive) {
+                        showArchiveConfirm = true
+                    } label: {
                         Label("Archive", systemImage: "archivebox")
                     }
                 } label: {
@@ -168,6 +180,27 @@ struct HabitDetailView: View {
         .tint(habit.habitType.color)
         .sheet(isPresented: $showLogPastSheet) {
             logPastSheet
+        }
+        .sheet(isPresented: $showEditSheet) {
+            NavigationStack {
+                AddHabitFormView(
+                    habitType: habit.habitType,
+                    existingHabit: habit,
+                    dismissSheet: { showEditSheet = false }
+                )
+            }
+        }
+        .confirmationDialog(
+            "Archive Habit", isPresented: $showArchiveConfirm, titleVisibility: .visible
+        ) {
+            Button("Archive", role: .destructive) {
+                NotificationManager.shared.cancelNotifications(for: habit)
+                habit.archivedDate = selectedDate
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This habit will be moved to your archive. You can restore it later.")
         }
     }
 
@@ -280,7 +313,8 @@ struct HabitDetailView: View {
                     .font(.system(size: 10))
                     .foregroundStyle(Color.textTertiary)
                 Spacer()
-                Button {} label: {
+                Button {
+                } label: {
                     Text("Remind me")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(habit.habitType.color)
@@ -368,7 +402,8 @@ struct HabitDetailView: View {
         let count = habit.activeTodoItems.count
         let deadlineCount = habit.activeTodoItems.filter { $0.deadline != nil }.count
         if deadlineCount > 0 {
-            return "\(count) item\(count == 1 ? "" : "s") (\(deadlineCount) with deadline\(deadlineCount == 1 ? "" : "s"))"
+            return
+                "\(count) item\(count == 1 ? "" : "s") (\(deadlineCount) with deadline\(deadlineCount == 1 ? "" : "s"))"
         }
         return "\(count) item\(count == 1 ? "" : "s") to complete"
     }
@@ -648,7 +683,8 @@ struct HabitDetailView: View {
 
         return Button {
             withAnimation(.spring(duration: 0.3)) {
-                habit.toggleTodoItem(item: item, on: selectedDate)
+                let toggleDate = isOneTimeTodo ? habit.startDate : selectedDate
+                habit.toggleTodoItem(item: item, on: toggleDate)
             }
             let impact = UIImpactFeedbackGenerator(style: .light)
             impact.impactOccurred()
@@ -657,16 +693,14 @@ struct HabitDetailView: View {
                 Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 22, weight: .medium))
                     .foregroundStyle(
-                        isCompleted ? habit.habitType.color :
-                        isOverdue ? .red : Color.textTertiary
+                        isCompleted ? habit.habitType.color : isOverdue ? .red : Color.textTertiary
                     )
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.title)
                         .font(.system(size: 15, weight: isCompleted ? .medium : .regular))
                         .foregroundStyle(
-                            isCompleted ? Color.textTertiary :
-                            isOverdue ? .red : Color.textPrimary
+                            isCompleted ? Color.textTertiary : isOverdue ? .red : Color.textPrimary
                         )
                         .strikethrough(isCompleted, color: Color.textTertiary)
 
@@ -678,8 +712,8 @@ struct HabitDetailView: View {
                                 .font(.system(size: 11, weight: .medium))
                         }
                         .foregroundStyle(
-                            isCompleted ? Color.textTertiary :
-                            isOverdue ? .red : Color.textSecondary
+                            isCompleted
+                                ? Color.textTertiary : isOverdue ? .red : Color.textSecondary
                         )
                     }
                 }
@@ -728,7 +762,6 @@ struct HabitDetailView: View {
         return formatter.string(from: date)
     }
 
-
     // MARK: Route Content
 
     private var routeContent: some View {
@@ -743,9 +776,13 @@ struct HabitDetailView: View {
                         Image(systemName: "map")
                             .font(.system(size: 32))
                             .foregroundStyle(habit.habitType.color)
-                        Text(todayCount > 0 ? "\(todayCount) stop\(todayCount == 1 ? "" : "s") logged" : "No stops logged")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(Color.textPrimary)
+                        Text(
+                            todayCount > 0
+                                ? "\(todayCount) stop\(todayCount == 1 ? "" : "s") logged"
+                                : "No stops logged"
+                        )
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.textPrimary)
                     }
                 }
 
@@ -759,7 +796,6 @@ struct HabitDetailView: View {
             logPastLink
         }
     }
-
 
     // MARK: Budget Content
 
@@ -847,7 +883,9 @@ struct HabitDetailView: View {
         .padding(.vertical, 8)
     }
 
-    private func actionCircleButton(icon: String, filled: Bool, action: @escaping () -> Void) -> some View {
+    private func actionCircleButton(icon: String, filled: Bool, action: @escaping () -> Void)
+        -> some View
+    {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: 16, weight: .semibold))
@@ -865,7 +903,9 @@ struct HabitDetailView: View {
                 )
                 .background(
                     Circle()
-                        .fill(filled ? habit.habitType.shadowColor : Color.borderStrong.opacity(0.15))
+                        .fill(
+                            filled ? habit.habitType.shadowColor : Color.borderStrong.opacity(0.15)
+                        )
                         .offset(x: 3, y: 3)
                 )
         }
@@ -919,6 +959,7 @@ struct HabitDetailView: View {
     private func logCompletion() {
         withAnimation(.spring(duration: 0.3)) {
             habit.addCompletion(on: selectedDate)
+            refreshToken = UUID()
         }
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()
@@ -940,15 +981,21 @@ struct HabitDetailView: View {
     }
 
     private var undoButton: some View {
-        Button {
+        let isToday = calendar.isDateInToday(selectedDate)
+        return Button {
             withAnimation(.spring(duration: 0.3)) {
-                habit.removeLastCompletion(on: selectedDate)
+                if isToday {
+                    habit.removeLastCompletion(on: selectedDate)
+                } else {
+                    habit.removeCompletions(from: selectedDate)
+                }
+                refreshToken = UUID()
             }
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "arrow.uturn.backward")
                     .font(.system(size: 13))
-                Text("Undo")
+                Text(isToday ? "Undo" : "Remove from here onwards")
                     .font(.system(size: 13, weight: .semibold))
             }
             .foregroundStyle(habit.habitType.color)
@@ -1001,6 +1048,34 @@ struct HabitDetailView: View {
                         Text("Already \(pastCount)\u{00D7} logged on this date")
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(Color.textSecondary)
+                        Spacer()
+                        Menu {
+                            Button(role: .destructive) {
+                                withAnimation(.spring(duration: 0.3)) {
+                                    habit.removeLastCompletion(on: pastLogDate)
+                                    refreshToken = UUID()
+                                }
+                            } label: {
+                                Label("Remove 1 Entry", systemImage: "minus.circle")
+                            }
+                            Button(role: .destructive) {
+                                withAnimation(.spring(duration: 0.3)) {
+                                    habit.removeCompletions(from: pastLogDate)
+                                    refreshToken = UUID()
+                                }
+                            } label: {
+                                Label(
+                                    "Remove From Here Onwards", systemImage: "arrow.uturn.backward")
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "minus.circle.fill")
+                                    .font(.system(size: 13))
+                                Text("Remove")
+                                    .font(.system(size: 12, weight: .semibold))
+                            }
+                            .foregroundStyle(.red)
+                        }
                     }
                 }
 
@@ -1108,13 +1183,14 @@ struct HabitDetailView: View {
 
     private var todoDaysFullyCompleted: Int {
         guard !habit.activeTodoItems.isEmpty else { return 0 }
-        let allDates = Set(habit.activeTodoCompletions.compactMap { entry -> Date? in
-            let parts = entry.split(separator: ":")
-            guard parts.count == 2 else { return nil }
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd"
-            return formatter.date(from: String(parts[0]))
-        })
+        let allDates = Set(
+            habit.activeTodoCompletions.compactMap { entry -> Date? in
+                let parts = entry.split(separator: ":")
+                guard parts.count == 2 else { return nil }
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd"
+                return formatter.date(from: String(parts[0]))
+            })
         return allDates.filter { habit.allTodosCompleted(on: $0) }.count
     }
 
@@ -1246,8 +1322,39 @@ struct HabitDetailView: View {
                     .padding(.bottom, 16)
                 } else {
                     VStack(spacing: 0) {
-                        ForEach(Array(recentSessions.enumerated()), id: \.offset) { index, session in
+                        ForEach(Array(recentSessions.enumerated()), id: \.offset) {
+                            index, session in
                             recentSessionRow(date: session.0, count: session.1)
+                                .contextMenu {
+                                    Button(role: .destructive) {
+                                        withAnimation(.spring(duration: 0.3)) {
+                                            habit.removeLastCompletion(on: session.0)
+                                            refreshToken = UUID()
+                                        }
+                                    } label: {
+                                        Label("Remove 1 Entry", systemImage: "minus.circle")
+                                    }
+                                    if session.1 > 1 {
+                                        Button(role: .destructive) {
+                                            withAnimation(.spring(duration: 0.3)) {
+                                                habit.removeAllCompletions(on: session.0)
+                                                refreshToken = UUID()
+                                            }
+                                        } label: {
+                                            Label("Remove All on This Day", systemImage: "trash")
+                                        }
+                                    }
+                                    Button(role: .destructive) {
+                                        withAnimation(.spring(duration: 0.3)) {
+                                            habit.removeCompletions(from: session.0)
+                                            refreshToken = UUID()
+                                        }
+                                    } label: {
+                                        Label(
+                                            "Remove From This Day Onwards",
+                                            systemImage: "arrow.uturn.backward")
+                                    }
+                                }
                             if index < recentSessions.count - 1 {
                                 Divider().padding(.leading, 62)
                             }
@@ -1290,9 +1397,9 @@ struct HabitDetailView: View {
 
             Spacer()
 
-            Text("Done")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(habit.habitType.color)
+            Image(systemName: "ellipsis")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(Color.textTertiary)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

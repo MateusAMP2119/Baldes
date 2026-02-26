@@ -161,19 +161,21 @@ struct HabitFormReminderToggle: View {
                         .tint(Color(hex: "34C759"))
                 }
                 
-                Divider()
-                    .padding(.horizontal, 16)
-                
-                DatePicker(
-                    selection: $reminderTime,
-                    displayedComponents: .hourAndMinute
-                ) {
-                    Text("Reminder Time")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color.textSecondary)
+                if isOn {
+                    Divider()
+                        .padding(.horizontal, 16)
+
+                    DatePicker(
+                        selection: $reminderTime,
+                        displayedComponents: .hourAndMinute
+                    ) {
+                        Text("Reminder Time")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.textSecondary)
+                    }
+                    .datePickerStyle(.compact)
+                    .tint(accentColor)
                 }
-                .datePickerStyle(.compact)
-                .tint(accentColor)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)

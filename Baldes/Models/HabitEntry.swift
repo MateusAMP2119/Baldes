@@ -171,16 +171,33 @@ final class HabitEntry {
     func removeLastCompletionToday() {
         let calendar = Calendar.current
         if let index = completionLogs.lastIndex(where: { calendar.isDateInToday($0) }) {
-            completionLogs.remove(at: index)
+            var updated = completionLogs
+            updated.remove(at: index)
+            completionLogs = updated
         }
     }
 
-    /// Remove the most recent completion on a specific date.
+    /// Remove the most recent completion on a specific date only.
     func removeLastCompletion(on date: Date) {
         let calendar = Calendar.current
         if let index = completionLogs.lastIndex(where: { calendar.isDate($0, inSameDayAs: date) }) {
-            completionLogs.remove(at: index)
+            var updated = completionLogs
+            updated.remove(at: index)
+            completionLogs = updated
         }
+    }
+
+    /// Remove all completions on a specific date only.
+    func removeAllCompletions(on date: Date) {
+        let calendar = Calendar.current
+        completionLogs = completionLogs.filter { !calendar.isDate($0, inSameDayAs: date) }
+    }
+
+    /// Remove all completions from a date onwards (inclusive).
+    func removeCompletions(from date: Date) {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        completionLogs = completionLogs.filter { $0 < startOfDay }
     }
 
     // MARK: - Todo Completion Helpers
