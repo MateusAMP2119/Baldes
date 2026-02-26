@@ -133,8 +133,12 @@ struct AddHabitFormView: View {
                 HabitFormReminderToggle(
                     accentColor: vm.habitType.color,
                     isOn: $vm.reminderEnabled,
-                    reminderTime: $vm.timedReminderTime
+                    reminderTime: $vm.timedReminderTime,
+                    additionalReminderTimes: $vm.timedAdditionalReminderTimes
                 )
+            }
+            .onChange(of: vm.timedScheduleTime) { _, newValue in
+                vm.timedReminderTime = newValue
             }
             .animation(.spring(duration: 0.3), value: vm.timerType)
 
@@ -170,8 +174,12 @@ struct AddHabitFormView: View {
                 HabitFormReminderToggle(
                     accentColor: vm.habitType.color,
                     isOn: $vm.reminderEnabled,
-                    reminderTime: $vm.reminderTime
+                    reminderTime: $vm.reminderTime,
+                    additionalReminderTimes: $vm.additionalReminderTimes
                 )
+            }
+            .onChange(of: vm.todoScheduleTime) { _, newValue in
+                vm.reminderTime = newValue
             }
 
         case .routes:
@@ -203,7 +211,8 @@ struct AddHabitFormView: View {
                     accentColor: vm.habitType.color,
                     label: "Budget Reminder",
                     isOn: $vm.budgetReminder,
-                    reminderTime: $vm.budgetReminderTime
+                    reminderTime: $vm.budgetReminderTime,
+                    additionalReminderTimes: $vm.budgetAdditionalReminderTimes
                 )
             }
 
@@ -247,11 +256,15 @@ struct AddHabitFormView: View {
                 endDateEnabled: $vm.commonEndDateEnabled,
                 endDate: $vm.commonEndDate
             )
+            .onChange(of: vm.commonScheduleTime) { _, newValue in
+                vm.reminderTime = newValue
+            }
 
             HabitFormReminderToggle(
                 accentColor: vm.habitType.color,
                 isOn: $vm.reminderEnabled,
-                reminderTime: $vm.reminderTime
+                reminderTime: $vm.reminderTime,
+                additionalReminderTimes: $vm.additionalReminderTimes
             )
         }
     }

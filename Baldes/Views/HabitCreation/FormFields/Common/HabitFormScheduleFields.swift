@@ -4,7 +4,7 @@ import SwiftUI
 
 struct HabitFormCategoryField: View {
     @Binding var type: HabitType
-    
+
     @State private var scheduleTime: Date = {
         let calendar = Calendar.current
         var components = calendar.dateComponents([.year, .month, .day], from: Date())
@@ -131,12 +131,17 @@ struct HabitFormReminderToggle: View {
     let label: String
     @Binding var isOn: Bool
     @Binding var reminderTime: Date
+    @Binding var additionalReminderTimes: [Date]
 
-    init(accentColor: Color, label: String = "Active", isOn: Binding<Bool>, reminderTime: Binding<Date>) {
+    init(
+        accentColor: Color, label: String = "Active", isOn: Binding<Bool>,
+        reminderTime: Binding<Date>, additionalReminderTimes: Binding<[Date]>
+    ) {
         self.accentColor = accentColor
         self.label = label
         self._isOn = isOn
         self._reminderTime = reminderTime
+        self._additionalReminderTimes = additionalReminderTimes
     }
 
     var body: some View {
@@ -144,8 +149,9 @@ struct HabitFormReminderToggle: View {
             Text("Reminders")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Color.textPrimary)
-            
+
             VStack {
+                // Main toggle row
                 HStack {
                     HStack(spacing: 12) {
                         Image(systemName: "bell.badge.fill")
@@ -158,13 +164,14 @@ struct HabitFormReminderToggle: View {
                     Spacer()
                     Toggle("", isOn: $isOn)
                         .labelsHidden()
-                        .tint(Color(hex: "34C759"))
+                        .tint(accentColor)
                 }
-                
+
                 if isOn {
                     Divider()
                         .padding(.horizontal, 16)
 
+                    // Primary Reminder Time
                     DatePicker(
                         selection: $reminderTime,
                         displayedComponents: .hourAndMinute
@@ -175,6 +182,59 @@ struct HabitFormReminderToggle: View {
                     }
                     .datePickerStyle(.compact)
                     .tint(accentColor)
+
+                    // Additional Reminders
+                    ForEach(Array(additionalReminderTimes.enumerated()), id: \.offset) { index, _ in
+                        Divider()
+                            .padding(.horizontal, 16)
+
+                        HStack {
+                            DatePicker(
+                                selection: $additionalReminderTimes[index],
+                                displayedComponents: .hourAndMinute
+                            ) {
+                                Text("Reminder \(index + 2)")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(Color.textSecondary)
+                            }
+                            .datePickerStyle(.compact)
+                            .tint(accentColor)
+
+                            Button(role: .destructive) {
+                                additionalReminderTimes.remove(at: index)
+                            } label: {
+                                Image(systemName: "minus.circle.fill")
+                                    .foregroundStyle(Color.textTertiary)
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.leading, 8)
+                        }
+                    }
+
+                    // Add Notification Button
+                    Divider()
+                        .padding(.horizontal, 16)
+
+                    Button {
+                        // Default to 1 hour after the latest reminder, or 10:00 AM
+                        let newTime: Date
+                        if let lastTime = additionalReminderTimes.last ?? reminderTime as Date? {
+                            newTime =
+                                Calendar.current.date(byAdding: .hour, value: 1, to: lastTime)
+                                ?? lastTime
+                        } else {
+                            newTime = Date()
+                        }
+                        additionalReminderTimes.append(newTime)
+                    } label: {
+                        HStack {
+                            Image(systemName: "plus.circle.fill")
+                            Text("Add Notification")
+                        }
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(accentColor)
+                    }
+                    .padding(.top, 4)
                 }
             }
             .padding(.horizontal, 16)

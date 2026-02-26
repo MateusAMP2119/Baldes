@@ -1,10 +1,17 @@
+import AudioToolbox
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct TodoQuickCompleteSheet: View {
     let habit: HabitEntry
     let selectedDate: Date
+    let triggerConfetti: () -> Void
     @Environment(\.dismiss) private var dismiss
-    @State private var showEditSheet = false
+    @State private var newTaskTitle = ""
+    @State private var newTaskDeadline: Date =
+        Calendar.current.date(byAdding: .hour, value: 1, to: Date()) ?? Date()
+    @State private var hasDeadline = false
+    @FocusState private var isAddingTask: Bool
 
     private var isOneTime: Bool { habit.frequency == 0 }
 
@@ -73,7 +80,8 @@ struct TodoQuickCompleteSheet: View {
                             .fill(habit.habitType.color)
                             .frame(
                                 width: total > 0
-                                    ? geo.size.width * CGFloat(completedCount) / CGFloat(total) : 0,
+                                    ? geo.size.width * CGFloat(completedCount) / CGFloat(total)
+                                    : 0,
                                 height: 5
                             )
                             .animation(.spring(duration: 0.3), value: completedCount)
@@ -86,8 +94,10 @@ struct TodoQuickCompleteSheet: View {
 
             Divider()
 
-            // Checklist
-            if habit.activeTodoItems.isEmpty {
+            // Content
+            if habit.activeTodoItems.isEmpty && !isAddingTask && !hasDeadline {
+                // Empty state — centered in available space
+                Spacer()
                 VStack(spacing: 12) {
                     Image(systemName: "checklist")
                         .font(.system(size: 36, weight: .light))
@@ -95,68 +105,120 @@ struct TodoQuickCompleteSheet: View {
                     Text("No items yet")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(Color.textSecondary)
-                    Text("Edit this habit to add tasks\nto your checklist.")
+                    Text("Add your first task below")
                         .font(.system(size: 13))
                         .foregroundStyle(Color.textTertiary)
-                        .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 40)
-
-                Button {
-                    showEditSheet = true
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "pencil.circle.fill")
-                            .font(.system(size: 16, weight: .bold))
-                        Text("Edit Habit")
-                            .font(.system(size: 15, weight: .bold))
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(habit.habitType.color)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .strokeBorder(Color.borderStrong, lineWidth: 2)
-                    )
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(habit.habitType.shadowColor)
-                            .offset(x: 3, y: 3)
-                    )
-                }
                 Spacer()
             } else {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 0) {
-                        ForEach(Array(sortedItems.enumerated()), id: \.element.id) { index, item in
+                        ForEach(Array(sortedItems.enumerated()), id: \.element.id) {
+                            index, item in
                             if index > 0 { Divider().padding(.leading, 52) }
                             todoRow(item: item)
                         }
                     }
-                    .padding(.bottom, 20)
+                    .padding(.bottom, 8)
+                }
+            }
+
+            // Add Task Bar
+            Divider()
+            VStack(spacing: 0) {
+                HStack(spacing: 12) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundStyle(habit.habitType.color)
+
+                    TextField("Add a task…", text: $newTaskTitle)
+                        .font(.system(size: 15))
+                        .focused($isAddingTask)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            addTask()
+                        }
+
+                    // Deadline toggle button
+                    Button {
+                        withAnimation(.spring(duration: 0.25)) {
+                            hasDeadline.toggle()
+                            if hasDeadline {
+                                newTaskDeadline =
+                                    Calendar.current.date(byAdding: .hour, value: 1, to: Date())
+                                    ?? Date()
+                            }
+                        }
+                    } label: {
+                        Image(systemName: hasDeadline ? "clock.fill" : "clock")
+                            .font(.system(size: 18))
+                            .foregroundStyle(
+                                hasDeadline ? habit.habitType.color : Color.textTertiary)
+                    }
+
+                    if !newTaskTitle.isEmpty {
+                        Button {
+                            addTask()
+                        } label: {
+                            Image(systemName: "arrow.up.circle.fill")
+                                .font(.system(size: 24, weight: .medium))
+                                .foregroundStyle(habit.habitType.color)
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+
+                // Expandable deadline picker
+                if hasDeadline {
+                    Divider()
+                        .padding(.horizontal, 20)
+
+                    HStack {
+                        Image(systemName: "clock")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.textSecondary)
+                        Text("Deadline")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.textSecondary)
+                        Spacer()
+                        DatePicker(
+                            "",
+                            selection: $newTaskDeadline,
+                            displayedComponents: [.date, .hourAndMinute]
+                        )
+                        .labelsHidden()
+                        .datePickerStyle(.compact)
+                        .tint(habit.habitType.color)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .sheet(
-            isPresented: $showEditSheet,
-            onDismiss: {
-                dismiss()
-            }
-        ) {
-            NavigationStack {
-                AddHabitFormView(
-                    habitType: habit.habitType,
-                    existingHabit: habit,
-                    dismissSheet: { showEditSheet = false }
-                )
-            }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.hidden)
+        .presentationBackground(Color.bgPage)
+    }
+
+    private func addTask() {
+        let trimmed = newTaskTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        let deadline = hasDeadline ? newTaskDeadline : nil
+        let newItem = TodoItem(title: trimmed, deadline: deadline)
+
+        withAnimation(.spring(duration: 0.25)) {
+            habit.todoItemsData.append(newItem)
+            newTaskTitle = ""
+            hasDeadline = false
+            newTaskDeadline = Calendar.current.date(byAdding: .hour, value: 1, to: Date()) ?? Date()
         }
+
+        let impact = UIImpactFeedbackGenerator(style: .light)
+        impact.impactOccurred()
     }
 
     private func todoRow(item: TodoItem) -> some View {
@@ -164,12 +226,43 @@ struct TodoQuickCompleteSheet: View {
         let overdue = item.deadline.map { $0 < Date() && !done } ?? false
 
         return Button {
+            let wasCompleted = done
+            let toggleDate = isOneTime ? Date() : selectedDate
+
             withAnimation(.spring(duration: 0.25)) {
-                let toggleDate = isOneTime ? habit.startDate : selectedDate
                 habit.toggleTodoItem(item: item, on: toggleDate)
             }
-            let impact = UIImpactFeedbackGenerator(style: .light)
-            impact.impactOccurred()
+
+            if !wasCompleted {
+                // Item just got checked off
+                let newCompletedCount = completedCount
+                let totalItems = habit.activeTodoItems.count
+
+                if newCompletedCount == totalItems {
+                    // Full habit completion — confetti + crisp tap + bright chime
+                    triggerConfetti()
+                    let impact = UIImpactFeedbackGenerator(style: .medium)
+                    impact.impactOccurred()
+                    AudioServicesPlaySystemSound(1004)  // tap
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        let notification = UINotificationFeedbackGenerator()
+                        notification.notificationOccurred(.success)
+                        AudioServicesPlaySystemSound(1025)  // send swoosh
+                    }
+                } else {
+                    // Single item completion (not full habit) — heavier hit, haptic only (overcompletion style)
+                    let impact = UIImpactFeedbackGenerator(style: .heavy)
+                    impact.impactOccurred(intensity: 0.85)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        let soft = UIImpactFeedbackGenerator(style: .soft)
+                        soft.impactOccurred(intensity: 0.6)
+                    }
+                }
+            } else {
+                // Unchecking an item — light haptic
+                let impact = UIImpactFeedbackGenerator(style: .light)
+                impact.impactOccurred()
+            }
         } label: {
             HStack(spacing: 14) {
                 Image(systemName: done ? "checkmark.circle.fill" : "circle")

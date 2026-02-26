@@ -263,7 +263,7 @@ struct HabitDetailTypeContent: View {
 
         return Button {
             withAnimation(.spring(duration: 0.3)) {
-                let toggleDate = isOneTimeTodo ? habit.startDate : selectedDate
+                let toggleDate = isOneTimeTodo ? Date() : selectedDate
                 habit.toggleTodoItem(item: item, on: toggleDate)
             }
             let impact = UIImpactFeedbackGenerator(style: .light)

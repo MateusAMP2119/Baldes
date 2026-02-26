@@ -25,6 +25,7 @@ final class AddHabitViewModel {
         components.minute = 0
         return calendar.date(from: components) ?? Date()
     }()
+    var additionalReminderTimes: [Date] = []
 
     // Common schedule state
     var commonStartDate = Date()
@@ -62,6 +63,7 @@ final class AddHabitViewModel {
         components.minute = 0
         return calendar.date(from: components) ?? Date()
     }()
+    var timedAdditionalReminderTimes: [Date] = []
 
     // MARK: - Daily Goals State
     var dailyGoalFromDate = Date()
@@ -108,6 +110,7 @@ final class AddHabitViewModel {
         components.minute = 0
         return calendar.date(from: components) ?? Date()
     }()
+    var budgetAdditionalReminderTimes: [Date] = []
 
     // MARK: - Notes State
     var noteFormatIndex = 0  // 0=Plain Text, 1=Markdown, 2=Voice Memo
@@ -152,6 +155,9 @@ final class AddHabitViewModel {
             timedReminderTime = time
             budgetReminderTime = time
         }
+        additionalReminderTimes = habit.additionalReminderTimes
+        timedAdditionalReminderTimes = habit.additionalReminderTimes
+        budgetAdditionalReminderTimes = habit.additionalReminderTimes
 
         // Schedule times
         if let time = habit.scheduleTime {
@@ -201,6 +207,7 @@ final class AddHabitViewModel {
         let resolvedEndDate: Date?
         let resolvedScheduleTime: Date?
         let resolvedReminderTime: Date?
+        let resolvedAdditionalReminders: [Date]
 
         switch habitType {
         case .timed:
@@ -209,12 +216,14 @@ final class AddHabitViewModel {
             resolvedEndDate = timedEndDateEnabled ? timedEndDate : nil
             resolvedScheduleTime = hasTime ? timedScheduleTime : nil
             resolvedReminderTime = reminderEnabled ? timedReminderTime : nil
+            resolvedAdditionalReminders = reminderEnabled ? timedAdditionalReminderTimes : []
         case .budgets:
             resolvedStartDate = budgetStartDate
             resolvedEndDateEnabled = budgetEndDateEnabled
             resolvedEndDate = budgetEndDateEnabled ? budgetEndDate : nil
             resolvedScheduleTime = nil
             resolvedReminderTime = budgetReminder ? budgetReminderTime : nil
+            resolvedAdditionalReminders = budgetReminder ? budgetAdditionalReminderTimes : []
         case .todo:
             if todoRecurring {
                 resolvedStartDate = commonStartDate
@@ -228,12 +237,14 @@ final class AddHabitViewModel {
                 resolvedScheduleTime = nil
             }
             resolvedReminderTime = reminderEnabled ? reminderTime : nil
+            resolvedAdditionalReminders = reminderEnabled ? additionalReminderTimes : []
         default:
             resolvedStartDate = commonStartDate
             resolvedEndDateEnabled = commonEndDateEnabled
             resolvedEndDate = commonEndDateEnabled ? commonEndDate : nil
             resolvedScheduleTime = hasTime ? commonScheduleTime : nil
             resolvedReminderTime = reminderEnabled ? reminderTime : nil
+            resolvedAdditionalReminders = reminderEnabled ? additionalReminderTimes : []
         }
 
         let resolvedFrequency: Int
@@ -295,6 +306,7 @@ final class AddHabitViewModel {
             existing.endDate = finalEndDate
             existing.reminderEnabled = reminderEnabled
             existing.reminderTime = resolvedReminderTime
+            existing.additionalReminderTimes = resolvedAdditionalReminders
             existing.todoItemsData = todoItems
 
             if existing.reminderEnabled {
@@ -323,6 +335,7 @@ final class AddHabitViewModel {
                 endDate: finalEndDate,
                 reminderEnabled: reminderEnabled,
                 reminderTime: resolvedReminderTime,
+                additionalReminderTimes: resolvedAdditionalReminders,
                 todoItems: todoItems,
                 sortOrder: allHabitsCount
             )

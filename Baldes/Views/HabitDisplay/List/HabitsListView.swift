@@ -111,9 +111,11 @@ struct HabitsListView: View {
             }
         }
         .sheet(item: $todoQuickCompleteHabit) { habit in
-            TodoQuickCompleteSheet(habit: habit, selectedDate: selectedDate)
-                .presentationDetents([.medium, .large])
-                .presentationBackground(Color.bgPage)
+            TodoQuickCompleteSheet(
+                habit: habit,
+                selectedDate: selectedDate,
+                triggerConfetti: triggerConfetti
+            )
         }
     }
 

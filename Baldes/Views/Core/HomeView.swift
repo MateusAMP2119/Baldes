@@ -1,5 +1,5 @@
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 struct HomeView: View {
     @State private var selectedDate = Date()
@@ -22,7 +22,32 @@ struct HomeView: View {
         for dayOffset in 0..<7 {
             let date = calendar.date(byAdding: .day, value: dayOffset, to: weekStartDate)!
             let dayStart = calendar.startOfDay(for: date)
-            let total = allHabits.reduce(0) { $0 + $1.completionCount(on: date) }
+
+            let total = allHabits.reduce(0) { sum, habit in
+                if habit.habitType == .todo {
+                    // For todo habits, count as 1 completion only if ALL items are done for that day
+                    // (and there is at least one item)
+                    guard !habit.activeTodoItems.isEmpty else { return sum }
+
+                    let completedItems = habit.activeTodoItems.filter {
+                        return habit.isTodoItemCompleted(item: $0, on: date)
+                    }.count
+
+                    // For todo habits:
+                    // - 1 completion point if AT LEAST ONE item is done (partial progress)
+                    // - 2 completion points if ALL items are done (full completion)
+                    if completedItems == habit.activeTodoItems.count {
+                        return sum + 2
+                    } else if completedItems > 0 {
+                        return sum + 1
+                    } else {
+                        return sum
+                    }
+                } else {
+                    return sum + habit.completionCount(on: date)
+                }
+            }
+
             counts[dayStart] = total
         }
         return counts

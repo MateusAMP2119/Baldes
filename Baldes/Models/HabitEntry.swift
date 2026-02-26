@@ -24,6 +24,7 @@ final class HabitEntry {
     // Reminder
     var reminderEnabled: Bool
     var reminderTime: Date?
+    var additionalReminderTimes: [Date] = []
 
     // Todo — legacy fields (kept for automatic migration)
     var todoItems: [String] = []
@@ -315,6 +316,18 @@ final class HabitEntry {
             // One-time todos persist every day from start (even after completion,
             // the UI separates them into a "Completed" section)
             if habitType == .todo {
+                if allTodosCompletedGlobally {
+                    // Find the latest completion date
+                    let latestCompletionDate: Date? = activeTodoCompletions.compactMap { entry in
+                        let parts = entry.split(separator: ":")
+                        guard parts.count == 2, let dateStr = parts.first else { return nil }
+                        return Self.todoDateFormatter.date(from: String(dateStr))
+                    }.max()
+
+                    if let latest = latestCompletionDate {
+                        return day >= start && day <= calendar.startOfDay(for: latest)
+                    }
+                }
                 return day >= start
             }
             // Non-todo one-time habits: only on the exact start date
@@ -372,6 +385,7 @@ final class HabitEntry {
         endDate: Date?,
         reminderEnabled: Bool,
         reminderTime: Date?,
+        additionalReminderTimes: [Date] = [],
         todoItems: [TodoItem] = [],
         completionLogs: [Date] = [],
         sortOrder: Int = 0
@@ -392,6 +406,7 @@ final class HabitEntry {
         self.endDate = endDate
         self.reminderEnabled = reminderEnabled
         self.reminderTime = reminderTime
+        self.additionalReminderTimes = additionalReminderTimes
         self.todoItemsData = todoItems
         self.completionLogs = completionLogs
     }
