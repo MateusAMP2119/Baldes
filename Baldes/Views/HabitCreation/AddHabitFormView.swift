@@ -2,333 +2,65 @@ import SwiftData
 import SwiftUI
 
 struct AddHabitFormView: View {
-    @State var habitType: HabitType
-    var existingHabit: HabitEntry?
-    var dismissSheet: (() -> Void)?
+    @State private var viewModel: AddHabitViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query private var allHabits: [HabitEntry]
 
-    private var isEditing: Bool { existingHabit != nil }
-
-    @State private var showNotificationDeniedAlert = false
-
-    // MARK: - Shared State
-
-    @State private var habitName = ""
-    @State private var habitEmoji = Self.randomEmoji()
-
-    private static func randomEmoji() -> String {
-        let emojis = ["🎯", "🔥", "💪", "🌟", "⚡", "🚀", "🧠", "🌈", "✨", "🎨",
-                      "🏆", "💎", "🌻", "🍀", "🦋", "🎵", "📚", "🧘", "🏃", "💧"]
-        return emojis.randomElement() ?? "🎯"
+    init(habitType: HabitType, existingHabit: HabitEntry? = nil, dismissSheet: (() -> Void)? = nil)
+    {
+        _viewModel = State(
+            initialValue: AddHabitViewModel(
+                habitType: habitType,
+                existingHabit: existingHabit,
+                dismissSheet: dismissSheet
+            ))
     }
-    @State private var motivationQuote = HabitFormQuoteField.initialQuote
-    @State private var frequency = 2  // 0 = Once, 1 = Daily, 2 = Custom
-    @State private var hasTime = true
-    @State private var selectedDays: Set<Int> = [0, 1, 2, 3, 4]
-    @State private var reminderEnabled = true
-    @State private var reminderTime: Date = {
-        let calendar = Calendar.current
-        var components = calendar.dateComponents([.year, .month, .day], from: Date())
-        components.hour = 9
-        components.minute = 0
-        return calendar.date(from: components) ?? Date()
-    }()
 
-    // Common schedule state
-    @State private var commonStartDate = Date()
-    @State private var commonEndDateEnabled = false
-    @State private var commonEndDate =
-        Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
-    @State private var commonScheduleTime: Date = {
-        let calendar = Calendar.current
-        var components = calendar.dateComponents([.year, .month, .day], from: Date())
-        components.hour = 9
-        components.minute = 0
-        return calendar.date(from: components) ?? Date()
-    }()
-
-    // MARK: - Timed State
-
-    @State private var timerType = 0  // 0 = Countdown, 1 = Stopwatch
-    @State private var durationHours = 1
-    @State private var durationMinutes = 30
-    @State private var durationSeconds = 5
-    @State private var trackStartDate = Date()
-    @State private var trackDurationType = 1  // 0 = 7 days, 1 = 30 days, 2 = custom
-    @State private var trackCustomEndDate =
-        Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
-    @State private var timedEndDateEnabled = true
-    @State private var timedEndDate =
-        Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
-    @State private var timedScheduleTime: Date = {
-        let calendar = Calendar.current
-        var components = calendar.dateComponents([.year, .month, .day], from: Date())
-        components.hour = 9
-        components.minute = 0
-        return calendar.date(from: components) ?? Date()
-    }()
-    @State private var timedReminderTime: Date = {
-        let calendar = Calendar.current
-        var components = calendar.dateComponents([.year, .month, .day], from: Date())
-        components.hour = 9
-        components.minute = 0
-        return calendar.date(from: components) ?? Date()
-    }()
-
-    // MARK: - Daily Goals State
-
-    @State private var dailyGoalFromDate = Date()
-    @State private var dailyGoalToDate =
-        Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
-
-    // MARK: - Metrics State
-
-    @State private var targetValue = 0
-    @State private var isIncrease = true
-    @State private var metricUnit = "Steps"
-
-    // MARK: - Todo State
-
-    @State private var todoItems: [TodoItem] = []
-    @State private var todoRecurring = false
-    @State private var todoSelectedDays: Set<Int> = [0, 1, 2, 3, 4]
-    @State private var todoHasTime = false
-    @State private var todoScheduleTime: Date = {
-        let calendar = Calendar.current
-        var components = calendar.dateComponents([.year, .month, .day], from: Date())
-        components.hour = 9
-        components.minute = 0
-        return calendar.date(from: components) ?? Date()
-    }()
-
-    // MARK: - Routes State
-
-    @State private var transportMode = 0
-    @State private var routeStops: [RouteStop] = []
-    @State private var startDate = Date()
-    @State private var endDate =
-        Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date()
-
-    // MARK: - Budgets State
-
-    @State private var budgetAmount = 500.0
-    @State private var currencyIndex = 0
-    @State private var alertThreshold = 80.0
-    @State private var budgetType = 1  // 0=One-time, 1=Recurring
-    @State private var budgetPeriodIndex = 1  // 0=Weekly, 1=Monthly, 2=Yearly
-    @State private var budgetStartDate = Date()
-    @State private var budgetEndDateEnabled = false
-    @State private var budgetEndDate =
-        Calendar.current.date(byAdding: .month, value: 6, to: Date()) ?? Date()
-    @State private var budgetReminder = true
-    @State private var budgetReminderTime: Date = {
-        let calendar = Calendar.current
-        var components = calendar.dateComponents([.year, .month, .day], from: Date())
-        components.hour = 9
-        components.minute = 0
-        return calendar.date(from: components) ?? Date()
-    }()
-
-    // MARK: - Notes State
-
-    @State private var noteFormatIndex = 0  // 0=Plain Text, 1=Markdown, 2=Voice Memo
-    @State private var noteTags: [String] = []
-
-    // MARK: - Journal State
-
-    @State private var journalPrompt = ""
-    @State private var journalWordGoalEnabled = false
-    @State private var journalWordGoalTarget = 100
-    @State private var journalFeelingsEnabled = true
+    private var isEditing: Bool { viewModel.existingHabit != nil }
 
     var body: some View {
+        @Bindable var vm = viewModel
+
         ZStack {
-            HabitFormBackground(gradientColor: habitType.gradientColor)
-                .animation(.easeInOut(duration: 0.4), value: habitType)
+            HabitFormBackground(gradientColor: vm.habitType.gradientColor)
+                .animation(.easeInOut(duration: 0.4), value: vm.habitType)
 
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 24) {
                     HabitFormMascotSection(
-                        imageName: habitType.mascotImageName,
-                        title: habitType.formTitle,
-                        subtitle: habitType.formSubtitle
+                        imageName: vm.habitType.mascotImageName,
+                        title: vm.habitType.formTitle,
+                        subtitle: vm.habitType.formSubtitle
                     )
-                    .id(habitType)
+                    .id(vm.habitType)
                     .transition(.blurReplace)
 
-                    formFields
+                    formFields()
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 40)
             }
         }
-        .animation(.spring(duration: 0.35), value: habitType)
+        .animation(.spring(duration: 0.35), value: vm.habitType)
         .navigationTitle(isEditing ? "Edit Habit" : "New Habit")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { prefillFromExistingHabit() }
+        .onAppear { viewModel.prefillFromExistingHabit() }
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button {
-                    // Use the correct start date / end date based on habit type
-                    let resolvedStartDate: Date
-                    let resolvedEndDateEnabled: Bool
-                    let resolvedEndDate: Date?
-                    let resolvedScheduleTime: Date?
-                    let resolvedReminderTime: Date?
-
-                    switch habitType {
-                    case .timed:
-                        resolvedStartDate = trackStartDate
-                        resolvedEndDateEnabled = timedEndDateEnabled
-                        resolvedEndDate = timedEndDateEnabled ? timedEndDate : nil
-                        resolvedScheduleTime = hasTime ? timedScheduleTime : nil
-                        resolvedReminderTime = reminderEnabled ? timedReminderTime : nil
-                    case .budgets:
-                        resolvedStartDate = budgetStartDate
-                        resolvedEndDateEnabled = budgetEndDateEnabled
-                        resolvedEndDate = budgetEndDateEnabled ? budgetEndDate : nil
-                        resolvedScheduleTime = nil
-                        resolvedReminderTime = budgetReminder ? budgetReminderTime : nil
-                    case .todo:
-                        resolvedStartDate = Date()
-                        resolvedEndDateEnabled = false
-                        resolvedEndDate = nil
-                        resolvedScheduleTime = (todoRecurring && todoHasTime) ? todoScheduleTime : nil
-                        resolvedReminderTime = reminderEnabled ? reminderTime : nil
-                    default:
-                        resolvedStartDate = commonStartDate
-                        resolvedEndDateEnabled = commonEndDateEnabled
-                        resolvedEndDate = commonEndDateEnabled ? commonEndDate : nil
-                        resolvedScheduleTime = hasTime ? commonScheduleTime : nil
-                        resolvedReminderTime = reminderEnabled ? reminderTime : nil
-                    }
-
-                    // Clean up frequency-specific fields to avoid stale data
-                    let resolvedFrequency: Int
-                    let resolvedSelectedDays: [Int]
-                    let finalEndDateEnabled: Bool
-                    let finalEndDate: Date?
-                    let resolvedHasTime: Bool
-
-                    if habitType == .todo {
-                        // Todo uses its own recurring toggle instead of the generic frequency picker
-                        if todoRecurring {
-                            if todoSelectedDays.count == 7 {
-                                resolvedFrequency = 1  // Daily
-                                resolvedSelectedDays = []
-                            } else {
-                                resolvedFrequency = 2  // Custom days
-                                resolvedSelectedDays = Array(todoSelectedDays)
-                            }
-                            resolvedHasTime = todoHasTime
-                        } else {
-                            resolvedFrequency = 0  // Once (one-time list)
-                            resolvedSelectedDays = []
-                            resolvedHasTime = false
-                        }
-                        finalEndDateEnabled = false
-                        finalEndDate = nil
-                    } else {
-                        resolvedFrequency = frequency
-                        resolvedHasTime = hasTime
-
-                        switch frequency {
-                        case 0:  // Once — no selected days, no end date
-                            resolvedSelectedDays = []
-                            finalEndDateEnabled = false
-                            finalEndDate = nil
-                        case 1:  // Daily — no selected days, no end date
-                            resolvedSelectedDays = []
-                            finalEndDateEnabled = false
-                            finalEndDate = nil
-                        case 2:  // Custom — all fields relevant
-                            resolvedSelectedDays = Array(selectedDays)
-                            finalEndDateEnabled = resolvedEndDateEnabled
-                            finalEndDate = resolvedEndDate
-                        default:
-                            resolvedSelectedDays = Array(selectedDays)
-                            finalEndDateEnabled = resolvedEndDateEnabled
-                            finalEndDate = resolvedEndDate
-                        }
-                    }
-
-                    if let existing = existingHabit {
-                        // Update existing habit
-                        existing.name = habitName
-                        existing.emoji = habitEmoji
-                        existing.habitTypeRaw = habitType.rawValue
-                        existing.motivationQuote = motivationQuote
-                        existing.hasTime = resolvedHasTime
-                        existing.scheduleTime = resolvedScheduleTime
-                        existing.frequency = resolvedFrequency
-                        existing.selectedDays = resolvedSelectedDays
-                        existing.startDate = resolvedStartDate
-                        existing.endDateEnabled = finalEndDateEnabled
-                        existing.endDate = finalEndDate
-                        existing.reminderEnabled = reminderEnabled
-                        existing.reminderTime = resolvedReminderTime
-                        existing.todoItemsData = todoItems
-
-                        if existing.reminderEnabled {
-                            NotificationManager.shared.ensurePermissionAndSchedule(for: existing) {
-                                showNotificationDeniedAlert = true
-                            }
-                        } else {
-                            NotificationManager.shared.cancelNotifications(for: existing)
-                        }
-
-                        // Schedule deadline notifications for todo items (independent of reminders)
-                        if habitType == .todo {
-                            NotificationManager.shared.scheduleDeadlineNotifications(for: existing)
-                        }
-                    } else {
-                        // Create new habit
-                        let entry = HabitEntry(
-                            name: habitName,
-                            emoji: habitEmoji,
-                            habitTypeRaw: habitType.rawValue,
-                            motivationQuote: motivationQuote,
-                            hasTime: resolvedHasTime,
-                            scheduleTime: resolvedScheduleTime,
-                            frequency: resolvedFrequency,
-                            selectedDays: resolvedSelectedDays,
-                            startDate: resolvedStartDate,
-                            endDateEnabled: finalEndDateEnabled,
-                            endDate: finalEndDate,
-                            reminderEnabled: reminderEnabled,
-                            reminderTime: resolvedReminderTime,
-                            todoItems: todoItems,
-                            sortOrder: allHabits.count
-                        )
-                        modelContext.insert(entry)
-
-                        if entry.reminderEnabled {
-                            NotificationManager.shared.ensurePermissionAndSchedule(for: entry) {
-                                showNotificationDeniedAlert = true
-                            }
-                        }
-
-                        // Schedule deadline notifications for todo items (independent of reminders)
-                        if habitType == .todo {
-                            NotificationManager.shared.scheduleDeadlineNotifications(for: entry)
-                        }
-                    }
-                    if let dismissSheet {
-                        dismissSheet()
-                    } else {
-                        dismiss()
-                    }
+                    viewModel.save(
+                        modelContext: modelContext, allHabitsCount: allHabits.count,
+                        dismiss: dismiss)
                 } label: {
                     Image(systemName: "checkmark")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(habitType.color)
+                        .foregroundStyle(vm.habitType.color)
                 }
-                .animation(.easeInOut(duration: 0.3), value: habitType)
+                .animation(.easeInOut(duration: 0.3), value: vm.habitType)
             }
         }
-        .alert("Notifications Disabled", isPresented: $showNotificationDeniedAlert) {
+        .alert("Notifications Disabled", isPresented: $vm.showNotificationDeniedAlert) {
             Button("Open Settings") {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
                     UIApplication.shared.open(url)
@@ -336,87 +68,34 @@ struct AddHabitFormView: View {
             }
             Button("Not Now", role: .cancel) {}
         } message: {
-            Text("You set a reminder for this habit, but notifications are turned off. Enable them in Settings so you don't miss it.")
-        }
-    }
-
-    // MARK: - Prefill for Editing
-
-    private func prefillFromExistingHabit() {
-        guard let habit = existingHabit else { return }
-
-        habitName = habit.name
-        habitEmoji = habit.emoji
-        habitType = habit.habitType
-        motivationQuote = habit.motivationQuote
-        frequency = habit.frequency
-        hasTime = habit.hasTime
-        selectedDays = Set(habit.selectedDays)
-        reminderEnabled = habit.reminderEnabled
-
-        if let time = habit.reminderTime {
-            reminderTime = time
-            timedReminderTime = time
-            budgetReminderTime = time
-        }
-
-        // Schedule times
-        if let time = habit.scheduleTime {
-            commonScheduleTime = time
-            timedScheduleTime = time
-        }
-
-        // Todo items & recurring state
-        todoItems = habit.activeTodoItems
-        if habit.habitType == .todo {
-            todoRecurring = habit.frequency != 0
-            todoHasTime = habit.hasTime
-            if let time = habit.scheduleTime {
-                todoScheduleTime = time
-            }
-            if habit.frequency == 2 {
-                todoSelectedDays = Set(habit.selectedDays)
-            } else if habit.frequency == 1 {
-                todoSelectedDays = Set(0...6) // Daily = all days
-            }
-        }
-
-        // Dates
-        switch habit.habitType {
-        case .timed:
-            trackStartDate = habit.startDate
-            timedEndDateEnabled = habit.endDateEnabled
-            if let end = habit.endDate { timedEndDate = end }
-        case .budgets:
-            budgetStartDate = habit.startDate
-            budgetEndDateEnabled = habit.endDateEnabled
-            if let end = habit.endDate { budgetEndDate = end }
-        default:
-            commonStartDate = habit.startDate
-            commonEndDateEnabled = habit.endDateEnabled
-            if let end = habit.endDate { commonEndDate = end }
+            Text(
+                "You set a reminder for this habit, but notifications are turned off. Enable them in Settings so you don't miss it."
+            )
         }
     }
 
     // MARK: - Form Fields
 
-    private var formFields: some View {
+    @ViewBuilder
+    private func formFields() -> some View {
+        @Bindable var vm = viewModel
         VStack(spacing: 16) {
-            HabitNameField(text: $habitName, emoji: $habitEmoji, accentColor: habitType.color)
+            HabitNameField(
+                text: $vm.habitName, emoji: $vm.habitEmoji, accentColor: vm.habitType.color)
 
             HabitFormQuoteField(
-                accentColor: habitType.color,
-                text: $motivationQuote
+                accentColor: vm.habitType.color,
+                text: $vm.motivationQuote
             )
 
-            HabitFormCategoryField(type: $habitType)
+            HabitFormCategoryField(type: $vm.habitType)
 
-            typeSpecificFields
-                .id(habitType)
+            typeSpecificFields()
+                .id(vm.habitType)
                 .transition(.blurReplace)
 
-            if habitType != .budgets && habitType != .timed && habitType != .todo {
-                commonScheduleFields
+            if vm.habitType != .budgets && vm.habitType != .timed && vm.habitType != .todo {
+                commonScheduleFields()
                     .transition(.blurReplace)
             }
         }
@@ -425,323 +104,154 @@ struct AddHabitFormView: View {
     // MARK: - Type-Specific Fields
 
     @ViewBuilder
-    private var typeSpecificFields: some View {
-        switch habitType {
+    private func typeSpecificFields() -> some View {
+        @Bindable var vm = viewModel
+        switch vm.habitType {
         case .timed:
-            timedFields
+            VStack(spacing: 16) {
+                TimerGroupedCard(
+                    label: "Timer",
+                    accentColor: vm.habitType.color,
+                    timerType: $vm.timerType,
+                    hours: $vm.durationHours,
+                    minutes: $vm.durationMinutes,
+                    seconds: $vm.durationSeconds
+                )
+
+                ScheduleGroupedCard(
+                    label: "Track for",
+                    accentColor: vm.habitType.color,
+                    startDate: $vm.trackStartDate,
+                    frequency: $vm.frequency,
+                    hasTime: $vm.hasTime,
+                    scheduleTime: $vm.timedScheduleTime,
+                    selectedDays: $vm.selectedDays,
+                    endDateEnabled: $vm.timedEndDateEnabled,
+                    endDate: $vm.timedEndDate
+                )
+
+                HabitFormReminderToggle(
+                    accentColor: vm.habitType.color,
+                    isOn: $vm.reminderEnabled,
+                    reminderTime: $vm.timedReminderTime
+                )
+            }
+            .animation(.spring(duration: 0.3), value: vm.timerType)
+
         case .dailyGoals:
-            dailyGoalFields
+            VStack(spacing: 16) {
+                EmptyView()
+            }
+
         case .metrics:
-            metricsFields
+            VStack(spacing: 16) {
+                MetricsGroupedCard(
+                    label: "Metric",
+                    accentColor: vm.habitType.color,
+                    isIncrease: $vm.isIncrease,
+                    targetValue: $vm.targetValue,
+                    unit: $vm.metricUnit
+                )
+            }
+
         case .todo:
-            todoFields
+            VStack(spacing: 16) {
+                ChecklistGroupedCard(
+                    label: "Checklist",
+                    accentColor: vm.habitType.color,
+                    items: $vm.todoItems
+                )
+
+                AddHabitTodoScheduleCard(
+                    accentColor: vm.habitType.color,
+                    viewModel: viewModel
+                )
+
+                HabitFormReminderToggle(
+                    accentColor: vm.habitType.color,
+                    isOn: $vm.reminderEnabled,
+                    reminderTime: $vm.reminderTime
+                )
+            }
+
         case .routes:
-            routesFields
+            VStack(spacing: 16) {
+                RouteGroupedCard(
+                    label: "Route",
+                    accentColor: vm.habitType.color,
+                    transportMode: $vm.transportMode,
+                    stops: $vm.routeStops
+                )
+            }
+
         case .budgets:
-            budgetsFields
+            VStack(spacing: 16) {
+                BudgetGroupedCard(
+                    label: "Budget",
+                    accentColor: vm.habitType.color,
+                    currencyIndex: $vm.currencyIndex,
+                    amount: $vm.budgetAmount,
+                    budgetType: $vm.budgetType,
+                    periodIndex: $vm.budgetPeriodIndex,
+                    alertThreshold: $vm.alertThreshold,
+                    startDate: $vm.budgetStartDate,
+                    endDateEnabled: $vm.budgetEndDateEnabled,
+                    endDate: $vm.budgetEndDate
+                )
+
+                HabitFormReminderToggle(
+                    accentColor: vm.habitType.color,
+                    label: "Budget Reminder",
+                    isOn: $vm.budgetReminder,
+                    reminderTime: $vm.budgetReminderTime
+                )
+            }
+
         case .notes:
-            notesFields
+            VStack(spacing: 16) {
+                NotesGroupedCard(
+                    label: "Notes",
+                    accentColor: vm.habitType.color,
+                    formatIndex: $vm.noteFormatIndex,
+                    tags: $vm.noteTags
+                )
+            }
+
         case .journal:
-            journalFields
+            VStack(spacing: 16) {
+                JournalGroupedCard(
+                    label: "Journal",
+                    accentColor: vm.habitType.color,
+                    prompt: $vm.journalPrompt,
+                    wordGoalEnabled: $vm.journalWordGoalEnabled,
+                    wordGoalTarget: $vm.journalWordGoalTarget,
+                    feelingsLogEnabled: $vm.journalFeelingsEnabled
+                )
+            }
         }
     }
 
     // MARK: - Common Schedule Fields
 
-    private var commonScheduleFields: some View {
-        VStack(spacing: 16) {
+    private func commonScheduleFields() -> some View {
+        @Bindable var vm = viewModel
+        return VStack(spacing: 16) {
             ScheduleGroupedCard(
                 label: "Schedule",
-                accentColor: habitType.color,
-                startDate: $commonStartDate,
-                frequency: $frequency,
-                hasTime: $hasTime,
-                scheduleTime: $commonScheduleTime,
-                selectedDays: $selectedDays,
-                endDateEnabled: $commonEndDateEnabled,
-                endDate: $commonEndDate
+                accentColor: vm.habitType.color,
+                startDate: $vm.commonStartDate,
+                frequency: $vm.frequency,
+                hasTime: $vm.hasTime,
+                scheduleTime: $vm.commonScheduleTime,
+                selectedDays: $vm.selectedDays,
+                endDateEnabled: $vm.commonEndDateEnabled,
+                endDate: $vm.commonEndDate
             )
 
             HabitFormReminderToggle(
-                accentColor: habitType.color,
-                isOn: $reminderEnabled,
-                reminderTime: $reminderTime
-            )
-        }
-    }
-}
-
-// MARK: - Timed Activity Fields
-
-extension AddHabitFormView {
-    private var timedFields: some View {
-        VStack(spacing: 16) {
-            TimerGroupedCard(
-                label: "Timer",
-                accentColor: habitType.color,
-                timerType: $timerType,
-                hours: $durationHours,
-                minutes: $durationMinutes,
-                seconds: $durationSeconds
-            )
-
-            ScheduleGroupedCard(
-                label: "Track for",
-                accentColor: habitType.color,
-                startDate: $trackStartDate,
-                frequency: $frequency,
-                hasTime: $hasTime,
-                scheduleTime: $timedScheduleTime,
-                selectedDays: $selectedDays,
-                endDateEnabled: $timedEndDateEnabled,
-                endDate: $timedEndDate
-            )
-
-            HabitFormReminderToggle(
-                accentColor: habitType.color,
-                isOn: $reminderEnabled,
-                reminderTime: $timedReminderTime
-            )
-        }
-        .animation(.spring(duration: 0.3), value: timerType)
-    }
-}
-
-// MARK: - Daily Goals Fields
-
-extension AddHabitFormView {
-    private var dailyGoalFields: some View {
-        VStack(spacing: 16) {
-            EmptyView()
-        }
-    }
-}
-
-// MARK: - Numeric Metrics Fields
-
-extension AddHabitFormView {
-    private var metricsFields: some View {
-        VStack(spacing: 16) {
-            MetricsGroupedCard(
-                label: "Metric",
-                accentColor: habitType.color,
-                isIncrease: $isIncrease,
-                targetValue: $targetValue,
-                unit: $metricUnit
-            )
-        }
-    }
-}
-
-// MARK: - Todo List Fields
-
-extension AddHabitFormView {
-    private var todoFields: some View {
-        VStack(spacing: 16) {
-            ChecklistGroupedCard(
-                label: "Checklist",
-                accentColor: habitType.color,
-                items: $todoItems
-            )
-
-            todoScheduleCard
-
-            HabitFormReminderToggle(
-                accentColor: habitType.color,
-                isOn: $reminderEnabled,
-                reminderTime: $reminderTime
-            )
-        }
-    }
-
-    private var todoScheduleCard: some View {
-        let dayLabels = ["M", "T", "W", "T", "F", "S", "S"]
-
-        return VStack(alignment: .leading, spacing: 8) {
-            Text("Schedule")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Color.textPrimary)
-
-            VStack(spacing: 0) {
-                // Recurring toggle
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Recurring")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(Color.textSecondary)
-                        Text(todoRecurring ? "Resets on scheduled days" : "One-time list")
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.textTertiary)
-                    }
-
-                    Spacer()
-
-                    Toggle("Recurring", isOn: $todoRecurring)
-                        .labelsHidden()
-                        .tint(habitType.color)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-
-                if todoRecurring {
-                    Divider().padding(.horizontal, 16)
-
-                    // Day picker
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Active days")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(Color.textTertiary)
-
-                        HStack(spacing: 8) {
-                            ForEach(0..<7, id: \.self) { index in
-                                let isSelected = todoSelectedDays.contains(index)
-
-                                Button {
-                                    if isSelected {
-                                        todoSelectedDays.remove(index)
-                                    } else {
-                                        todoSelectedDays.insert(index)
-                                    }
-                                } label: {
-                                    ZStack {
-                                        Circle()
-                                            .fill(isSelected ? habitType.color : .white)
-                                            .frame(width: 38, height: 38)
-
-                                        Text(dayLabels[index])
-                                            .font(.system(size: 13, weight: isSelected ? .bold : .semibold))
-                                            .foregroundStyle(isSelected ? .white : Color.textTertiary)
-                                    }
-                                }
-                                .buttonStyle(.plain)
-                                .frame(maxWidth: .infinity)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-
-                    Divider().padding(.horizontal, 16)
-
-                    // Set time toggle
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Set Time")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(Color.textSecondary)
-                            Text(todoHasTime ? "Shows in Scheduled section" : "Shows in Anytime section")
-                                .font(.system(size: 11))
-                                .foregroundStyle(Color.textTertiary)
-                        }
-
-                        Spacer()
-
-                        Toggle("Set Time", isOn: $todoHasTime)
-                            .labelsHidden()
-                            .tint(habitType.color)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-
-                    if todoHasTime {
-                        Divider().padding(.horizontal, 16)
-
-                        DatePicker(
-                            selection: $todoScheduleTime,
-                            displayedComponents: .hourAndMinute
-                        ) {
-                            Text("Time")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(Color.textSecondary)
-                        }
-                        .datePickerStyle(.compact)
-                        .tint(habitType.color)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                    }
-                }
-            }
-            .background(Color(hex: "F5F5F5"))
-            .cornerRadius(16)
-        }
-        .animation(.spring(duration: 0.3), value: todoRecurring)
-        .animation(.spring(duration: 0.3), value: todoHasTime)
-    }
-}
-
-// MARK: - Routes Fields
-
-extension AddHabitFormView {
-    private var routesFields: some View {
-        VStack(spacing: 16) {
-            RouteGroupedCard(
-                label: "Route",
-                accentColor: habitType.color,
-                transportMode: $transportMode,
-                stops: $routeStops
-            )
-        }
-    }
-}
-
-// MARK: - Budget Fields
-
-extension AddHabitFormView {
-    private var budgetsFields: some View {
-        VStack(spacing: 16) {
-            BudgetGroupedCard(
-                label: "Budget",
-                accentColor: habitType.color,
-                currencyIndex: $currencyIndex,
-                amount: $budgetAmount,
-                budgetType: $budgetType,
-                periodIndex: $budgetPeriodIndex,
-                alertThreshold: $alertThreshold,
-                startDate: $budgetStartDate,
-                endDateEnabled: $budgetEndDateEnabled,
-                endDate: $budgetEndDate
-            )
-
-            HabitFormReminderToggle(
-                accentColor: habitType.color,
-                label: "Budget Reminder",
-                isOn: $budgetReminder,
-                reminderTime: $budgetReminderTime
-            )
-        }
-    }
-}
-
-// MARK: - Loose Notes Fields
-
-extension AddHabitFormView {
-    private var notesFields: some View {
-        VStack(spacing: 16) {
-            NotesGroupedCard(
-                label: "Notes",
-                accentColor: habitType.color,
-                formatIndex: $noteFormatIndex,
-                tags: $noteTags
-            )
-        }
-    }
-}
-
-// MARK: - Journal Fields
-
-extension AddHabitFormView {
-    private var journalFields: some View {
-        VStack(spacing: 16) {
-            JournalGroupedCard(
-                label: "Journal",
-                accentColor: habitType.color,
-                prompt: $journalPrompt,
-                wordGoalEnabled: $journalWordGoalEnabled,
-                wordGoalTarget: $journalWordGoalTarget,
-                feelingsLogEnabled: $journalFeelingsEnabled
+                accentColor: vm.habitType.color,
+                isOn: $vm.reminderEnabled,
+                reminderTime: $vm.reminderTime
             )
         }
     }
