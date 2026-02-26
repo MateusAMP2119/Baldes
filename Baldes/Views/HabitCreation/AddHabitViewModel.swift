@@ -184,6 +184,10 @@ final class AddHabitViewModel {
             budgetStartDate = habit.startDate
             budgetEndDateEnabled = habit.endDateEnabled
             if let end = habit.endDate { budgetEndDate = end }
+        case .todo:
+            commonStartDate = habit.startDate
+            commonEndDateEnabled = habit.endDateEnabled
+            if let end = habit.endDate { commonEndDate = end }
         default:
             commonStartDate = habit.startDate
             commonEndDateEnabled = habit.endDateEnabled
@@ -212,10 +216,17 @@ final class AddHabitViewModel {
             resolvedScheduleTime = nil
             resolvedReminderTime = budgetReminder ? budgetReminderTime : nil
         case .todo:
-            resolvedStartDate = Date()
-            resolvedEndDateEnabled = false
-            resolvedEndDate = nil
-            resolvedScheduleTime = (todoRecurring && todoHasTime) ? todoScheduleTime : nil
+            if todoRecurring {
+                resolvedStartDate = commonStartDate
+                resolvedEndDateEnabled = commonEndDateEnabled
+                resolvedEndDate = commonEndDateEnabled ? commonEndDate : nil
+                resolvedScheduleTime = todoHasTime ? todoScheduleTime : nil
+            } else {
+                resolvedStartDate = Date()
+                resolvedEndDateEnabled = false
+                resolvedEndDate = nil
+                resolvedScheduleTime = nil
+            }
             resolvedReminderTime = reminderEnabled ? reminderTime : nil
         default:
             resolvedStartDate = commonStartDate
@@ -241,13 +252,15 @@ final class AddHabitViewModel {
                     resolvedSelectedDays = Array(todoSelectedDays)
                 }
                 resolvedHasTime = todoHasTime
+                finalEndDateEnabled = resolvedEndDateEnabled
+                finalEndDate = resolvedEndDate
             } else {
                 resolvedFrequency = 0
                 resolvedSelectedDays = []
                 resolvedHasTime = false
+                finalEndDateEnabled = false
+                finalEndDate = nil
             }
-            finalEndDateEnabled = false
-            finalEndDate = nil
         } else {
             resolvedFrequency = frequency
             resolvedHasTime = hasTime

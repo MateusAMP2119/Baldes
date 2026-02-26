@@ -36,6 +36,24 @@ struct AddHabitTodoScheduleCard: View {
                 if viewModel.todoRecurring {
                     Divider().padding(.horizontal, 16)
 
+                    // Start date
+                    DatePicker(
+                        selection: $viewModel.commonStartDate,
+                        in: ...Date().addingTimeInterval(365 * 24 * 60 * 60),
+                        displayedComponents: .date
+                    ) {
+                        Text("Start Date")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.textSecondary)
+                    }
+                    .datePickerStyle(.compact)
+                    .tint(accentColor)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+
+                    Divider().padding(.horizontal, 16)
+
                     // Day picker
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Active days")
@@ -120,6 +138,43 @@ struct AddHabitTodoScheduleCard: View {
                         .padding(.vertical, 14)
                         .transition(.opacity.combined(with: .move(edge: .top)))
                     }
+
+                    Divider().padding(.horizontal, 16)
+
+                    // End date toggle
+                    HStack {
+                        Text("End Date")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.textSecondary)
+
+                        Spacer()
+
+                        Toggle("End Date", isOn: $viewModel.commonEndDateEnabled)
+                            .labelsHidden()
+                            .tint(accentColor)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+
+                    if viewModel.commonEndDateEnabled {
+                        Divider().padding(.horizontal, 16)
+
+                        DatePicker(
+                            selection: $viewModel.commonEndDate,
+                            in: viewModel.commonStartDate...,
+                            displayedComponents: .date
+                        ) {
+                            Text("Until")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(Color.textSecondary)
+                        }
+                        .datePickerStyle(.compact)
+                        .tint(accentColor)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
                 }
             }
             .background(Color(hex: "F5F5F5"))
@@ -127,5 +182,6 @@ struct AddHabitTodoScheduleCard: View {
         }
         .animation(.spring(duration: 0.3), value: viewModel.todoRecurring)
         .animation(.spring(duration: 0.3), value: viewModel.todoHasTime)
+        .animation(.spring(duration: 0.3), value: viewModel.commonEndDateEnabled)
     }
 }
