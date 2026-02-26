@@ -284,7 +284,22 @@ struct HabitDetailTypeContent: View {
                         )
                         .strikethrough(isCompleted, color: Color.textTertiary)
 
-                    if let deadline = item.deadline {
+                    if isCompleted {
+                        let completedAt: Date? =
+                            isOneTimeTodo
+                            ? habit.todoItemCompletionTimeGlobally(item: item)
+                            : habit.todoItemCompletionTime(item: item, on: selectedDate)
+
+                        if let completedAt {
+                            HStack(spacing: 4) {
+                                Image(systemName: "checkmark.circle")
+                                    .font(.system(size: 10))
+                                Text("Done at \(completedAtFormatted(completedAt))")
+                                    .font(.system(size: 11, weight: .medium))
+                            }
+                            .foregroundStyle(habit.habitType.color.opacity(0.7))
+                        }
+                    } else if let deadline = item.deadline {
                         HStack(spacing: 4) {
                             Image(systemName: "clock")
                                 .font(.system(size: 10))
@@ -304,6 +319,12 @@ struct HabitDetailTypeContent: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private func completedAtFormatted(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f.string(from: date)
     }
 
     private func formattedDeadline(_ date: Date) -> String {

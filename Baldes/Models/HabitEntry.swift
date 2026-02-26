@@ -34,6 +34,9 @@ final class HabitEntry {
     var todoItemsData: [TodoItem] = []
     var todoCompletionsV2: [String] = []  // "yyyy-MM-dd:uuid"
 
+    // Timestamps for when each todo item was completed
+    var todoCompletionTimestamps: [String: Date] = [:]  // key = "yyyy-MM-dd:uuid"
+
     // Completion tracking
     var completionLogs: [Date] = []
 
@@ -218,9 +221,26 @@ final class HabitEntry {
         let key = "\(Self.todoDateFormatter.string(from: date)):\(item.id.uuidString)"
         if let existing = todoCompletionsV2.firstIndex(of: key) {
             todoCompletionsV2.remove(at: existing)
+            todoCompletionTimestamps.removeValue(forKey: key)
         } else {
             todoCompletionsV2.append(key)
+            todoCompletionTimestamps[key] = Date()
         }
+    }
+
+    /// Returns the timestamp when a todo item was completed on a given date, if available.
+    func todoItemCompletionTime(item: TodoItem, on date: Date) -> Date? {
+        let key = "\(Self.todoDateFormatter.string(from: date)):\(item.id.uuidString)"
+        return todoCompletionTimestamps[key]
+    }
+
+    /// Returns the completion time for a one-time todo item (any date), if available.
+    func todoItemCompletionTimeGlobally(item: TodoItem) -> Date? {
+        let suffix = ":\(item.id.uuidString)"
+        guard let key = activeTodoCompletions.first(where: { $0.hasSuffix(suffix) }) else {
+            return nil
+        }
+        return todoCompletionTimestamps[key]
     }
 
     func completedTodoCount(on date: Date) -> Int {

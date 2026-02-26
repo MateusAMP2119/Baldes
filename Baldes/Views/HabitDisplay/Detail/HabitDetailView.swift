@@ -135,7 +135,7 @@ struct HabitDetailView: View {
                     } label: {
                         Label("Share", systemImage: "square.and.arrow.up")
                     }
-                    Button(role: .destructive) {
+                    Button {
                         showArchiveConfirm = true
                     } label: {
                         Label("Archive", systemImage: "archivebox")
@@ -147,7 +147,7 @@ struct HabitDetailView: View {
                 }
             }
         }
-        .tint(habit.habitType.color)
+        .tint(Color.textPrimary)
         .sheet(isPresented: $showLogPastSheet) {
             logPastSheet
         }

@@ -37,7 +37,7 @@ struct CompletedHabitsSection: View {
             if isExpanded {
                 VStack(spacing: 0) {
                     ForEach(Array(completedHabits.enumerated()), id: \.element.id) { index, habit in
-                        HStack(spacing: 12) {
+                        ZStack(alignment: .trailing) {
                             NavigationLink(value: habit) {
                                 HStack(spacing: 12) {
                                     Text(habit.emoji)
@@ -48,11 +48,13 @@ struct CompletedHabitsSection: View {
                                         .font(.system(size: 14, weight: .medium))
                                         .foregroundStyle(Color.textTertiary)
                                         .strikethrough(true, color: Color.textTertiary.opacity(0.5))
+
+                                    Spacer()
                                 }
+                                .padding(.trailing, 40)
+                                .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
-
-                            Spacer()
 
                             Button {
                                 withAnimation(.easeInOut(duration: 0.25)) {

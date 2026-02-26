@@ -12,21 +12,7 @@ struct HabitDetailInfoRows: View {
                 Text(scheduleDescription)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Color.textSecondary)
-                Image(systemName: "pencil")
-                    .font(.system(size: 10))
-                    .foregroundStyle(Color.textTertiary)
                 Spacer()
-                Button {
-                } label: {
-                    Text("Remind me")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(habit.habitType.color)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule().fill(habit.habitType.color.opacity(0.1))
-                        )
-                }
             }
 
             HStack(spacing: 8) {
