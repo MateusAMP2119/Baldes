@@ -13,8 +13,8 @@ struct HabitDetailQuoteCard: View {
                         .foregroundStyle(Color.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    // Assuming HabitFormQuoteField is available and quotes is static
-                    if let author = HabitFormQuoteField.quotes.first(where: {
+                    // Find author in MotivationService quotes
+                    if let author = MotivationService.shared.quotes.first(where: {
                         $0.text == habit.motivationQuote
                     })?.author {
                         Text("— \(author)")

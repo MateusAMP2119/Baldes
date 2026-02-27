@@ -15,7 +15,7 @@ struct HabitRowView: View {
     private var isDone: Bool { completionCount > 0 }
 
     private var quoteAuthor: String? {
-        HabitFormQuoteField.quotes.first(where: { $0.text == habit.motivationQuote })?.author
+        MotivationService.shared.quotes.first(where: { $0.text == habit.motivationQuote })?.author
     }
 
     var body: some View {

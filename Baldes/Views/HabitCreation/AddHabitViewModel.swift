@@ -13,7 +13,7 @@ final class AddHabitViewModel {
     // MARK: - Shared State
     var habitName = ""
     var habitEmoji: String
-    var motivationQuote = "You can't cross the sea merely by standing and staring at the water."  // Using a default/initial quote since we can't access HabitFormQuoteField easily here without coupling
+    var motivationQuote = MotivationService.shared.getInitialQuoteText()
     var frequency = 2  // 0 = Once, 1 = Daily, 2 = Custom
     var hasTime = true
     var selectedDays: Set<Int> = [0, 1, 2, 3, 4]

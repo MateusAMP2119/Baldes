@@ -1,12 +1,5 @@
 import SwiftUI
 
-// MARK: - Quote Model
-
-struct Quote: Codable {
-    let text: String
-    let author: String
-}
-
 // MARK: - Quote / Motivation Field
 
 struct HabitFormQuoteField: View {
@@ -17,18 +10,10 @@ struct HabitFormQuoteField: View {
     @State private var flipID = 0
     @State private var activeAuthor: String?
 
-    static let quotes: [Quote] = {
-        guard let url = Bundle.main.url(forResource: "quotes", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let decoded = try? JSONDecoder().decode([Quote].self, from: data),
-              !decoded.isEmpty else {
-            return [Quote(text: "Stay consistent.", author: "Unknown")]
-        }
-        return decoded
-    }()
+    private var quotes: [Quote] { MotivationService.shared.quotes }
 
-    static var initialQuote: String {
-        quotes[Int.random(in: 0..<quotes.count)].text
+    private var initialQuote: String {
+        MotivationService.shared.getInitialQuoteText()
     }
 
     init(accentColor: Color, text: Binding<String>) {
@@ -36,9 +21,10 @@ struct HabitFormQuoteField: View {
         self._text = text
         // Find the matching quote index so activeAuthor is set correctly from the start
         let initialText = text.wrappedValue
-        let index = Self.quotes.firstIndex(where: { $0.text == initialText }) ?? 0
+        let index =
+            MotivationService.shared.quotes.firstIndex(where: { $0.text == initialText }) ?? 0
         self._quoteIndex = State(initialValue: index)
-        self._activeAuthor = State(initialValue: Self.quotes[index].author)
+        self._activeAuthor = State(initialValue: MotivationService.shared.quotes[index].author)
     }
 
     private var isTextEmpty: Bool { text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
@@ -95,7 +81,9 @@ struct HabitFormQuoteField: View {
                         .transition(.blurReplace)
                         .onChange(of: text) { _, newValue in
                             // Clear attribution only if the new text doesn't match any preset quote
-                            let matchesPreset = Self.quotes.contains { $0.text == newValue }
+                            let matchesPreset = MotivationService.shared.quotes.contains {
+                                $0.text == newValue
+                            }
                             if !matchesPreset {
                                 withAnimation(.easeInOut(duration: 0.2)) {
                                     activeAuthor = nil
@@ -121,10 +109,10 @@ struct HabitFormQuoteField: View {
 
     private func loadNextQuote() {
         withAnimation(.spring(duration: 0.35)) {
-            quoteIndex = (quoteIndex + Int.random(in: 1..<Self.quotes.count)) % Self.quotes.count
+            quoteIndex = (quoteIndex + Int.random(in: 1..<quotes.count)) % quotes.count
             flipID += 1
-            text = Self.quotes[quoteIndex].text
-            activeAuthor = Self.quotes[quoteIndex].author
+            text = quotes[quoteIndex].text
+            activeAuthor = quotes[quoteIndex].author
         }
     }
 }
