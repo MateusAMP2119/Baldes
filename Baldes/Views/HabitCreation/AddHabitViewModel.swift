@@ -293,6 +293,46 @@ final class AddHabitViewModel {
         }
 
         if let existing = existingHabit {
+            // Detect specific changes before applying
+            var changes: [(ActivityLogEntry.LogType, String?)] = []
+
+            if existing.name != habitName {
+                changes.append((.edited, "Name updated"))
+            }
+            if existing.emoji != habitEmoji {
+                changes.append((.edited, "Emoji changed"))
+            }
+            if existing.motivationQuote != motivationQuote {
+                changes.append((.edited, "Motivation updated"))
+            }
+            if existing.frequency != resolvedFrequency
+                || existing.selectedDays != resolvedSelectedDays
+                || existing.hasTime != resolvedHasTime
+                || existing.scheduleTime != resolvedScheduleTime
+                || existing.startDate != resolvedStartDate
+                || existing.endDateEnabled != finalEndDateEnabled
+                || existing.endDate != finalEndDate
+            {
+                changes.append((.edited, "Schedule changed"))
+            }
+            if existing.reminderEnabled != reminderEnabled
+                || existing.reminderTime != resolvedReminderTime
+                || existing.additionalReminderTimes != resolvedAdditionalReminders
+            {
+                changes.append((.edited, "Reminders updated"))
+            }
+
+            // Detect added/removed todo items
+            let oldIDs = Set(existing.todoItemsData.map(\.id))
+            let newIDs = Set(todoItems.map(\.id))
+            for item in todoItems where !oldIDs.contains(item.id) {
+                changes.append((.taskAdded, item.title))
+            }
+            for item in existing.todoItemsData where !newIDs.contains(item.id) {
+                changes.append((.taskRemoved, item.title))
+            }
+
+            // Apply changes
             existing.name = habitName
             existing.emoji = habitEmoji
             existing.habitTypeRaw = habitType.rawValue
@@ -308,6 +348,15 @@ final class AddHabitViewModel {
             existing.reminderTime = resolvedReminderTime
             existing.additionalReminderTimes = resolvedAdditionalReminders
             existing.todoItemsData = todoItems
+
+            // Log each detected change
+            if changes.isEmpty {
+                // No meaningful changes detected
+            } else {
+                for (type, detail) in changes {
+                    existing.logActivity(type, detail: detail)
+                }
+            }
 
             if existing.reminderEnabled {
                 NotificationManager.shared.ensurePermissionAndSchedule(for: existing) {

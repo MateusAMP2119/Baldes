@@ -208,35 +208,13 @@ struct HabitDetailStats: View {
     }
 
     /// Completion timeline for one-time todos
-    private var oneTimeTimeline: [(TodoItem, Date?)] {
-        habit.activeTodoItems.compactMap { item in
-            let time = habit.todoItemCompletionTimeGlobally(item: item)
-            return (item, time)
-        }
-        .sorted { a, b in
-            // Completed items first (most recent first), then uncompleted
-            switch (a.1, b.1) {
-            case (let aDate?, let bDate?): return aDate > bDate
-            case (.some, nil): return true
-            case (nil, .some): return false
-            case (nil, nil): return false
-            }
-        }
-    }
 
     // MARK: - Body
 
     var body: some View {
         VStack(spacing: 20) {
             if habit.habitType == .todo {
-                Text("Insights")
-                    .font(.system(size: 20, weight: .black))
-                    .foregroundStyle(Color.textPrimary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                if habit.frequency == 0 {
-                    todoOneTimeTimeline
-                } else {
+                if habit.frequency != 0 {
                     todoStatsCard
                 }
             } else {
@@ -245,14 +223,143 @@ struct HabitDetailStats: View {
                 weeklyChartCard
                 recentActivityCard
             }
+
+            // Activity Log — always shown
+            if !habit.activityLog.isEmpty {
+                activityLogSection
+            }
         }
+    }
+
+    // MARK: - Activity Log
+
+    @State private var showAllActivity = false
+
+    private var activityLogSection: some View {
+        NeoCard(shadowColor: habit.habitType.shadowColor) {
+            VStack(alignment: .leading, spacing: 14) {
+                let allEntries = Array(habit.activityLog.reversed())
+
+                HStack {
+                    Label {
+                        Text("Activity")
+                            .font(.system(size: 16, weight: .heavy))
+                            .foregroundStyle(Color.textPrimary)
+                    } icon: {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 14))
+                            .foregroundStyle(habit.habitType.color)
+                    }
+
+                    Spacer()
+
+                    if allEntries.count > 10 {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                showAllActivity.toggle()
+                            }
+                        } label: {
+                            Text(showAllActivity ? "Show less" : "See all (\(allEntries.count))")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(Color.textTertiary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
+                let entries = showAllActivity ? allEntries : Array(allEntries.prefix(10))
+                VStack(spacing: 0) {
+                    ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
+                        HStack(alignment: .top, spacing: 14) {
+                            // Timeline connector
+                            VStack(spacing: 0) {
+                                Circle()
+                                    .fill(Color.bgPage)
+                                    .frame(width: 10, height: 10)
+                                    .overlay(
+                                        Circle()
+                                            .strokeBorder(Color.borderStrong, lineWidth: 2)
+                                    )
+                                    .padding(.top, 4)
+
+                                if index < entries.count - 1 {
+                                    Rectangle()
+                                        .fill(Color.borderStrong.opacity(0.3))
+                                        .frame(width: 2)
+                                        .frame(maxHeight: .infinity)
+                                }
+                            }
+
+                            // Content
+                            VStack(alignment: .leading, spacing: 3) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: entry.icon)
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundStyle(Color.textPrimary)
+
+                                    Text(entry.title)
+                                        .font(.system(size: 13, weight: .bold))
+                                        .foregroundStyle(Color.textPrimary)
+
+                                    if let detail = entry.detail {
+                                        Text("· \(detail)")
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundStyle(Color.textSecondary)
+                                            .lineLimit(1)
+                                    }
+                                }
+
+                                Text(activityTimeFormatted(entry.date))
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundStyle(Color.textTertiary)
+                            }
+                            .padding(.bottom, index < entries.count - 1 ? 14 : 0)
+
+                            Spacer()
+                        }
+                    }
+                }
+            }
+            .padding(18)
+        }
+    }
+
+    private func activityTimeFormatted(_ date: Date) -> String {
+        let now = Date()
+        let diff = now.timeIntervalSince(date)
+
+        if diff < 60 { return "Just now" }
+        if diff < 3600 { return "\(Int(diff / 60))m ago" }
+        if diff < 86400 { return "\(Int(diff / 3600))h ago" }
+
+        if calendar.isDateInToday(date) { return "Today" }
+        if calendar.isDateInYesterday(date) { return "Yesterday" }
+
+        let days = Int(diff / 86400)
+        if days < 7 { return "\(days)d ago" }
+
+        let f = DateFormatter()
+        f.dateFormat = "MMM d"
+        return f.string(from: date)
     }
 
     // MARK: - Combined Todo Stats Card
 
     private var todoStatsCard: some View {
         NeoCard(shadowColor: habit.habitType.shadowColor) {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack {
+                    Label {
+                        Text("Insights")
+                            .font(.system(size: 16, weight: .heavy))
+                            .foregroundStyle(Color.textPrimary)
+                    } icon: {
+                        Image(systemName: "dot.scope")
+                            .font(.system(size: 14))
+                            .foregroundStyle(habit.habitType.color)
+                    }
+                    Spacer()
+                }
                 // Period picker inside the card
                 Picker("Period", selection: $todoPeriod.animation(.smooth(duration: 0.3))) {
                     ForEach(TodoPeriod.allCases, id: \.self) { period in
@@ -449,119 +556,6 @@ struct HabitDetailStats: View {
     }
 
     // MARK: - One-Time Timeline
-
-    private var todoOneTimeTimeline: some View {
-        NeoCard(shadowColor: habit.habitType.shadowColor) {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack {
-                    Label {
-                        Text("Completion Timeline")
-                            .font(.system(size: 16, weight: .heavy))
-                            .foregroundStyle(Color.textPrimary)
-                    } icon: {
-                        Image(systemName: "timeline.selection")
-                            .font(.system(size: 14))
-                            .foregroundStyle(habit.habitType.color)
-                    }
-                    Spacer()
-
-                    let done = oneTimeTimeline.filter { $0.1 != nil }.count
-                    let total = oneTimeTimeline.count
-                    Text("\(done)/\(total)")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(habit.habitType.color)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Capsule().fill(habit.habitType.color.opacity(0.1)))
-                }
-
-                if oneTimeTimeline.isEmpty {
-                    Text("No tasks yet")
-                        .font(.system(size: 13))
-                        .foregroundStyle(Color.textTertiary)
-                } else {
-                    VStack(spacing: 0) {
-                        ForEach(Array(oneTimeTimeline.enumerated()), id: \.element.0.id) {
-                            index, entry in
-                            let item = entry.0
-                            let completedAt = entry.1
-                            let isLast = index == oneTimeTimeline.count - 1
-
-                            HStack(alignment: .top, spacing: 12) {
-                                // Timeline dot + connector
-                                VStack(spacing: 0) {
-                                    Circle()
-                                        .fill(
-                                            completedAt != nil
-                                                ? habit.habitType.color
-                                                : Color.textTertiary.opacity(0.3)
-                                        )
-                                        .frame(width: 12, height: 12)
-                                        .overlay(
-                                            Circle()
-                                                .strokeBorder(
-                                                    completedAt != nil
-                                                        ? Color.borderStrong : Color.clear,
-                                                    lineWidth: 1.5
-                                                )
-                                        )
-
-                                    if !isLast {
-                                        Rectangle()
-                                            .fill(Color.dividerColor)
-                                            .frame(width: 2)
-                                            .frame(minHeight: 28)
-                                    }
-                                }
-
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(item.title)
-                                        .font(
-                                            .system(
-                                                size: 14,
-                                                weight: completedAt != nil ? .semibold : .regular)
-                                        )
-                                        .foregroundStyle(
-                                            completedAt != nil
-                                                ? Color.textPrimary : Color.textTertiary
-                                        )
-                                        .strikethrough(
-                                            completedAt != nil,
-                                            color: Color.textTertiary.opacity(0.5))
-
-                                    if let time = completedAt {
-                                        Text(timelineFormatted(time))
-                                            .font(.system(size: 11, weight: .medium))
-                                            .foregroundStyle(habit.habitType.color.opacity(0.7))
-                                    } else {
-                                        Text("Pending")
-                                            .font(.system(size: 11, weight: .medium))
-                                            .foregroundStyle(Color.textTertiary)
-                                    }
-                                }
-                                .padding(.bottom, isLast ? 0 : 10)
-
-                                Spacer()
-                            }
-                        }
-                    }
-                }
-            }
-            .padding(18)
-        }
-    }
-
-    private func timelineFormatted(_ date: Date) -> String {
-        let f = DateFormatter()
-        if calendar.isDateInToday(date) {
-            f.dateFormat = "'Today at' h:mm a"
-        } else if calendar.isDateInYesterday(date) {
-            f.dateFormat = "'Yesterday at' h:mm a"
-        } else {
-            f.dateFormat = "MMM d 'at' h:mm a"
-        }
-        return f.string(from: date)
-    }
 
     private func neoStatPill(value: String, label: String, icon: String) -> some View {
         VStack(spacing: 6) {

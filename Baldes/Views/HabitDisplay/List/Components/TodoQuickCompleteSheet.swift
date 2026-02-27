@@ -85,7 +85,6 @@ struct TodoQuickCompleteSheet: View {
                                 lineWidth: 1.5
                             )
                         )
-                        .rotationEffect(.degrees(allDone ? -3 : 0))
                         .animation(.spring(duration: 0.3), value: allDone)
                 }
             }
@@ -125,13 +124,13 @@ struct TodoQuickCompleteSheet: View {
                 VStack(spacing: 12) {
                     Image(systemName: "checklist")
                         .font(.system(size: 36, weight: .light))
-                        .foregroundStyle(Color.textTertiary)
+                        .foregroundStyle(Color.accentColor)
                     Text("No tasks yet")
                         .font(.system(size: 15, weight: .heavy))
-                        .foregroundStyle(Color.textSecondary)
+                        .foregroundStyle(Color.accentColor)
                     Text("Edit this habit to add tasks")
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(Color.textTertiary)
+                        .foregroundStyle(Color.accentColor)
                 }
                 .frame(maxWidth: .infinity)
                 Spacer()

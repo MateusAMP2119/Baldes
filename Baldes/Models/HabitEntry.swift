@@ -40,6 +40,9 @@ final class HabitEntry {
     // Completion tracking
     var completionLogs: [Date] = []
 
+    // Activity log
+    var activityLog: [ActivityLogEntry] = []
+
     // Soft delete
     var archivedDate: Date?
 
@@ -158,6 +161,7 @@ final class HabitEntry {
 
     func addCompletion() {
         completionLogs.append(Date())
+        logActivity(.completed)
     }
 
     /// Add a completion stamped at noon on the given date (for past-date logging).
@@ -222,9 +226,17 @@ final class HabitEntry {
         if let existing = todoCompletionsV2.firstIndex(of: key) {
             todoCompletionsV2.remove(at: existing)
             todoCompletionTimestamps.removeValue(forKey: key)
+            logActivity(.uncompleted, detail: item.title)
         } else {
             todoCompletionsV2.append(key)
             todoCompletionTimestamps[key] = Date()
+            logActivity(.completed, detail: item.title)
+
+            // Check if all tasks are now done for this date
+            let allDone = activeTodoItems.allSatisfy { isTodoItemCompleted(item: $0, on: date) }
+            if allDone && activeTodoItems.count > 1 {
+                logActivity(.doneForDay)
+            }
         }
     }
 
@@ -429,5 +441,13 @@ final class HabitEntry {
         self.additionalReminderTimes = additionalReminderTimes
         self.todoItemsData = todoItems
         self.completionLogs = completionLogs
+
+        self.activityLog = [ActivityLogEntry(type: .created)]
+    }
+
+    // MARK: - Activity Logging
+
+    func logActivity(_ type: ActivityLogEntry.LogType, detail: String? = nil) {
+        activityLog.append(ActivityLogEntry(type: type, detail: detail))
     }
 }

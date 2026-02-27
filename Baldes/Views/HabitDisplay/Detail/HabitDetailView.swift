@@ -165,6 +165,7 @@ struct HabitDetailView: View {
         ) {
             Button("Archive", role: .destructive) {
                 NotificationManager.shared.cancelNotifications(for: habit)
+                habit.logActivity(.archived)
                 habit.archivedDate = selectedDate
                 dismiss()
             }
