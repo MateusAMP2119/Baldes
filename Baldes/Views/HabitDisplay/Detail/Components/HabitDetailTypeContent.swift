@@ -8,6 +8,8 @@ struct HabitDetailTypeContent: View {
     var onLogCompletion: () -> Void
     var onUndo: () -> Void
     var onLogPast: () -> Void
+    var onStartCountdown: () -> Void
+    var onStartStopwatch: () -> Void
 
     var body: some View {
         NeoCard(shadowColor: habit.habitType.shadowColor) {
@@ -38,30 +40,122 @@ struct HabitDetailTypeContent: View {
 
     // MARK: - Timer Content
 
+    private func sessionsForDate(_ date: Date) -> [Date] {
+        habit.completionLogs
+            .filter { calendar.isDate($0, inSameDayAs: date) }
+            .sorted()
+    }
+
     private var timedContent: some View {
         VStack(spacing: 16) {
-            let todayCount = habit.completionCount(on: selectedDate)
+            let sessions = sessionsForDate(selectedDate)
+            let sessionCount = sessions.count
+            let target = habit.frequency > 0 ? habit.frequency : 0
 
-            circularDisplay(
-                value: "\(todayCount)",
-                subtitle: todayCount == 1 ? "session today" : "sessions today",
-                progress: todayCount > 0 ? 1.0 : 0.0
-            )
-
-            HStack(spacing: 12) {
-                actionCircleButton(icon: "checkmark", filled: true) {
-                    onLogCompletion()
-                }
-                actionCircleButton(icon: "calendar.badge.plus", filled: false) {
-                    onLogPast()
+            // Progress header
+            HStack {
+                Text("\(sessionCount) session\(sessionCount == 1 ? "" : "s") today")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color.textPrimary)
+                Spacer()
+                if target > 0 && sessionCount >= target {
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 14))
+                        Text("All done!")
+                            .font(.system(size: 13, weight: .bold))
+                    }
+                    .foregroundStyle(habit.habitType.color)
                 }
             }
 
-            if todayCount > 0 {
+            // Progress bar
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(habit.habitType.color.opacity(0.15))
+                        .frame(height: 6)
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(habit.habitType.color)
+                        .frame(
+                            width: target > 0
+                                ? geo.size.width * min(CGFloat(sessionCount) / CGFloat(target), 1.0)
+                                : sessionCount > 0 ? geo.size.width : 0,
+                            height: 6
+                        )
+                        .animation(.spring(duration: 0.3), value: sessionCount)
+                }
+            }
+            .frame(height: 6)
+
+            // Session list or empty state
+            if sessions.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 28))
+                        .foregroundStyle(Color.textTertiary)
+                    Text("No sessions logged yet")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color.textTertiary)
+                    Text("Tap below to log a session")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.textTertiary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(Array(sessions.enumerated()), id: \.offset) { index, session in
+                        if index > 0 {
+                            Divider().padding(.leading, 42)
+                        }
+                        HStack(spacing: 12) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 22, weight: .medium))
+                                .foregroundStyle(habit.habitType.color)
+                            Text("Session \(index + 1)")
+                                .font(.system(size: 15))
+                                .foregroundStyle(Color.textPrimary)
+                            Spacer()
+                            Text(completedAtFormatted(session))
+                                .font(.system(size: 13))
+                                .foregroundStyle(Color.textSecondary)
+                        }
+                        .padding(.vertical, 10)
+                    }
+                }
+            }
+
+            // CTA buttons based on timer mode
+            if habit.timerType == 0 {
+                // Countdown mode
+                let totalSec = habit.timerDurationSeconds
+                let h = totalSec / 3600
+                let m = (totalSec % 3600) / 60
+                let s = totalSec % 60
+                let durationLabel: String = {
+                    if h > 0 {
+                        return "\(h)h \(m)m"
+                    } else if m > 0 {
+                        return s > 0 ? "\(m)m \(s)s" : "\(m)m"
+                    } else {
+                        return "\(s)s"
+                    }
+                }()
+
+                neoCTAButton(icon: "timer", label: "Start Countdown · \(durationLabel)") {
+                    onStartCountdown()
+                }
+            } else {
+                // Stopwatch mode
+                neoCTAButton(icon: "stopwatch", label: "Start Stopwatch") {
+                    onStartStopwatch()
+                }
+            }
+
+            if sessionCount > 0 {
                 undoButtonView
             }
-
-            captionRow(icon: "hand.tap", text: "Tap checkmark to log a session")
         }
     }
 

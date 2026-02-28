@@ -37,6 +37,10 @@ final class HabitEntry {
     // Timestamps for when each todo item was completed
     var todoCompletionTimestamps: [String: Date] = [:]  // key = "yyyy-MM-dd:uuid"
 
+    // Timed habit settings
+    var timerType: Int = 0  // 0 = Countdown, 1 = Stopwatch
+    var timerDurationSeconds: Int = 0  // Total duration for countdown mode
+
     // Completion tracking
     var completionLogs: [Date] = []
 

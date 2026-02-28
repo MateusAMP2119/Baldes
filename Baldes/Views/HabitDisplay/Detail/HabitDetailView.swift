@@ -11,6 +11,8 @@ struct HabitDetailView: View {
     @State private var showCompletionFeedback = false
     @State private var showEditSheet = false
     @State private var showArchiveConfirm = false
+    @State private var showCountdownSheet = false
+    @State private var showStopwatchSheet = false
     @State private var refreshToken = UUID()
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -43,11 +45,7 @@ struct HabitDetailView: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 20) {
-                if habit.habitType != .todo {
-                    HabitDetailMascotCard(
-                        habit: habit, selectedDate: selectedDate, streakCount: streakCount)
-                    HabitDetailQuoteCard(habit: habit)
-                } else {
+                if habit.habitType == .todo || habit.habitType == .timed {
                     HStack(alignment: .bottom, spacing: 0) {
                         Image(habit.habitType.mascotImageName)
                             .resizable()
@@ -57,6 +55,10 @@ struct HabitDetailView: View {
 
                         HabitDetailQuoteCard(habit: habit)
                     }
+                } else {
+                    HabitDetailMascotCard(
+                        habit: habit, selectedDate: selectedDate, streakCount: streakCount)
+                    HabitDetailQuoteCard(habit: habit)
                 }
 
                 HabitDetailInfoRows(habit: habit)
@@ -69,7 +71,9 @@ struct HabitDetailView: View {
                     onLogPast: {
                         pastLogDate = selectedDate
                         showLogPastSheet = true
-                    }
+                    },
+                    onStartCountdown: { showCountdownSheet = true },
+                    onStartStopwatch: { showStopwatchSheet = true }
                 )
 
                 HabitDetailStats(
@@ -150,6 +154,22 @@ struct HabitDetailView: View {
         .tint(Color.textPrimary)
         .sheet(isPresented: $showLogPastSheet) {
             logPastSheet
+        }
+        .sheet(isPresented: $showCountdownSheet) {
+            CountdownSessionView(habit: habit) {
+                logCompletion()
+                showCountdownSheet = false
+            }
+            .presentationDetents([.large])
+            .presentationBackground(Color.bgPage)
+        }
+        .sheet(isPresented: $showStopwatchSheet) {
+            StopwatchSessionView(habit: habit) {
+                logCompletion()
+                showStopwatchSheet = false
+            }
+            .presentationDetents([.large])
+            .presentationBackground(Color.bgPage)
         }
         .sheet(isPresented: $showEditSheet) {
             NavigationStack {

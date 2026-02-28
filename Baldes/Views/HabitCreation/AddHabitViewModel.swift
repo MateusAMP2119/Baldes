@@ -186,6 +186,11 @@ final class AddHabitViewModel {
             trackStartDate = habit.startDate
             timedEndDateEnabled = habit.endDateEnabled
             if let end = habit.endDate { timedEndDate = end }
+            timerType = habit.timerType
+            let total = habit.timerDurationSeconds
+            durationHours = total / 3600
+            durationMinutes = (total % 3600) / 60
+            durationSeconds = total % 60
         case .budgets:
             budgetStartDate = habit.startDate
             budgetEndDateEnabled = habit.endDateEnabled
@@ -348,6 +353,8 @@ final class AddHabitViewModel {
             existing.reminderTime = resolvedReminderTime
             existing.additionalReminderTimes = resolvedAdditionalReminders
             existing.todoItemsData = todoItems
+            existing.timerType = timerType
+            existing.timerDurationSeconds = durationHours * 3600 + durationMinutes * 60 + durationSeconds
 
             // Log each detected change
             if changes.isEmpty {
@@ -390,6 +397,8 @@ final class AddHabitViewModel {
                 todoItems: todoItems,
                 sortOrder: allHabitsCount
             )
+            entry.timerType = timerType
+            entry.timerDurationSeconds = durationHours * 3600 + durationMinutes * 60 + durationSeconds
             modelContext.insert(entry)
 
             if entry.reminderEnabled {
