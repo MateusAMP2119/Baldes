@@ -216,17 +216,18 @@ struct HabitDetailStats: View {
             if habit.habitType == .todo {
                 if habit.frequency != 0 {
                     todoStatsCard
+                } else if !habit.activityLog.isEmpty {
+                    activityLogSection
                 }
             } else {
                 periodSelector
                 statsGrid
                 weeklyChartCard
                 recentActivityCard
-            }
 
-            // Activity Log — always shown
-            if !habit.activityLog.isEmpty {
-                activityLogSection
+                if !habit.activityLog.isEmpty {
+                    activityLogSection
+                }
             }
         }
     }
@@ -253,7 +254,7 @@ struct HabitDetailStats: View {
 
                     Spacer()
 
-                    if allEntries.count > 10 {
+                    if allEntries.count > 5 {
                         Button {
                             withAnimation(.easeInOut(duration: 0.25)) {
                                 showAllActivity.toggle()
@@ -267,56 +268,33 @@ struct HabitDetailStats: View {
                     }
                 }
 
-                let entries = showAllActivity ? allEntries : Array(allEntries.prefix(10))
-                VStack(spacing: 0) {
-                    ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
-                        HStack(alignment: .top, spacing: 14) {
-                            // Timeline connector
-                            VStack(spacing: 0) {
-                                Circle()
-                                    .fill(Color.bgPage)
-                                    .frame(width: 10, height: 10)
-                                    .overlay(
-                                        Circle()
-                                            .strokeBorder(Color.borderStrong, lineWidth: 2)
-                                    )
-                                    .padding(.top, 4)
+                let entries = showAllActivity ? allEntries : Array(allEntries.prefix(5))
+                VStack(spacing: 6) {
+                    ForEach(entries, id: \.id) { entry in
+                        HStack(spacing: 10) {
+                            Image(systemName: entry.icon)
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.textTertiary)
+                                .frame(width: 20)
 
-                                if index < entries.count - 1 {
-                                    Rectangle()
-                                        .fill(Color.borderStrong.opacity(0.3))
-                                        .frame(width: 2)
-                                        .frame(maxHeight: .infinity)
-                                }
-                            }
+                            Text(entry.title)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(Color.textPrimary)
 
-                            // Content
-                            VStack(alignment: .leading, spacing: 3) {
-                                HStack(spacing: 6) {
-                                    Image(systemName: entry.icon)
-                                        .font(.system(size: 11, weight: .bold))
-                                        .foregroundStyle(Color.textPrimary)
-
-                                    Text(entry.title)
-                                        .font(.system(size: 13, weight: .bold))
-                                        .foregroundStyle(Color.textPrimary)
-
-                                    if let detail = entry.detail {
-                                        Text("· \(detail)")
-                                            .font(.system(size: 13, weight: .medium))
-                                            .foregroundStyle(Color.textSecondary)
-                                            .lineLimit(1)
-                                    }
-                                }
-
-                                Text(activityTimeFormatted(entry.date))
-                                    .font(.system(size: 11, weight: .medium))
+                            if let detail = entry.detail {
+                                Text(detail)
+                                    .font(.system(size: 13))
                                     .foregroundStyle(Color.textTertiary)
+                                    .lineLimit(1)
                             }
-                            .padding(.bottom, index < entries.count - 1 ? 14 : 0)
 
                             Spacer()
+
+                            Text(activityTimeFormatted(entry.date))
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.textTertiary)
                         }
+                        .padding(.vertical, 4)
                     }
                 }
             }
@@ -502,6 +480,72 @@ struct HabitDetailStats: View {
                             }
                         }
                         .animation(.smooth(duration: 0.35), value: todoPeriod)
+                    }
+                }
+
+                // Activity log inline
+                if !habit.activityLog.isEmpty {
+                    Divider()
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        let allEntries = Array(habit.activityLog.reversed())
+
+                        HStack {
+                            Label {
+                                Text("Activity")
+                                    .font(.system(size: 16, weight: .heavy))
+                                    .foregroundStyle(Color.textPrimary)
+                            } icon: {
+                                Image(systemName: "clock.arrow.circlepath")
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(habit.habitType.color)
+                            }
+
+                            Spacer()
+
+                            if allEntries.count > 5 {
+                                Button {
+                                    withAnimation(.easeInOut(duration: 0.25)) {
+                                        showAllActivity.toggle()
+                                    }
+                                } label: {
+                                    Text(showAllActivity ? "Show less" : "See all (\(allEntries.count))")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(Color.textTertiary)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+
+                        let entries = showAllActivity ? allEntries : Array(allEntries.prefix(5))
+                        VStack(spacing: 6) {
+                            ForEach(entries, id: \.id) { entry in
+                                HStack(spacing: 10) {
+                                    Image(systemName: entry.icon)
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(Color.textTertiary)
+                                        .frame(width: 20)
+
+                                    Text(entry.title)
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundStyle(Color.textPrimary)
+
+                                    if let detail = entry.detail {
+                                        Text(detail)
+                                            .font(.system(size: 13))
+                                            .foregroundStyle(Color.textTertiary)
+                                            .lineLimit(1)
+                                    }
+
+                                    Spacer()
+
+                                    Text(activityTimeFormatted(entry.date))
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(Color.textTertiary)
+                                }
+                                .padding(.vertical, 4)
+                            }
+                        }
                     }
                 }
             }
