@@ -358,16 +358,18 @@ final class AddHabitViewModel {
                 }
             }
 
-            if existing.reminderEnabled {
-                NotificationManager.shared.ensurePermissionAndSchedule(for: existing) {
-                    self.showNotificationDeniedAlert = true
+            if existing.archivedDate == nil {
+                if existing.reminderEnabled {
+                    NotificationManager.shared.ensurePermissionAndSchedule(for: existing) {
+                        self.showNotificationDeniedAlert = true
+                    }
+                } else {
+                    NotificationManager.shared.cancelNotifications(for: existing)
                 }
-            } else {
-                NotificationManager.shared.cancelNotifications(for: existing)
-            }
 
-            if habitType == .todo {
-                NotificationManager.shared.scheduleDeadlineNotifications(for: existing)
+                if habitType == .todo {
+                    NotificationManager.shared.scheduleDeadlineNotifications(for: existing)
+                }
             }
         } else {
             let entry = HabitEntry(

@@ -202,6 +202,7 @@ final class NotificationManager {
             }
         }
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
+        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ids)
 
         // Also cancel any deadline notifications
         cancelDeadlineNotifications(for: habit)
