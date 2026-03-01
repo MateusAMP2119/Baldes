@@ -101,7 +101,7 @@ struct AnytimeHabitsSection: View {
             Button(role: .destructive) {
                 onDeleteHabit(habit)
             } label: {
-                Image(systemName: "trash")
+                Image(systemName: "archivebox")
             }
             .tint(.red)
         }

@@ -14,6 +14,7 @@ struct HabitsListView: View {
     @State private var habitToEdit: HabitEntry?
     @State private var incompleteBannerExpanded = true
     @State private var completedSectionExpanded = false
+    @State private var archivedSectionExpanded = false
     @State private var todoQuickCompleteHabit: HabitEntry?
     @Binding var showConfetti: Bool
 
@@ -56,9 +57,15 @@ struct HabitsListView: View {
             .sorted { $0.createdAt > $1.createdAt }
     }
 
+    private var archivedHabits: [HabitEntry] {
+        allHabits
+            .filter { $0.isArchivedButScheduled(on: selectedDate) }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
     var body: some View {
         VStack(spacing: 16) {
-            if scheduledHabits.isEmpty && anytimeHabits.isEmpty && completedHabits.isEmpty {
+            if scheduledHabits.isEmpty && anytimeHabits.isEmpty && completedHabits.isEmpty && archivedHabits.isEmpty {
                 emptyState
             } else {
                 // Incomplete setup warning
@@ -104,6 +111,14 @@ struct HabitsListView: View {
                         completedHabits: completedHabits,
                         isExpanded: $completedSectionExpanded,
                         onRestoreCompletedTodo: restoreCompletedTodo
+                    )
+                }
+                if !archivedHabits.isEmpty {
+                    ArchivedHabitsSection(
+                        archivedHabits: archivedHabits,
+                        isExpanded: $archivedSectionExpanded,
+                        onUnarchiveHabit: unarchiveHabit,
+                        onDeleteHabit: permanentlyDeleteHabit
                     )
                 }
             }
@@ -159,6 +174,21 @@ struct HabitsListView: View {
     }
 
     // MARK: - Actions
+
+    private func permanentlyDeleteHabit(_ habit: HabitEntry) {
+        NotificationManager.shared.cancelNotifications(for: habit)
+        modelContext.delete(habit)
+        let impact = UIImpactFeedbackGenerator(style: .light)
+        impact.impactOccurred()
+    }
+
+    private func unarchiveHabit(_ habit: HabitEntry) {
+        withAnimation(.easeInOut(duration: 0.25)) {
+            habit.unarchive()
+        }
+        let impact = UIImpactFeedbackGenerator(style: .light)
+        impact.impactOccurred()
+    }
 
     private func restoreCompletedTodo(_ habit: HabitEntry) {
         if habit.habitType == .todo {

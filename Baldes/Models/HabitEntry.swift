@@ -161,6 +161,12 @@ final class HabitEntry {
         return formatter.localizedString(for: last, relativeTo: Date())
     }
 
+    /// The most recent completion timestamp today, if any.
+    var lastCompletionTimeToday: Date? {
+        let calendar = Calendar.current
+        return completionLogs.filter { calendar.isDateInToday($0) }.max()
+    }
+
     func completionCount(on date: Date) -> Int {
         let calendar = Calendar.current
         return completionLogs.filter { calendar.isDate($0, inSameDayAs: date) }.count
@@ -394,6 +400,35 @@ final class HabitEntry {
     }
 
     // MARK: - Archive Helpers
+
+    /// Whether this habit is archived and would have been scheduled on the given date.
+    func isArchivedButScheduled(on date: Date) -> Bool {
+        guard archivedDate != nil else { return false }
+
+        let calendar = Calendar.current
+        let day = calendar.startOfDay(for: date)
+        let start = calendar.startOfDay(for: startDate)
+
+        switch frequency {
+        case 0:
+            if habitType == .todo {
+                return day >= start
+            }
+            return calendar.isDate(date, inSameDayAs: startDate)
+        case 1:
+            return day >= start
+        case 2:
+            guard day >= start else { return false }
+            if endDateEnabled, let endDate {
+                guard day <= calendar.startOfDay(for: endDate) else { return false }
+            }
+            let weekday = calendar.component(.weekday, from: date)
+            let mappedDay = (weekday + 5) % 7
+            return selectedDays.contains(mappedDay)
+        default:
+            return true
+        }
+    }
 
     /// Restores an archived habit back to the active list.
     func unarchive() {

@@ -16,27 +16,26 @@ struct IncompleteWarningBanner: View {
                 }
             } label: {
                 HStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color.accentYellow)
+                    Image(systemName: "exclamationmark.circle")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Color.textTertiary)
 
                     Text(
                         count == 1
-                            ? "1 habit needs finishing setup"
-                            : "\(count) habits need finishing setup"
+                            ? "1 habit needs setup"
+                            : "\(count) habits need setup"
                     )
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.textPrimary)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color.textTertiary)
 
                     Spacer()
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(Color.textTertiary)
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                 }
                 .padding(.horizontal, 14)
-                .padding(.top, 0)
                 .padding(.vertical, 10)
                 .contentShape(Rectangle())
             }
@@ -45,7 +44,7 @@ struct IncompleteWarningBanner: View {
             // Expandable list of incomplete habits
             if isExpanded {
                 Rectangle()
-                    .fill(Color.accentYellow.opacity(0.2))
+                    .fill(Color.dividerColor.opacity(0.5))
                     .frame(height: 1)
                     .padding(.horizontal, 10)
 
@@ -56,24 +55,25 @@ struct IncompleteWarningBanner: View {
                         } label: {
                             HStack(spacing: 10) {
                                 Text(habit.emoji)
-                                    .font(.system(size: 18))
+                                    .font(.system(size: 16))
+                                    .opacity(0.7)
 
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(habit.name.isEmpty ? "Unnamed habit" : habit.name)
-                                        .font(.system(size: 13, weight: .bold))
-                                        .foregroundStyle(Color.textPrimary)
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundStyle(Color.textSecondary)
 
                                     Text(habit.incompleteReasons.joined(separator: " · "))
-                                        .font(.system(size: 11, weight: .medium))
+                                        .font(.system(size: 11, weight: .regular))
                                         .foregroundStyle(Color.textTertiary)
                                         .lineLimit(1)
                                 }
 
                                 Spacer()
 
-                                Image(systemName: "pencil.circle.fill")
-                                    .font(.system(size: 18, weight: .medium))
-                                    .foregroundStyle(Color.accentYellow)
+                                Image(systemName: "pencil.circle")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundStyle(Color.textTertiary)
                             }
                             .padding(.horizontal, 14)
                             .padding(.vertical, 8)
@@ -85,11 +85,7 @@ struct IncompleteWarningBanner: View {
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .background(Color.accentYellow.opacity(0.12))
+        .background(Color.textTertiary.opacity(0.06))
         .clipShape(RoundedRectangle(cornerRadius: 10))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(Color.accentYellow.opacity(0.3), lineWidth: 1)
-        )
     }
 }
