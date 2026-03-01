@@ -5,6 +5,7 @@ import UIKit
 
 struct HabitsListView: View {
     var selectedDate: Date
+    var searchText: String = ""
     @Query private var allHabits: [HabitEntry]
     @Environment(\.modelContext) private var modelContext
 
@@ -16,8 +17,15 @@ struct HabitsListView: View {
     @State private var todoQuickCompleteHabit: HabitEntry?
     @Binding var showConfetti: Bool
 
+    private var isSearching: Bool {
+        !searchText.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
     private var visibleHabits: [HabitEntry] {
-        allHabits.filter { $0.isScheduled(on: selectedDate) }
+        let base = isSearching
+            ? allHabits.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+            : allHabits.filter { $0.isScheduled(on: selectedDate) }
+        return base
     }
 
     private var scheduledHabits: [HabitEntry] {

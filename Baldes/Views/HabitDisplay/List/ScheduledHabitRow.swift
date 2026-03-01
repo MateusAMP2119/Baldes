@@ -23,7 +23,7 @@ struct HabitRowView: View {
             // Time column — pinned to top
             VStack(spacing: 1) {
                 Text(habit.displayTimeStart)
-                    .font(.system(size: 12, weight: .heavy))
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(isDone ? habit.accentColor : Color.textPrimary)
                 Text(habit.displayDuration)
                     .font(.system(size: 9, weight: .semibold))

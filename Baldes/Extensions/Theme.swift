@@ -33,8 +33,12 @@ extension Color {
 
     // MARK: - Borders / Dividers
     static let borderStrong = Color(hex: "000000")
+    static let borderLight = Color(hex: "E5E5EA")
     static let dividerColor = Color(hex: "E8E6E2")
     static let tabInactive = Color(hex: "A8A7A5")
+
+    // MARK: - Shadows
+    static let shadowSoft = Color.black.opacity(0.06)
 
     // MARK: - Activity Heatmap Levels
     static let heatLevel0 = Color(hex: "EDECEA")

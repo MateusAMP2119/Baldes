@@ -20,8 +20,7 @@ struct GreetingView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Color.textSecondary)
                 Text("Hey, Mateus!")
-                    .font(.system(size: 26, weight: .black))
-                    .tracking(-0.5)
+                    .font(.system(size: 24, weight: .bold))
                     .foregroundStyle(Color.textPrimary)
             }
         }

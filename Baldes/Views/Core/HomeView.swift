@@ -6,6 +6,7 @@ struct HomeView: View {
     @State private var weekOffset = 0
     @State private var showCalendarPicker = false
     @State private var showConfetti = false
+    @State private var searchText = ""
     @Query private var allHabits: [HabitEntry]
 
     private let calendar = Calendar.current
@@ -55,17 +56,35 @@ struct HomeView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            LinearGradient(
-                colors: [Color.accentOrangeLight, Color.white.opacity(0)],
-                startPoint: .top,
-                endPoint: UnitPoint(x: 0.5, y: 0.4)
-            )
-            .ignoresSafeArea()
+            Color(UIColor.systemBackground)
+                .ignoresSafeArea()
 
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 0) {
-                    GreetingView()
-                        .padding(.bottom, 28)
+                    HStack(spacing: 10) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(Color.textTertiary)
+                        TextField("Search habits", text: $searchText)
+                            .font(.system(size: 16))
+                            .foregroundStyle(Color.textPrimary)
+                        if !searchText.isEmpty {
+                            Button {
+                                searchText = ""
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 15))
+                                    .foregroundStyle(Color.textTertiary)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Color(UIColor.secondarySystemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 28)
+
                     WeekStripView(
                         selectedDate: $selectedDate,
                         weekOffset: $weekOffset,
@@ -73,7 +92,7 @@ struct HomeView: View {
                         dayCompletionCounts: weekCompletionCounts
                     )
                     .padding(.bottom, 28)
-                    HabitsListView(selectedDate: selectedDate, showConfetti: $showConfetti)
+                    HabitsListView(selectedDate: selectedDate, searchText: searchText, showConfetti: $showConfetti)
                 }
                 .padding(.bottom, 100)
             }

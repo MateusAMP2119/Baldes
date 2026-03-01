@@ -56,18 +56,9 @@ struct AnytimeHabitsSection: View {
                 listView
             }
             .clipShape(RoundedRectangle(cornerRadius: 12))
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.white)
-            )
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(Color.borderStrong, lineWidth: 2)
-            )
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.shadowOrange)
-                    .offset(x: 4, y: 4)
+                    .strokeBorder(Color.dividerColor, lineWidth: 1)
             )
     }
 

@@ -17,8 +17,8 @@ enum DesignTokens {
     enum Typography {
         
         // Headers
-        static let headerLarge = Font.system(size: 24, weight: .heavy)
-        static let headerMedium = Font.system(size: 18, weight: .black)
+        static let headerLarge = Font.system(size: 24, weight: .bold)
+        static let headerMedium = Font.system(size: 18, weight: .semibold)
         
         // Body
         static let bodyLarge = Font.system(size: 15, weight: .medium)

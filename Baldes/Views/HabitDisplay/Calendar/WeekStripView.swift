@@ -55,7 +55,7 @@ struct WeekStripView: View {
             Button(action: onCalendarTap) {
                 HStack(spacing: 6) {
                     Text(headerLabel)
-                        .font(.system(size: 18, weight: .black))
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(Color.textPrimary)
                     Image(systemName: "chevron.down")
                         .font(.system(size: 12, weight: .semibold))
@@ -136,27 +136,13 @@ struct WeekStripView: View {
 
             if isSelected {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 21)
+                    Circle()
                         .fill(Color.accentOrange)
                         .frame(width: 42, height: 42)
-                        .offset(x: 3, y: 3)
-
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 21)
-                            .fill(Color.white)
-                            .frame(width: 42, height: 42)
-                        RoundedRectangle(cornerRadius: 21)
-                            .strokeBorder(Color.borderStrong, lineWidth: 2)
-                            .frame(width: 42, height: 42)
-                        Text("\(dayNumber)")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(Color.textPrimary)
-                            .rotationEffect(.degrees(-0.19))
-                    }
+                    Text("\(dayNumber)")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.white)
                 }
-                .frame(width: 42, height: 42)
-                .padding(.trailing, 3)
-                .padding(.bottom, 3)
             } else {
                 ZStack {
                     Circle()
