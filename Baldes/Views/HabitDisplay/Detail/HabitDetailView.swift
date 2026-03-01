@@ -470,50 +470,52 @@ struct HabitDetailView: View {
                 }
             }
             .modelContainer(container)
-            .onAppear {
-                let items = [
-                    TodoItem(title: "Review PRs"),
-                    TodoItem(title: "Update documentation"),
-                    TodoItem(title: "Fix login bug"),
-                    TodoItem(title: "Write unit tests"),
-                ]
-                let df = DateFormatter()
-                df.dateFormat = "yyyy-MM-dd"
-                let todayStr = df.string(from: Date())
+            .onAppear { setupHabit() }
+        }
 
-                let h = HabitEntry(
-                    name: "Dev Tasks",
-                    emoji: "\u{1F4BB}",
-                    habitTypeRaw: "todo",
-                    motivationQuote: "Code is like humor. When you have to explain it, it's bad.",
-                    hasTime: false,
-                    scheduleTime: nil,
-                    frequency: 0,
-                    selectedDays: [],
-                    startDate: Calendar.current.date(byAdding: .day, value: -3, to: Date())!,
-                    endDateEnabled: false,
-                    endDate: nil,
-                    reminderEnabled: false,
-                    reminderTime: nil,
-                    completionLogs: []
-                )
-                h.todoItemsData = items
-                h.todoCompletionsV2 = [
-                    "\(todayStr):\(items[0].id.uuidString)",
-                    "\(todayStr):\(items[1].id.uuidString)",
-                ]
-                h.activityLog = [
-                    ActivityLogEntry(type: .created),
-                    ActivityLogEntry(type: .taskAdded, detail: "Review PRs"),
-                    ActivityLogEntry(type: .taskAdded, detail: "Update documentation"),
-                    ActivityLogEntry(type: .completed, detail: "Review PRs"),
-                    ActivityLogEntry(type: .completed, detail: "Update documentation"),
-                    ActivityLogEntry(type: .taskAdded, detail: "Fix login bug"),
-                    ActivityLogEntry(type: .taskAdded, detail: "Write unit tests"),
-                ]
-                container.mainContext.insert(h)
-                habit = h
-            }
+        private func setupHabit() {
+            let items = [
+                TodoItem(title: "Review PRs"),
+                TodoItem(title: "Update documentation"),
+                TodoItem(title: "Fix login bug"),
+                TodoItem(title: "Write unit tests"),
+            ]
+            let df = DateFormatter()
+            df.dateFormat = "yyyy-MM-dd"
+            let todayStr = df.string(from: Date())
+
+            let h = HabitEntry(
+                name: "Dev Tasks",
+                emoji: "\u{1F4BB}",
+                habitTypeRaw: "todo",
+                motivationQuote: "Code is like humor. When you have to explain it, it's bad.",
+                hasTime: false,
+                scheduleTime: nil,
+                frequency: 0,
+                selectedDays: [],
+                startDate: Calendar.current.date(byAdding: .day, value: -3, to: Date())!,
+                endDateEnabled: false,
+                endDate: nil,
+                reminderEnabled: false,
+                reminderTime: nil,
+                completionLogs: []
+            )
+            h.todoItemsData = items
+            h.todoCompletionsV2 = [
+                "\(todayStr):\(items[0].id.uuidString)",
+                "\(todayStr):\(items[1].id.uuidString)",
+            ]
+            h.activityLog = [
+                ActivityLogEntry(type: .created),
+                ActivityLogEntry(type: .taskAdded, detail: "Review PRs"),
+                ActivityLogEntry(type: .taskAdded, detail: "Update documentation"),
+                ActivityLogEntry(type: .completed, detail: "Review PRs"),
+                ActivityLogEntry(type: .completed, detail: "Update documentation"),
+                ActivityLogEntry(type: .taskAdded, detail: "Fix login bug"),
+                ActivityLogEntry(type: .taskAdded, detail: "Write unit tests"),
+            ]
+            container.mainContext.insert(h)
+            habit = h
         }
     }
 

@@ -12,10 +12,17 @@ struct HabitDetailTypeContent: View {
     var onStartStopwatch: () -> Void
 
     var body: some View {
-        NeoCard(shadowColor: habit.habitType.shadowColor) {
-            mainContentInner
-                .padding(20)
-        }
+        mainContentInner
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color.white)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(Color.borderStrong.opacity(0.15), lineWidth: 1)
+            )
     }
 
     @ViewBuilder
@@ -291,24 +298,55 @@ struct HabitDetailTypeContent: View {
                 }
             }
 
-            // Progress bar
+            // Progress bar — neo-brutalist with stripes
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(habit.habitType.color.opacity(0.15))
-                        .frame(height: 6)
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(habit.habitType.color)
-                        .frame(
-                            width: totalCount > 0
-                                ? geo.size.width * CGFloat(completedCount) / CGFloat(totalCount)
-                                : 0,
-                            height: 6
+                    // Background track with diagonal stripes
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(habit.habitType.color.opacity(0.06))
+                        .frame(height: 14)
+                        .overlay(
+                            Canvas { context, size in
+                                let stripeWidth: CGFloat = 3
+                                let gap: CGFloat = 5
+                                let step = stripeWidth + gap
+                                var x: CGFloat = -size.height
+                                while x < size.width + size.height {
+                                    var path = Path()
+                                    path.move(to: CGPoint(x: x, y: size.height))
+                                    path.addLine(to: CGPoint(x: x + size.height, y: 0))
+                                    path.addLine(to: CGPoint(x: x + size.height + stripeWidth, y: 0))
+                                    path.addLine(to: CGPoint(x: x + stripeWidth, y: size.height))
+                                    path.closeSubpath()
+                                    context.fill(path, with: .color(habit.habitType.color.opacity(0.18)))
+                                    x += step
+                                }
+                            }
+                            .clipShape(RoundedRectangle(cornerRadius: 5))
                         )
-                        .animation(.spring(duration: 0.3), value: completedCount)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 5)
+                                .strokeBorder(Color.borderStrong, lineWidth: 1.5)
+                        )
+
+                    // Filled portion
+                    if completedCount > 0 {
+                        let fillWidth = totalCount > 0
+                            ? max(geo.size.width * CGFloat(completedCount) / CGFloat(totalCount), 18)
+                            : CGFloat(0)
+
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(habit.habitType.color)
+                            .frame(width: fillWidth, height: 14)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 5)
+                                    .strokeBorder(Color.borderStrong, lineWidth: 1.5)
+                            )
+                            .animation(.spring(duration: 0.3), value: completedCount)
+                    }
                 }
             }
-            .frame(height: 6)
+            .frame(height: 14)
 
             // Overdue warning
             let overdueCount = habit.overdueItems.count

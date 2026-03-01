@@ -237,48 +237,90 @@ struct HabitDetailStats: View {
     @State private var showAllActivity = false
 
     private var activityLogSection: some View {
-        NeoCard(shadowColor: habit.habitType.shadowColor) {
-            VStack(alignment: .leading, spacing: 14) {
-                let allEntries = Array(habit.activityLog.reversed())
+        VStack(alignment: .leading, spacing: 14) {
+            let allEntries = Array(habit.activityLog.reversed())
 
-                HStack {
-                    Label {
-                        Text("Activity")
-                            .font(.system(size: 16, weight: .heavy))
-                            .foregroundStyle(Color.textPrimary)
-                    } icon: {
-                        Image(systemName: "clock.arrow.circlepath")
-                            .font(.system(size: 14))
-                            .foregroundStyle(habit.habitType.color)
-                    }
-
-                    Spacer()
-
-                    if allEntries.count > 5 {
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.25)) {
-                                showAllActivity.toggle()
-                            }
-                        } label: {
-                            Text(showAllActivity ? "Show less" : "See all (\(allEntries.count))")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(Color.textTertiary)
-                        }
-                        .buttonStyle(.plain)
-                    }
+            HStack {
+                Label {
+                    Text("Activity")
+                        .font(.system(size: 16, weight: .heavy))
+                        .foregroundStyle(Color.textPrimary)
+                } icon: {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 14))
+                        .foregroundStyle(habit.habitType.color)
                 }
 
-                let entries = showAllActivity ? allEntries : Array(allEntries.prefix(5))
-                VStack(spacing: 6) {
-                    ForEach(entries, id: \.id) { entry in
-                        HStack(spacing: 10) {
-                            Image(systemName: entry.icon)
-                                .font(.system(size: 11))
-                                .foregroundStyle(Color.textTertiary)
-                                .frame(width: 20)
+                Spacer()
 
+                if allEntries.count > 5 {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            showAllActivity.toggle()
+                        }
+                    } label: {
+                        Text(showAllActivity ? "Show less" : "See all (\(allEntries.count))")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color.textTertiary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            let entries = showAllActivity ? allEntries : Array(allEntries.prefix(5))
+            activityTimeline(entries: entries)
+        }
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.white)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .strokeBorder(Color.borderStrong.opacity(0.15), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Timeline Component
+
+    private func activityTimeline(entries: [ActivityLogEntry]) -> some View {
+        VStack(spacing: 0) {
+            ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
+                HStack(alignment: .top, spacing: 12) {
+                    // Timeline rail: dot + line
+                    VStack(spacing: 0) {
+                        // Neo dot
+                        Circle()
+                            .fill(entry.tintColor)
+                            .frame(width: 10, height: 10)
+                            .overlay(
+                                Circle()
+                                    .strokeBorder(Color.borderStrong, lineWidth: 1.5)
+                            )
+                            .background(
+                                Circle()
+                                    .fill(entry.tintColor.opacity(0.5))
+                                    .frame(width: 10, height: 10)
+                                    .offset(x: 1.5, y: 1.5)
+                            )
+                            .padding(.top, 4)
+
+                        // Connecting line
+                        if index < entries.count - 1 {
+                            Rectangle()
+                                .fill(Color.borderStrong.opacity(0.25))
+                                .frame(width: 2)
+                                .frame(maxHeight: .infinity)
+                        }
+                    }
+                    .frame(width: 10)
+
+                    // Entry content
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 6) {
                             Text(entry.title)
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.system(size: 13, weight: .semibold))
                                 .foregroundStyle(Color.textPrimary)
 
                             if let detail = entry.detail {
@@ -287,18 +329,17 @@ struct HabitDetailStats: View {
                                     .foregroundStyle(Color.textTertiary)
                                     .lineLimit(1)
                             }
-
-                            Spacer()
-
-                            Text(activityTimeFormatted(entry.date))
-                                .font(.system(size: 11))
-                                .foregroundStyle(Color.textTertiary)
                         }
-                        .padding(.vertical, 4)
+
+                        Text(activityTimeFormatted(entry.date))
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.textTertiary)
                     }
+                    .padding(.bottom, index < entries.count - 1 ? 14 : 0)
+
+                    Spacer()
                 }
             }
-            .padding(18)
         }
     }
 
@@ -324,232 +365,360 @@ struct HabitDetailStats: View {
     // MARK: - Combined Todo Stats Card
 
     private var todoStatsCard: some View {
-        NeoCard(shadowColor: habit.habitType.shadowColor) {
+        VStack(alignment: .leading, spacing: 0) {
+            // — Insights section
+            todoInsightsSection
+                .padding(.bottom, 28)
+
+            sectionDivider
+
+            // — Task Breakdown section
+            todoBreakdownSection
+                .padding(.top, 24)
+                .padding(.bottom, 28)
+
+            if !habit.activityLog.isEmpty {
+                sectionDivider
+
+                // — Activity section
+                todoActivitySection
+                    .padding(.top, 24)
+            }
+        }
+        .padding(24)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.white)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .strokeBorder(Color.borderStrong.opacity(0.15), lineWidth: 1)
+        )
+    }
+
+    private var sectionDivider: some View {
+        Rectangle()
+            .fill(Color.borderStrong.opacity(0.1))
+            .frame(height: 1)
+            .padding(.horizontal, -24)
+            .padding(.horizontal, 24)
+    }
+
+    // MARK: - Insights Section
+
+    private var todoInsightsSection: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack {
+                Label {
+                    Text("Insights")
+                        .font(.system(size: 16, weight: .heavy))
+                        .foregroundStyle(Color.textPrimary)
+                } icon: {
+                    Image(systemName: "dot.scope")
+                        .font(.system(size: 14))
+                        .foregroundStyle(habit.habitType.color)
+                }
+                Spacer()
+            }
+
+            Picker("Period", selection: $todoPeriod.animation(.smooth(duration: 0.3))) {
+                ForEach(TodoPeriod.allCases, id: \.self) { period in
+                    Text(period.rawValue).tag(period)
+                }
+            }
+            .pickerStyle(.segmented)
+
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
                     Label {
-                        Text("Insights")
-                            .font(.system(size: 16, weight: .heavy))
-                            .foregroundStyle(Color.textPrimary)
+                        Text(
+                            todoPeriod == .week
+                                ? "This Week"
+                                : todoPeriod == .month
+                                    ? "This Month"
+                                    : "All Time"
+                        )
+                        .font(.system(size: 16, weight: .heavy))
+                        .foregroundStyle(Color.textPrimary)
+                        .contentTransition(.numericText())
                     } icon: {
-                        Image(systemName: "dot.scope")
+                        Image(systemName: "chart.bar.fill")
                             .font(.system(size: 14))
                             .foregroundStyle(habit.habitType.color)
                     }
                     Spacer()
-                }
-                // Period picker inside the card
-                Picker("Period", selection: $todoPeriod.animation(.smooth(duration: 0.3))) {
-                    ForEach(TodoPeriod.allCases, id: \.self) { period in
-                        Text(period.rawValue).tag(period)
-                    }
-                }
-                .pickerStyle(.segmented)
 
-                // Velocity chart section
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Label {
-                            Text(
-                                todoPeriod == .week
-                                    ? "This Week"
-                                    : todoPeriod == .month
-                                        ? "This Month"
-                                        : "All Time"
-                            )
-                            .font(.system(size: 16, weight: .heavy))
-                            .foregroundStyle(Color.textPrimary)
-                            .contentTransition(.numericText())
-                        } icon: {
-                            Image(systemName: "chart.bar.fill")
-                                .font(.system(size: 14))
-                                .foregroundStyle(habit.habitType.color)
+                    let totalTasks = todoVelocityData.reduce(0) { $0 + $1.1 }
+                    Text("\(totalTasks) tasks")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(habit.habitType.color)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Capsule().fill(habit.habitType.color.opacity(0.1)))
+                        .contentTransition(.numericText())
+                }
+
+                // Bar + Area chart
+                todoBarAreaChart
+            }
+        }
+    }
+
+    // MARK: - Bar + Area Chart
+
+    private var todoBarAreaChart: some View {
+        let maxVal = max(todoVelocityData.map(\.1).max() ?? 1, 1)
+        let chartHeight: CGFloat = 100
+
+        return VStack(spacing: 0) {
+            GeometryReader { geo in
+                let barCount = CGFloat(todoVelocityData.count)
+                let spacing: CGFloat = 8
+                let totalSpacing = spacing * (barCount - 1)
+                let barWidth = (geo.size.width - totalSpacing) / barCount
+
+                ZStack(alignment: .bottom) {
+                    // Area fill behind bars
+                    Path { path in
+                        let points: [CGPoint] = todoVelocityData.enumerated().map { index, data in
+                            let x = CGFloat(index) * (barWidth + spacing) + barWidth / 2
+                            let ratio = CGFloat(data.1) / CGFloat(maxVal)
+                            let y = chartHeight - (ratio * (chartHeight - 4))
+                            return CGPoint(x: x, y: y)
                         }
-                        Spacer()
 
-                        let totalTasks = todoVelocityData.reduce(0) { $0 + $1.1 }
-                        Text("\(totalTasks) tasks")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(habit.habitType.color)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(Capsule().fill(habit.habitType.color.opacity(0.1)))
-                            .contentTransition(.numericText())
+                        guard !points.isEmpty else { return }
+                        path.move(to: CGPoint(x: points.first!.x, y: chartHeight))
+                        path.addLine(to: points.first!)
+
+                        for i in 1..<points.count {
+                            let cp1 = CGPoint(
+                                x: points[i - 1].x + (points[i].x - points[i - 1].x) * 0.4,
+                                y: points[i - 1].y
+                            )
+                            let cp2 = CGPoint(
+                                x: points[i].x - (points[i].x - points[i - 1].x) * 0.4,
+                                y: points[i].y
+                            )
+                            path.addCurve(to: points[i], control1: cp1, control2: cp2)
+                        }
+
+                        path.addLine(to: CGPoint(x: points.last!.x, y: chartHeight))
+                        path.closeSubpath()
                     }
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                habit.habitType.color.opacity(0.15),
+                                habit.habitType.color.opacity(0.03),
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
 
-                    HStack(alignment: .bottom, spacing: 8) {
+                    // Area stroke line
+                    Path { path in
+                        let points: [CGPoint] = todoVelocityData.enumerated().map { index, data in
+                            let x = CGFloat(index) * (barWidth + spacing) + barWidth / 2
+                            let ratio = CGFloat(data.1) / CGFloat(maxVal)
+                            let y = chartHeight - (ratio * (chartHeight - 4))
+                            return CGPoint(x: x, y: y)
+                        }
+
+                        guard !points.isEmpty else { return }
+                        path.move(to: points.first!)
+                        for i in 1..<points.count {
+                            let cp1 = CGPoint(
+                                x: points[i - 1].x + (points[i].x - points[i - 1].x) * 0.4,
+                                y: points[i - 1].y
+                            )
+                            let cp2 = CGPoint(
+                                x: points[i].x - (points[i].x - points[i - 1].x) * 0.4,
+                                y: points[i].y
+                            )
+                            path.addCurve(to: points[i], control1: cp1, control2: cp2)
+                        }
+                    }
+                    .stroke(habit.habitType.color.opacity(0.4), lineWidth: 1.5)
+
+                    // Bars on top
+                    HStack(alignment: .bottom, spacing: spacing) {
                         ForEach(Array(todoVelocityData.enumerated()), id: \.offset) { _, data in
-                            let maxVal = max(todoVelocityData.map(\.1).max() ?? 1, 1)
-                            let barHeight = max(CGFloat(data.1) / CGFloat(maxVal) * 60, 4)
+                            let barHeight = max(CGFloat(data.1) / CGFloat(maxVal) * (chartHeight - 4), 4)
 
-                            VStack(spacing: 6) {
+                            VStack(spacing: 0) {
                                 if data.1 > 0 {
                                     Text("\(data.1)")
                                         .font(.system(size: 10, weight: .bold))
                                         .foregroundStyle(habit.habitType.color)
                                         .contentTransition(.numericText())
+                                        .padding(.bottom, 4)
                                 }
 
                                 RoundedRectangle(cornerRadius: 4)
                                     .fill(
                                         data.1 > 0
                                             ? habit.habitType.color
-                                            : habit.habitType.color.opacity(0.15)
+                                            : habit.habitType.color.opacity(0.08)
                                     )
-                                    .frame(width: 28, height: barHeight)
+                                    .frame(height: barHeight)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 4)
                                             .strokeBorder(
-                                                data.1 > 0 ? Color.borderStrong : Color.clear,
+                                                data.1 > 0 ? Color.borderStrong : Color.borderStrong.opacity(0.2),
                                                 lineWidth: 1.5
                                             )
                                     )
-
-                                Text(data.0)
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundStyle(Color.textTertiary)
                             }
                             .frame(maxWidth: .infinity)
                         }
                     }
-                    .frame(height: 90, alignment: .bottom)
-                    .animation(.smooth(duration: 0.35), value: todoPeriod)
-                }
-
-                Divider()
-
-                // Task breakdown section
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Label {
-                            Text("Task Breakdown")
-                                .font(.system(size: 16, weight: .heavy))
-                                .foregroundStyle(Color.textPrimary)
-                        } icon: {
-                            Image(systemName: "list.bullet.clipboard")
-                                .font(.system(size: 14))
-                                .foregroundStyle(habit.habitType.color)
-                        }
-                        Spacer()
-                    }
-
-                    if taskCompletionRates.isEmpty {
-                        Text("Complete tasks to see your breakdown")
-                            .font(.system(size: 13))
-                            .foregroundStyle(Color.textTertiary)
-                    } else {
-                        VStack(spacing: 10) {
-                            ForEach(taskCompletionRates, id: \.0.id) { item, rate, count in
-                                HStack(spacing: 10) {
-                                    Text(item.title)
-                                        .font(.system(size: 13, weight: .medium))
-                                        .foregroundStyle(Color.textPrimary)
-                                        .lineLimit(1)
-                                        .frame(width: 90, alignment: .leading)
-
-                                    GeometryReader { geo in
-                                        ZStack(alignment: .leading) {
-                                            RoundedRectangle(cornerRadius: 4)
-                                                .fill(habit.habitType.color.opacity(0.12))
-                                                .frame(height: 14)
-
-                                            RoundedRectangle(cornerRadius: 4)
-                                                .fill(habit.habitType.color)
-                                                .frame(
-                                                    width: max(
-                                                        geo.size.width * rate, rate > 0 ? 8 : 0),
-                                                    height: 14
-                                                )
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 4)
-                                                        .strokeBorder(
-                                                            Color.borderStrong, lineWidth: 1)
-                                                )
-                                                .animation(
-                                                    .smooth(duration: 0.35), value: todoPeriod)
-                                        }
-                                    }
-                                    .frame(height: 14)
-
-                                    Text("\(count)×")
-                                        .font(.system(size: 11, weight: .bold))
-                                        .foregroundStyle(Color.textSecondary)
-                                        .frame(width: 30, alignment: .trailing)
-                                        .contentTransition(.numericText())
-                                }
-                            }
-                        }
-                        .animation(.smooth(duration: 0.35), value: todoPeriod)
-                    }
-                }
-
-                // Activity log inline
-                if !habit.activityLog.isEmpty {
-                    Divider()
-
-                    VStack(alignment: .leading, spacing: 10) {
-                        let allEntries = Array(habit.activityLog.reversed())
-
-                        HStack {
-                            Label {
-                                Text("Activity")
-                                    .font(.system(size: 16, weight: .heavy))
-                                    .foregroundStyle(Color.textPrimary)
-                            } icon: {
-                                Image(systemName: "clock.arrow.circlepath")
-                                    .font(.system(size: 14))
-                                    .foregroundStyle(habit.habitType.color)
-                            }
-
-                            Spacer()
-
-                            if allEntries.count > 5 {
-                                Button {
-                                    withAnimation(.easeInOut(duration: 0.25)) {
-                                        showAllActivity.toggle()
-                                    }
-                                } label: {
-                                    Text(showAllActivity ? "Show less" : "See all (\(allEntries.count))")
-                                        .font(.system(size: 13, weight: .semibold))
-                                        .foregroundStyle(Color.textTertiary)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-
-                        let entries = showAllActivity ? allEntries : Array(allEntries.prefix(5))
-                        VStack(spacing: 6) {
-                            ForEach(entries, id: \.id) { entry in
-                                HStack(spacing: 10) {
-                                    Image(systemName: entry.icon)
-                                        .font(.system(size: 11))
-                                        .foregroundStyle(Color.textTertiary)
-                                        .frame(width: 20)
-
-                                    Text(entry.title)
-                                        .font(.system(size: 13, weight: .medium))
-                                        .foregroundStyle(Color.textPrimary)
-
-                                    if let detail = entry.detail {
-                                        Text(detail)
-                                            .font(.system(size: 13))
-                                            .foregroundStyle(Color.textTertiary)
-                                            .lineLimit(1)
-                                    }
-
-                                    Spacer()
-
-                                    Text(activityTimeFormatted(entry.date))
-                                        .font(.system(size: 11))
-                                        .foregroundStyle(Color.textTertiary)
-                                }
-                                .padding(.vertical, 4)
-                            }
-                        }
-                    }
                 }
             }
-            .padding(18)
+            .frame(height: chartHeight + 20)
+
+            // Day labels
+            HStack(spacing: 8) {
+                ForEach(Array(todoVelocityData.enumerated()), id: \.offset) { _, data in
+                    Text(data.0)
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Color.textTertiary)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            .padding(.top, 6)
+        }
+        .animation(.smooth(duration: 0.35), value: todoPeriod)
+    }
+
+    // MARK: - Task Breakdown Section
+
+    private var todoBreakdownSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Label {
+                    Text("Task Breakdown")
+                        .font(.system(size: 16, weight: .heavy))
+                        .foregroundStyle(Color.textPrimary)
+                } icon: {
+                    Image(systemName: "list.bullet.clipboard")
+                        .font(.system(size: 14))
+                        .foregroundStyle(habit.habitType.color)
+                }
+                Spacer()
+            }
+
+            if taskCompletionRates.isEmpty {
+                Text("Complete tasks to see your breakdown")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.textTertiary)
+            } else {
+                VStack(spacing: 12) {
+                    ForEach(taskCompletionRates, id: \.0.id) { item, rate, count in
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text(item.title)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(Color.textPrimary)
+                                    .lineLimit(1)
+                                Spacer()
+                                Text("\(count)×")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundStyle(Color.textSecondary)
+                            }
+
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    // Striped background
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(habit.habitType.color.opacity(0.06))
+                                        .frame(height: 12)
+                                        .overlay(
+                                            Canvas { context, size in
+                                                let stripeWidth: CGFloat = 3
+                                                let gap: CGFloat = 5
+                                                let step = stripeWidth + gap
+                                                var x: CGFloat = -size.height
+                                                while x < size.width + size.height {
+                                                    var path = Path()
+                                                    path.move(to: CGPoint(x: x, y: size.height))
+                                                    path.addLine(to: CGPoint(x: x + size.height, y: 0))
+                                                    path.addLine(to: CGPoint(x: x + size.height + stripeWidth, y: 0))
+                                                    path.addLine(to: CGPoint(x: x + stripeWidth, y: size.height))
+                                                    path.closeSubpath()
+                                                    context.fill(path, with: .color(habit.habitType.color.opacity(0.12)))
+                                                    x += step
+                                                }
+                                            }
+                                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                                        )
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 4)
+                                                .strokeBorder(Color.borderStrong.opacity(0.4), lineWidth: 1)
+                                        )
+
+                                    // Filled bar
+                                    if rate > 0 {
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .fill(habit.habitType.color)
+                                            .frame(
+                                                width: max(geo.size.width * rate, 10),
+                                                height: 12
+                                            )
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 4)
+                                                    .strokeBorder(Color.borderStrong, lineWidth: 1)
+                                            )
+                                            .animation(.smooth(duration: 0.35), value: todoPeriod)
+                                    }
+                                }
+                            }
+                            .frame(height: 12)
+                        }
+                    }
+                }
+                .animation(.smooth(duration: 0.35), value: todoPeriod)
+            }
+        }
+    }
+
+    // MARK: - Todo Activity Section
+
+    private var todoActivitySection: some View {
+        let allEntries = Array(habit.activityLog.reversed())
+
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Label {
+                    Text("Activity")
+                        .font(.system(size: 16, weight: .heavy))
+                        .foregroundStyle(Color.textPrimary)
+                } icon: {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 14))
+                        .foregroundStyle(habit.habitType.color)
+                }
+
+                Spacer()
+
+                if allEntries.count > 5 {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            showAllActivity.toggle()
+                        }
+                    } label: {
+                        Text(showAllActivity ? "Show less" : "See all (\(allEntries.count))")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color.textTertiary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            let entries = showAllActivity ? allEntries : Array(allEntries.prefix(5))
+            activityTimeline(entries: entries)
         }
     }
 
