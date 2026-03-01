@@ -74,7 +74,7 @@ struct AnytimeHabitsSection: View {
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Color.textTertiary)
             }
-            .padding(.horizontal, 4)
+            .padding(.horizontal, 12)
 
             listContainer
         }
