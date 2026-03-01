@@ -108,7 +108,7 @@ struct HabitsListView: View {
                 }
             }
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 12)
         .sheet(item: $habitToEdit) { habit in
             NavigationStack {
                 AddHabitFormView(

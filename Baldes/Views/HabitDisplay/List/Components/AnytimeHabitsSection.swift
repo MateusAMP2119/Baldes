@@ -56,10 +56,6 @@ struct AnytimeHabitsSection: View {
                 listView
             }
             .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(Color.dividerColor, lineWidth: 1)
-            )
     }
 
     var body: some View {
@@ -97,7 +93,7 @@ struct AnytimeHabitsSection: View {
         }
         .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
         .listRowInsets(EdgeInsets())
-        .listRowSeparator(index < anytimeHabits.count - 1 ? .visible : .hidden)
+        .listRowSeparator(.visible)
         .listRowSeparatorTint(Color.dividerColor)
         .listRowBackground(RoundedRectangle(cornerRadius: 12).fill(Color.white))
         .swipeActions(edge: .leading, allowsFullSwipe: true) {

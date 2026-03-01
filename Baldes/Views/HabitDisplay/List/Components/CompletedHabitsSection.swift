@@ -74,20 +74,14 @@ struct CompletedHabitsSection: View {
                         .padding(.horizontal, 16)
                         .padding(.vertical, 10)
 
-                        if index < completedHabits.count - 1 {
-                            Rectangle()
-                                .fill(Color.dividerColor.opacity(0.5))
-                                .frame(height: 1)
-                                .padding(.horizontal, 16)
-                        }
+                        Rectangle()
+                            .fill(Color.dividerColor.opacity(0.5))
+                            .frame(height: 1)
+                            .padding(.horizontal, 16)
                     }
                 }
                 .background(Color.bgPage)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(Color.dividerColor, lineWidth: 1.5)
-                )
                 .transition(.opacity)
             }
         }

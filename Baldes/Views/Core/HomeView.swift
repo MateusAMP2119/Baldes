@@ -65,7 +65,7 @@ struct HomeView: View {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 15, weight: .medium))
                             .foregroundStyle(Color.textTertiary)
-                        TextField("Search habits", text: $searchText)
+                        TextField("Procura por actividades", text: $searchText)
                             .font(.system(size: 16))
                             .foregroundStyle(Color.textPrimary)
                         if !searchText.isEmpty {
@@ -83,8 +83,9 @@ struct HomeView: View {
                     .background(Color(UIColor.secondarySystemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .padding(.horizontal, 24)
-                    .padding(.bottom, 28)
-
+                    .padding(.bottom, 16)
+                    .padding(.top, 8)
+                    
                     WeekStripView(
                         selectedDate: $selectedDate,
                         weekOffset: $weekOffset,

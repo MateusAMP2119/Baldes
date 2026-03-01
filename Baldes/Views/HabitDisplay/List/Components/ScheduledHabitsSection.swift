@@ -56,10 +56,6 @@ struct ScheduledHabitsSection: View {
                 listView
             }
             .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(Color.dividerColor, lineWidth: 1)
-            )
     }
 
     @ViewBuilder
@@ -76,7 +72,7 @@ struct ScheduledHabitsSection: View {
         }
         .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
         .listRowInsets(EdgeInsets())
-        .listRowSeparator(index < scheduledHabits.count - 1 ? .visible : .hidden)
+        .listRowSeparator(.visible)
         .listRowSeparatorTint(Color.dividerColor)
         .listRowBackground(RoundedRectangle(cornerRadius: 12).fill(Color.white))
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
