@@ -82,10 +82,10 @@ struct AnytimeHabitRowView: View {
                                     .font(.system(size: 11, weight: .heavy))
                             }
                         }
-                        .foregroundStyle(.white)
+                        .foregroundStyle(habit.allowMultipleCompletions ? habit.accentColor : .white)
                         .padding(.horizontal, completionCount > 1 ? 8 : 6)
                         .padding(.vertical, 5)
-                        .background(habit.accentColor)
+                        .background(habit.allowMultipleCompletions ? habit.accentColor.opacity(0.15) : habit.accentColor)
                         .clipShape(Capsule())
                     }
                 }
@@ -111,7 +111,7 @@ struct AnytimeHabitRowView: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .background(
-            isDone
+            isDone && !habit.allowMultipleCompletions
                 ? habit.accentColor.opacity(0.04)
                 : Color.white
         )

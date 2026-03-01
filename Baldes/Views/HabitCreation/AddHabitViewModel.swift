@@ -26,6 +26,7 @@ final class AddHabitViewModel {
         return calendar.date(from: components) ?? Date()
     }()
     var additionalReminderTimes: [Date] = []
+    var allowMultipleCompletions = false
 
     // Common schedule state
     var commonStartDate = Date()
@@ -149,6 +150,8 @@ final class AddHabitViewModel {
         hasTime = habit.hasTime
         selectedDays = Set(habit.selectedDays)
         reminderEnabled = habit.reminderEnabled
+
+        allowMultipleCompletions = habit.allowMultipleCompletions
 
         if let time = habit.reminderTime {
             reminderTime = time
@@ -355,6 +358,7 @@ final class AddHabitViewModel {
             existing.todoItemsData = todoItems
             existing.timerType = timerType
             existing.timerDurationSeconds = durationHours * 3600 + durationMinutes * 60 + durationSeconds
+            existing.allowMultipleCompletions = allowMultipleCompletions
 
             // Log each detected change
             if changes.isEmpty {
@@ -399,6 +403,7 @@ final class AddHabitViewModel {
             )
             entry.timerType = timerType
             entry.timerDurationSeconds = durationHours * 3600 + durationMinutes * 60 + durationSeconds
+            entry.allowMultipleCompletions = allowMultipleCompletions
             modelContext.insert(entry)
 
             if entry.reminderEnabled {

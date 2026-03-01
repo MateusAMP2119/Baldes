@@ -161,8 +161,13 @@ struct HabitsListView: View {
     // MARK: - Actions
 
     private func restoreCompletedTodo(_ habit: HabitEntry) {
-        // Clear all completions so the todo returns to active
-        habit.activeTodoCompletions = []
+        if habit.habitType == .todo {
+            // Clear all completions so the todo returns to active
+            habit.activeTodoCompletions = []
+        } else {
+            // Remove today's completions so the habit returns to active
+            habit.removeAllCompletions(on: selectedDate)
+        }
         let impact = UIImpactFeedbackGenerator(style: .light)
         impact.impactOccurred()
     }

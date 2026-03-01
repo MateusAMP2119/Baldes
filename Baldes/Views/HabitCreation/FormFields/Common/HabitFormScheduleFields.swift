@@ -245,6 +245,47 @@ struct HabitFormReminderToggle: View {
     }
 }
 
+// MARK: - Multiple Completions Toggle
+
+struct HabitFormMultipleCompletionsToggle: View {
+    let accentColor: Color
+    @Binding var isOn: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Completion")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color.textPrimary)
+
+            VStack(spacing: 8) {
+                HStack {
+                    HStack(spacing: 12) {
+                        Image(systemName: "arrow.trianglehead.2.counterclockwise")
+                            .font(.system(size: 18))
+                            .foregroundStyle(accentColor)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Allow multiple completions")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(Color.textSecondary)
+                            Text("When off, completed habits move to the done section")
+                                .font(.system(size: 11, weight: .regular))
+                                .foregroundStyle(Color.textTertiary)
+                        }
+                    }
+                    Spacer()
+                    Toggle("", isOn: $isOn)
+                        .labelsHidden()
+                        .tint(accentColor)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(Color(hex: "F5F5F5"))
+            .cornerRadius(16)
+        }
+    }
+}
+
 // MARK: - Schedule Time Field
 
 struct HabitFormScheduleField: View {

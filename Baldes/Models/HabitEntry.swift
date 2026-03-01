@@ -47,6 +47,9 @@ final class HabitEntry {
     // Activity log
     var activityLog: [ActivityLogEntry] = []
 
+    // Completion behavior
+    var allowMultipleCompletions: Bool = false
+
     // Soft delete
     var archivedDate: Date?
 
@@ -401,6 +404,9 @@ final class HabitEntry {
     var isCompleted: Bool {
         if habitType == .todo && frequency == 0 {
             return allTodosCompletedGlobally
+        }
+        if !allowMultipleCompletions && completionCount(on: Date()) > 0 {
+            return true
         }
         return false
     }

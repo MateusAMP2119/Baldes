@@ -136,6 +136,11 @@ struct AddHabitFormView: View {
                     reminderTime: $vm.timedReminderTime,
                     additionalReminderTimes: $vm.timedAdditionalReminderTimes
                 )
+
+                HabitFormMultipleCompletionsToggle(
+                    accentColor: vm.habitType.color,
+                    isOn: $vm.allowMultipleCompletions
+                )
             }
             .onChange(of: vm.timedScheduleTime) { _, newValue in
                 vm.timedReminderTime = newValue
@@ -265,6 +270,11 @@ struct AddHabitFormView: View {
                 isOn: $vm.reminderEnabled,
                 reminderTime: $vm.reminderTime,
                 additionalReminderTimes: $vm.additionalReminderTimes
+            )
+
+            HabitFormMultipleCompletionsToggle(
+                accentColor: vm.habitType.color,
+                isOn: $vm.allowMultipleCompletions
             )
         }
     }

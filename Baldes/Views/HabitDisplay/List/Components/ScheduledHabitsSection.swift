@@ -50,6 +50,16 @@ struct ScheduledHabitsSection: View {
     }
 
     var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "calendar.badge.checkmark")
+                .font(.system(size: 16, weight: .regular))
+                .foregroundStyle(Color.accentOrange)
+            Text("Scheduled")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(Color.textPrimary)
+            Spacer()
+        }
+        
         heightMeasuringView
             .onPreferenceChange(HabitsListHeightKey.self) { scheduledCardHeight = $0 }
             .overlay {
