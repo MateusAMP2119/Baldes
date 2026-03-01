@@ -50,22 +50,28 @@ struct ScheduledHabitsSection: View {
     }
 
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "calendar.badge.checkmark")
-                .font(.system(size: 16, weight: .regular))
-                .foregroundStyle(Color.accentOrange)
-            Text("Scheduled")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(Color.textPrimary)
-            Spacer()
-        }
-        
-        heightMeasuringView
+        VStack(spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: "calendar.badge.checkmark")
+                    .font(.system(size: 16, weight: .regular))
+                    .foregroundStyle(Color.accentOrange)
+                Text("Scheduled")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(Color.textPrimary)
+                Spacer()
+                Text("\(scheduledHabits.count) habits")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color.textTertiary)
+            }
+            .padding(.horizontal, 12)
+
+            heightMeasuringView
             .onPreferenceChange(HabitsListHeightKey.self) { scheduledCardHeight = $0 }
             .overlay {
                 listView
             }
             .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
     }
 
     @ViewBuilder

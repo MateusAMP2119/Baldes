@@ -33,10 +33,17 @@ struct CompletedHabitsSection: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .padding(.horizontal, 12)
 
             if isExpanded {
                 VStack(spacing: 0) {
                     ForEach(Array(completedHabits.enumerated()), id: \.element.id) { index, habit in
+                        if index == 0 {
+                            Rectangle()
+                                .fill(Color.dividerColor.opacity(0.5))
+                                .frame(height: 1)
+                                .padding(.horizontal, 16)
+                        }
                         ZStack(alignment: .trailing) {
                             NavigationLink(value: habit) {
                                 HStack(spacing: 12) {
