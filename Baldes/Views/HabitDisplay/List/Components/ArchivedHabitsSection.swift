@@ -33,13 +33,13 @@ struct ArchivedHabitsSection: View {
                         .foregroundStyle(Color.textTertiary.opacity(0.5))
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                 }
-                .padding(.horizontal, 4)
+                .padding(.horizontal, 12)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
             if isExpanded {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 12) {
                     ForEach(archivedHabits) { habit in
                         HStack(spacing: 8) {
                             Text(habit.emoji)
@@ -80,7 +80,7 @@ struct ArchivedHabitsSection: View {
                             }
                             .buttonStyle(.plain)
                         }
-                        .padding(.horizontal, 4)
+                        .padding(.horizontal, 12)
                     }
                 }
                 .transition(.opacity)

@@ -4,8 +4,6 @@ import SwiftUI
 
 struct HabitRowView: View {
     let habit: HabitEntry
-    let isFirst: Bool
-    let isLast: Bool
     var selectedDate: Date = Date()
 
     private var completionCount: Int {

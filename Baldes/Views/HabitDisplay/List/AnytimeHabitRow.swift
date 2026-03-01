@@ -4,8 +4,6 @@ import SwiftUI
 
 struct AnytimeHabitRowView: View {
     let habit: HabitEntry
-    let isFirst: Bool
-    let isLast: Bool
     var selectedDate: Date = Date()
 
     private var completionCount: Int {
@@ -43,6 +41,7 @@ struct AnytimeHabitRowView: View {
                         .offset(x: 4, y: -4)
                 }
             }
+            .frame(width: 46)
 
             // Accent bar — stretches full row height
             RoundedRectangle(cornerRadius: 2)

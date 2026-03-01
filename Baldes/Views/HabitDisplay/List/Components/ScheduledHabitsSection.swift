@@ -16,13 +16,9 @@ struct ScheduledHabitsSection: View {
             ForEach(Array(scheduledHabits.enumerated()), id: \.element.id) { index, habit in
                 HabitRowView(
                     habit: habit,
-                    isFirst: index == 0,
-                    isLast: index == scheduledHabits.count - 1,
                     selectedDate: selectedDate
                 )
-                if index < scheduledHabits.count - 1 {
-                    Rectangle().frame(height: 1)
-                }
+
             }
         }
         .hidden()
@@ -81,15 +77,12 @@ struct ScheduledHabitsSection: View {
                 .opacity(0)
             HabitRowView(
                 habit: habit,
-                isFirst: index == 0,
-                isLast: index == scheduledHabits.count - 1,
                 selectedDate: selectedDate
             )
         }
         .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
         .listRowInsets(EdgeInsets())
-        .listRowSeparator(.visible)
-        .listRowSeparatorTint(Color.dividerColor)
+        .listRowSeparator(.hidden)
         .listRowBackground(RoundedRectangle(cornerRadius: 12).fill(Color.white))
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
             Button(role: .destructive) {

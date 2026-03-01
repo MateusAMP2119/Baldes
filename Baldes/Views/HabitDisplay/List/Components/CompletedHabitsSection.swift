@@ -32,13 +32,13 @@ struct CompletedHabitsSection: View {
                         .foregroundStyle(Color.textTertiary.opacity(0.5))
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                 }
-                .padding(.horizontal, 4)
+                .padding(.horizontal, 12)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
             if isExpanded {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 12) {
                     ForEach(completedHabits) { habit in
                         NavigationLink(value: habit) {
                             HStack(spacing: 8) {
@@ -70,7 +70,7 @@ struct CompletedHabitsSection: View {
                                 }
                                 .buttonStyle(.plain)
                             }
-                            .padding(.horizontal, 4)
+                            .padding(.horizontal, 12)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
