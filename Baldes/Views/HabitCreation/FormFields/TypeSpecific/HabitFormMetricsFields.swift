@@ -9,7 +9,7 @@ struct MetricsGroupedCard: View {
     let label: String
     let accentColor: Color
     @Binding var isIncrease: Bool
-    @Binding var targetValue: Int
+    @Binding var targetValue: Int?
     @Binding var unit: String
 
     private let unitOptions: [(label: String, icon: String)] = [
@@ -72,7 +72,6 @@ struct MetricsGroupedCard: View {
             Spacer()
 
             TextField("0", value: $targetValue, format: .number)
-                .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(Color.textPrimary)
                 .multilineTextAlignment(.trailing)
                 .keyboardType(.numberPad)
@@ -136,7 +135,7 @@ struct MetricsGroupedCard: View {
 #Preview("Increase") {
     struct PreviewWrapper: View {
         @State private var isIncrease = true
-        @State private var targetValue = 0
+        @State private var targetValue: Int? = nil
         @State private var unit = "Steps"
 
         var body: some View {
@@ -160,7 +159,7 @@ struct MetricsGroupedCard: View {
 #Preview("Decrease") {
     struct PreviewWrapper: View {
         @State private var isIncrease = false
-        @State private var targetValue = 0
+        @State private var targetValue: Int? = nil
         @State private var unit = "Calories"
 
         var body: some View {

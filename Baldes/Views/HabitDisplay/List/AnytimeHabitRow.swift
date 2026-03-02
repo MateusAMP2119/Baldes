@@ -72,21 +72,7 @@ struct AnytimeHabitRowView: View {
                     Spacer(minLength: 0)
 
                     // Completion badge
-                    if isDone {
-                        HStack(spacing: 4) {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 10, weight: .black))
-                            if completionCount > 1 {
-                                Text("\u{00D7}\(completionCount)")
-                                    .font(.system(size: 11, weight: .heavy))
-                            }
-                        }
-                        .foregroundStyle(habit.allowMultipleCompletions ? habit.accentColor : .white)
-                        .padding(.horizontal, completionCount > 1 ? 8 : 6)
-                        .padding(.vertical, 5)
-                        .background(habit.allowMultipleCompletions ? habit.accentColor.opacity(0.15) : habit.accentColor)
-                        .clipShape(Capsule())
-                    }
+                    completionBadge
                 }
 
                 // Motivation quote — full width, no line limit
@@ -110,9 +96,88 @@ struct AnytimeHabitRowView: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .background(
-            isDone && !habit.allowMultipleCompletions
+            habit.isCompleted && !habit.allowMultipleCompletions
                 ? habit.accentColor.opacity(0.04)
                 : Color.white
         )
+    }
+
+    @ViewBuilder
+    private var completionBadge: some View {
+        if habit.habitType == .metrics {
+            if completionCount > 0 {
+                let target = habit.metricTargetValue > 0 ? Double(habit.metricTargetValue) : 1.0
+                let totalProgress = Double(completionCount) / target
+
+                ZStack {
+                    if totalProgress < 1.0 {
+                        // Background track
+                        Circle()
+                            .strokeBorder(
+                                habit.accentColor.opacity(0.2), lineWidth: 3
+                            )
+                            .frame(width: 20, height: 20)
+
+                        // Progress arc
+                        Circle()
+                            .trim(from: 0, to: totalProgress)
+                            .stroke(
+                                habit.accentColor, style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                            )
+                            .frame(width: 17, height: 17)
+                            .rotationEffect(.degrees(-90))
+
+                        // Start cap dot to cover gradient seam
+                        Circle()
+                            .fill(habit.accentColor)
+                            .frame(width: 3, height: 3)
+                            .offset(y: -8.5)
+                    } else {
+                        // Full ring — rotate the whole stroke so the
+                        // "end" lands at the overcomplete position
+                        Circle()
+                            .stroke(
+                                habit.accentColor, style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                            )
+                            .frame(width: 17, height: 17)
+                            .rotationEffect(.degrees(360 * totalProgress - 90))
+
+                        // Tip dot at the end with shadow for overlap depth
+                        Circle()
+                            .fill(habit.accentColor)
+                            .frame(width: 3, height: 3)
+                            .shadow(color: .black.opacity(0.3), radius: 1.5, x: 0, y: 0)
+                            .offset(y: -8.5)
+                            .rotationEffect(.degrees(360 * totalProgress))
+                    }
+
+                    if totalProgress >= 1.0 && !habit.allowMultipleCompletions {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 8, weight: .black))
+                            .foregroundStyle(habit.accentColor)
+                    } else {
+                        Text("\(completionCount)")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(habit.accentColor)
+                    }
+                }
+            }
+        } else if isDone {
+            HStack(spacing: 4) {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 10, weight: .black))
+                if completionCount > 1 {
+                    Text("×\(completionCount)")
+                        .font(.system(size: 11, weight: .heavy))
+                }
+            }
+            .foregroundStyle(habit.allowMultipleCompletions ? habit.accentColor : .white)
+            .padding(.horizontal, completionCount > 1 ? 8 : 6)
+            .padding(.vertical, 5)
+            .background(
+                habit.allowMultipleCompletions ? habit.accentColor.opacity(0.15) : habit.accentColor
+            )
+            .clipShape(Capsule())
+        }
     }
 }

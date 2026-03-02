@@ -71,7 +71,7 @@ final class AddHabitViewModel {
     var dailyGoalToDate = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
 
     // MARK: - Metrics State
-    var targetValue = 0
+    var targetValue: Int? = nil
     var isIncrease = true
     var metricUnit = "Steps"
 
@@ -152,6 +152,13 @@ final class AddHabitViewModel {
         reminderEnabled = habit.reminderEnabled
 
         allowMultipleCompletions = habit.allowMultipleCompletions
+
+        // Metrics fields
+        if habit.habitType == .metrics {
+            targetValue = habit.metricTargetValue == 0 ? nil : habit.metricTargetValue
+            isIncrease = habit.metricIsIncrease
+            metricUnit = habit.metricUnit
+        }
 
         if let time = habit.reminderTime {
             reminderTime = time
@@ -357,8 +364,12 @@ final class AddHabitViewModel {
             existing.additionalReminderTimes = resolvedAdditionalReminders
             existing.todoItemsData = todoItems
             existing.timerType = timerType
-            existing.timerDurationSeconds = durationHours * 3600 + durationMinutes * 60 + durationSeconds
+            existing.timerDurationSeconds =
+                durationHours * 3600 + durationMinutes * 60 + durationSeconds
             existing.allowMultipleCompletions = allowMultipleCompletions
+            existing.metricTargetValue = targetValue ?? 0
+            existing.metricIsIncrease = isIncrease
+            existing.metricUnit = metricUnit
 
             // Log each detected change
             if changes.isEmpty {
@@ -402,8 +413,12 @@ final class AddHabitViewModel {
                 sortOrder: allHabitsCount
             )
             entry.timerType = timerType
-            entry.timerDurationSeconds = durationHours * 3600 + durationMinutes * 60 + durationSeconds
+            entry.timerDurationSeconds =
+                durationHours * 3600 + durationMinutes * 60 + durationSeconds
             entry.allowMultipleCompletions = allowMultipleCompletions
+            entry.metricTargetValue = targetValue ?? 0
+            entry.metricIsIncrease = isIncrease
+            entry.metricUnit = metricUnit
             modelContext.insert(entry)
 
             if entry.reminderEnabled {

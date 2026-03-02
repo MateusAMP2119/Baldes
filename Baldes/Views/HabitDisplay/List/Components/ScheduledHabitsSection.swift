@@ -100,7 +100,12 @@ struct ScheduledHabitsSection: View {
                     onCompleteHabit(habit)
                 }
             } label: {
-                Image(systemName: habit.habitType == .todo ? "checklist" : "checkmark")
+                let iconName: String = {
+                    if habit.habitType == .todo { return "checklist" }
+                    if habit.habitType == .metrics { return "plus" }
+                    return "checkmark"
+                }()
+                Image(systemName: iconName)
             }
             .tint(.accentGreen)
             Button {

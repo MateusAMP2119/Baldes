@@ -50,6 +50,11 @@ final class HabitEntry {
     // Completion behavior
     var allowMultipleCompletions: Bool = false
 
+    // Metrics fields
+    var metricTargetValue: Int = 0
+    var metricIsIncrease: Bool = true
+    var metricUnit: String = "Steps"
+
     // Soft delete
     var archivedDate: Date?
 
@@ -113,6 +118,7 @@ final class HabitEntry {
         if frequency == 2 && selectedDays.isEmpty { return true }
         if reminderEnabled && reminderTime == nil { return true }
         if habitType == .todo && activeTodoItems.isEmpty { return true }
+        if habitType == .metrics && metricTargetValue == 0 { return true }
         return false
     }
 
@@ -128,6 +134,7 @@ final class HabitEntry {
         if frequency == 2 && selectedDays.isEmpty { reasons.append("Pick active days") }
         if reminderEnabled && reminderTime == nil { reasons.append("Set reminder time") }
         if habitType == .todo && activeTodoItems.isEmpty { reasons.append("Add to-do items") }
+        if habitType == .metrics && metricTargetValue == 0 { reasons.append("Set a target value") }
         return reasons
     }
 
@@ -440,7 +447,18 @@ final class HabitEntry {
         if habitType == .todo && frequency == 0 {
             return allTodosCompletedGlobally
         }
-        if !allowMultipleCompletions && completionCount(on: Date()) > 0 {
+
+        let countToday = completionCount(on: Date())
+
+        if habitType == .metrics {
+            if allowMultipleCompletions {
+                return false
+            }
+            let target = metricTargetValue > 0 ? metricTargetValue : 1
+            return countToday >= target
+        }
+
+        if !allowMultipleCompletions && countToday > 0 {
             return true
         }
         return false

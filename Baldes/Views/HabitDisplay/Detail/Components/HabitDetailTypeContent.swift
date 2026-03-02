@@ -171,27 +171,25 @@ struct HabitDetailTypeContent: View {
     private var metricsContent: some View {
         VStack(spacing: 16) {
             let todayCount = habit.completionCount(on: selectedDate)
+            let target = habit.metricTargetValue > 0 ? habit.metricTargetValue : 1
+            let progress = min(Double(todayCount) / Double(target), 1.0)
+            let unit = habit.metricUnit.lowercased()
 
             circularDisplay(
-                value: "\(todayCount)",
-                subtitle: "logged today",
-                progress: min(Double(todayCount) / 10.0, 1.0)
+                value: "\(todayCount) / \(target)",
+                subtitle: "\(unit) logged today",
+                progress: progress
             )
 
-            HStack(spacing: 12) {
-                actionCircleButton(icon: "checkmark", filled: true) {
-                    onLogCompletion()
-                }
-                actionCircleButton(icon: "calendar.badge.plus", filled: false) {
-                    onLogPast()
-                }
+            neoCTAButton(icon: "plus.circle.fill", label: "Log 1 \(unit.capitalized)") {
+                onLogCompletion()
             }
 
             if todayCount > 0 {
                 undoButtonView
             }
 
-            captionRow(icon: "square.and.pencil", text: "Tap checkmark to log an entry")
+            logPastLink
         }
     }
 
