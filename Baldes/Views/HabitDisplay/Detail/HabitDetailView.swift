@@ -58,8 +58,6 @@ struct HabitDetailView: View {
 
                         if streakCount > 0 {
                             HStack(spacing: 3) {
-                                Image(systemName: "flame.fill")
-                                    .font(.system(size: 10))
                                 Text("\(streakCount)d streak")
                                     .font(.system(size: 11, weight: .semibold))
                             }
@@ -74,19 +72,19 @@ struct HabitDetailView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 4)
-                .padding(.bottom, 14)
+                .padding(.bottom, 16)
 
                 // Motivation quote
                 if !habit.motivationQuote.isEmpty {
                     HabitDetailQuoteCard(habit: habit)
                         .padding(.horizontal, 20)
-                        .padding(.bottom, 14)
+                        .padding(.bottom, 16)
                 }
 
                 // Info
                 HabitDetailInfoRows(habit: habit)
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 18)
+                    .padding(.bottom, 16)
 
                 // Type-specific content
                 HabitDetailTypeContent(
@@ -103,7 +101,7 @@ struct HabitDetailView: View {
                     onAddNote: { showAddNoteSheet = true }
                 )
                 .padding(.horizontal, 20)
-                .padding(.vertical, 18)
+                .padding(.top, 16)
             }
             .padding(.top, 8)
             .padding(.bottom, 24)

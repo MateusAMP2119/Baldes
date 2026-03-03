@@ -89,7 +89,7 @@ struct MetricsTrendChart: View {
                 }
             }
             .chartYAxis {
-                AxisMarks(position: .leading) { value in
+                AxisMarks(position: .trailing) { value in
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [3, 3]))
                         .foregroundStyle(Color.textTertiary.opacity(0.3))
                     AxisValueLabel()

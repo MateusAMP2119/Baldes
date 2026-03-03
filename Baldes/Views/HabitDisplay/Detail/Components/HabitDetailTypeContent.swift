@@ -166,7 +166,7 @@ struct HabitDetailTypeContent: View {
         let target = habit.metricTargetValue > 0 ? habit.metricTargetValue : 1
         let unit = habit.metricUnit.lowercased()
 
-        return VStack(spacing: 12) {
+        return VStack(spacing: 16) {
 
             HStack(spacing: 16) {
                 HabitCompletionRing(
@@ -178,17 +178,21 @@ struct HabitDetailTypeContent: View {
                 )
 
                 VStack(alignment: .leading, spacing: 8) {
+                    let goalReached = todayCount >= target
+
                     VStack(alignment: .leading, spacing: 2) {
                         Text("\(todayCount) / \(target) \(unit)")
                             .font(.system(size: 15, weight: .bold))
                             .foregroundStyle(Color.textPrimary)
                             .contentTransition(.numericText())
-                            .animation(.snappy, value: todayCount)
-                        if todayCount >= target {
-                            Text("Goal reached!")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(habit.habitType.color)
-                        }
+                            .offset(y: goalReached ? 0 : 10)
+                            .animation(.spring(duration: 0.4), value: goalReached)
+                        Text("Goal reached!")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(habit.habitType.color)
+                            .opacity(goalReached ? 1 : 0)
+                            .offset(y: goalReached ? 0 : 8)
+                            .animation(.spring(duration: 0.4), value: goalReached)
                     }
 
                     HStack(spacing: 8) {
