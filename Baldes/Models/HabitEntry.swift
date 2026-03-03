@@ -220,6 +220,15 @@ final class HabitEntry {
         }
     }
 
+    /// Remove a specific completion timestamp. Used when a user manually deletes an activity log entry.
+    func removeCompletion(matching date: Date) {
+        if let index = completionLogs.firstIndex(where: { $0 == date }) {
+            var updated = completionLogs
+            updated.remove(at: index)
+            completionLogs = updated
+        }
+    }
+
     /// Remove all completions on a specific date only.
     func removeAllCompletions(on date: Date) {
         let calendar = Calendar.current
@@ -248,7 +257,7 @@ final class HabitEntry {
 
     func toggleTodoItem(item: TodoItem, on date: Date) {
         let key = "\(Self.todoDateFormatter.string(from: date)):\(item.id.uuidString)"
-        
+
         let calendar = Calendar.current
         let logDate: Date
         if calendar.isDateInToday(date) {
@@ -257,7 +266,7 @@ final class HabitEntry {
             // Stamp at noon so it sorts cleanly within the day
             logDate = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date) ?? date
         }
-        
+
         if let existing = todoCompletionsV2.firstIndex(of: key) {
             let removedDate = todoCompletionTimestamps[key] ?? logDate
             todoCompletionsV2.remove(at: existing)

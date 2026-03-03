@@ -224,7 +224,15 @@ struct HabitDetailView: View {
 
             Button {
                 withAnimation(.spring(duration: 0.3)) {
+                    // Restore to completionLogs if they were .completed
+                    for entry in deletedEntries {
+                        if entry.type == .completed {
+                            habit.completionLogs.append(entry.date)
+                        }
+                    }
+
                     habit.activityLog.append(contentsOf: deletedEntries)
+                    habit.activityLog.sort { $0.date > $1.date }  // Keep chronological sort
                     deletedEntries.removeAll()
                     showUndoSnackbar = false
                     undoTimer?.invalidate()

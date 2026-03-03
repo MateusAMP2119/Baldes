@@ -308,6 +308,12 @@ struct HabitDetailTypeContent: View {
                                         idsToRemove.contains($0.id)
                                     }
 
+                                    for entry in deleted {
+                                        if entry.type == .completed {
+                                            habit.removeCompletion(matching: entry.date)
+                                        }
+                                    }
+
                                     habit.activityLog.removeAll { entry in
                                         idsToRemove.contains(entry.id)
                                     }
@@ -396,6 +402,12 @@ struct HabitDetailTypeContent: View {
                                             withAnimation {
                                                 let deleted = habit.activityLog.filter {
                                                     group.entryIDs.contains($0.id)
+                                                }
+
+                                                for entry in deleted {
+                                                    if entry.type == .completed {
+                                                        habit.removeCompletion(matching: entry.date)
+                                                    }
                                                 }
 
                                                 habit.activityLog.removeAll { entry in
