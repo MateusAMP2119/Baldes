@@ -46,6 +46,21 @@ struct HabitDetailView: View {
         return streak
     }
 
+    private var dynamicTitle: String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(selectedDate) {
+            return "Details"
+        } else if calendar.isDateInYesterday(selectedDate) {
+            return "Details (Yesterday)"
+        } else if calendar.isDateInTomorrow(selectedDate) {
+            return "Details (Tomorrow)"
+        } else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMM d"
+            return "Details (\(formatter.string(from: selectedDate)))"
+        }
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -124,7 +139,7 @@ struct HabitDetailView: View {
             }
         }
         .background(Color(UIColor.systemBackground).ignoresSafeArea())
-        .navigationTitle("Details")
+        .navigationTitle(dynamicTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

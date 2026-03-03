@@ -274,8 +274,11 @@ struct HabitDetailTypeContent: View {
 
     private var metricsActivityLog: some View {
         let relevantTypes: Set<String> = ["completed", "uncompleted", "edited", "created"]
+        let endOfSelectedDate =
+            calendar.date(bySettingHour: 23, minute: 59, second: 59, of: selectedDate)
+            ?? selectedDate
         let entries = habit.activityLog
-            .filter { relevantTypes.contains($0.typeRaw) }
+            .filter { relevantTypes.contains($0.typeRaw) && $0.date <= endOfSelectedDate }
             .sorted { $0.date > $1.date }
         let dayGrouped = Dictionary(grouping: entries) { entry in
             calendar.startOfDay(for: entry.date)
