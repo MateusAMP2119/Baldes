@@ -11,9 +11,9 @@ struct TodoBarAreaChart: View {
     }
 
     // The drawable bar region height (bars grow within this)
-    private let barZoneHeight: CGFloat = 80
+    private let barZoneHeight: CGFloat = 60
     // Space above bar zone for value labels
-    private let labelZone: CGFloat = 20
+    private let labelZone: CGFloat = 16
     // Total container height
     private var containerHeight: CGFloat { barZoneHeight + labelZone }
 
@@ -98,13 +98,6 @@ struct TodoBarAreaChart: View {
                         : accentColor.opacity(0.08)
                 )
                 .frame(height: barHeight(for: value))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 4)
-                        .strokeBorder(
-                            value > 0 ? Color.borderStrong : Color.borderStrong.opacity(0.2),
-                            lineWidth: 1.5
-                        )
-                )
         }
         .frame(maxWidth: .infinity)
     }

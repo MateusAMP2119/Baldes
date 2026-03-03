@@ -13,16 +13,8 @@ struct HabitDetailTypeContent: View {
 
     var body: some View {
         mainContentInner
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(Color.white)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(Color.borderStrong.opacity(0.15), lineWidth: 1)
-            )
+            .padding(.top, 16)
+            .padding(.bottom, 24)
     }
 
     @ViewBuilder
@@ -54,7 +46,7 @@ struct HabitDetailTypeContent: View {
     }
 
     private var timedContent: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             let sessions = sessionsForDate(selectedDate)
             let sessionCount = sessions.count
             let target = habit.frequency > 0 ? habit.frequency : 0
@@ -62,7 +54,7 @@ struct HabitDetailTypeContent: View {
             // Progress header
             HStack {
                 Text("\(sessionCount) session\(sessionCount == 1 ? "" : "s") today")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.headline)
                     .foregroundStyle(Color.textPrimary)
                 Spacer()
                 if target > 0 && sessionCount >= target {
@@ -70,7 +62,7 @@ struct HabitDetailTypeContent: View {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 14))
                         Text("All done!")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.subheadline.weight(.bold))
                     }
                     .foregroundStyle(habit.habitType.color)
                 }
@@ -97,38 +89,38 @@ struct HabitDetailTypeContent: View {
 
             // Session list or empty state
             if sessions.isEmpty {
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
                     Image(systemName: "clock")
-                        .font(.system(size: 28))
+                        .font(.title2)
                         .foregroundStyle(Color.textTertiary)
                     Text("No sessions logged yet")
-                        .font(.system(size: 14))
+                        .font(.subheadline)
                         .foregroundStyle(Color.textTertiary)
                     Text("Tap below to log a session")
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundStyle(Color.textTertiary)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
+                .padding(.vertical, 10)
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(sessions.enumerated()), id: \.offset) { index, session in
                         if index > 0 {
                             Divider().padding(.leading, 42)
                         }
-                        HStack(spacing: 12) {
+                        HStack(spacing: 10) {
                             Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 22, weight: .medium))
+                                .font(.system(size: 18, weight: .medium))
                                 .foregroundStyle(habit.habitType.color)
                             Text("Session \(index + 1)")
-                                .font(.system(size: 15))
+                                .font(.system(size: 14))
                                 .foregroundStyle(Color.textPrimary)
                             Spacer()
                             Text(completedAtFormatted(session))
-                                .font(.system(size: 13))
+                                .font(.system(size: 12))
                                 .foregroundStyle(Color.textSecondary)
                         }
-                        .padding(.vertical, 10)
+                        .padding(.vertical, 8)
                     }
                 }
             }
@@ -169,17 +161,28 @@ struct HabitDetailTypeContent: View {
     // MARK: - Metrics Content
 
     private var metricsContent: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             let todayCount = habit.completionCount(on: selectedDate)
             let target = habit.metricTargetValue > 0 ? habit.metricTargetValue : 1
             let progress = min(Double(todayCount) / Double(target), 1.0)
             let unit = habit.metricUnit.lowercased()
 
-            circularDisplay(
-                value: "\(todayCount) / \(target)",
-                subtitle: "\(unit) logged today",
-                progress: progress
-            )
+            let percent = Int(progress * 100)
+
+            VStack(spacing: 8) {
+                HabitCompletionRing(
+                    completionCount: todayCount,
+                    target: Double(target),
+                    accentColor: habit.habitType.color,
+                    allowMultipleCompletions: habit.allowMultipleCompletions
+                )
+                .scaleEffect(3.0)
+                .padding(.vertical, 32)
+
+                Text("\(todayCount) / \(target) \(unit) logged today (\(percent)%)")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.textSecondary)
+            }
 
             neoCTAButton(icon: "plus.circle.fill", label: "Log 1 \(unit.capitalized)") {
                 onLogCompletion()
@@ -188,49 +191,53 @@ struct HabitDetailTypeContent: View {
             if todayCount > 0 {
                 undoButtonView
             }
-
-            logPastLink
         }
     }
 
     // MARK: - Daily Goals Content
 
     private var dailyGoalsContent: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             let todayCount = habit.completionCount(on: selectedDate)
 
             if todayCount > 0 {
-                VStack(spacing: 8) {
+                VStack(spacing: 4) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 56))
+                        .font(.system(size: 36))
                         .foregroundStyle(habit.habitType.color)
                     Text(dateLabel)
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.system(size: 16, weight: .bold))
                         .foregroundStyle(habit.habitType.color)
                     Text("\(todayCount)\u{00D7} completed")
-                        .font(.system(size: 13))
+                        .font(.system(size: 12))
                         .foregroundStyle(Color.textSecondary)
                 }
-                .padding(.vertical, 16)
+                .padding(.vertical, 8)
 
                 neoCTAButton(icon: "plus.circle.fill", label: "Log Another") {
                     onLogCompletion()
                 }
 
                 undoButtonView
-                logPastLink
             } else {
-                circularDisplay(
-                    value: "0",
-                    subtitle: "goals completed",
-                    progress: 0
-                )
+                VStack(spacing: 8) {
+                    HabitCompletionRing(
+                        completionCount: todayCount,
+                        target: 1.0,
+                        accentColor: habit.habitType.color,
+                        allowMultipleCompletions: habit.allowMultipleCompletions
+                    )
+                    .scaleEffect(3.0)
+                    .padding(.vertical, 32)
+
+                    Text("0 goals completed")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.textSecondary)
+                }
 
                 neoCTAButton(icon: "checkmark.circle.fill", label: "Mark Complete") {
                     onLogCompletion()
                 }
-
-                logPastLink
             }
 
             captionRow(icon: "hand.tap", text: "Tap to log completions")
@@ -274,7 +281,7 @@ struct HabitDetailTypeContent: View {
     }
 
     private var checklistContent: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             let items = habit.activeTodoItems
             let completedCount = todoCompletedCount
             let totalCount = items.count
@@ -282,7 +289,7 @@ struct HabitDetailTypeContent: View {
             // Progress header
             HStack {
                 Text("\(completedCount) of \(totalCount) done")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.headline)
                     .foregroundStyle(Color.textPrimary)
                 Spacer()
                 if completedCount == totalCount && totalCount > 0 {
@@ -290,61 +297,34 @@ struct HabitDetailTypeContent: View {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 14))
                         Text("All done!")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.subheadline.weight(.bold))
                     }
                     .foregroundStyle(habit.habitType.color)
                 }
             }
 
-            // Progress bar — neo-brutalist with stripes
+            // Progress bar
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    // Background track with diagonal stripes
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(habit.habitType.color.opacity(0.06))
-                        .frame(height: 14)
-                        .overlay(
-                            Canvas { context, size in
-                                let stripeWidth: CGFloat = 3
-                                let gap: CGFloat = 5
-                                let step = stripeWidth + gap
-                                var x: CGFloat = -size.height
-                                while x < size.width + size.height {
-                                    var path = Path()
-                                    path.move(to: CGPoint(x: x, y: size.height))
-                                    path.addLine(to: CGPoint(x: x + size.height, y: 0))
-                                    path.addLine(to: CGPoint(x: x + size.height + stripeWidth, y: 0))
-                                    path.addLine(to: CGPoint(x: x + stripeWidth, y: size.height))
-                                    path.closeSubpath()
-                                    context.fill(path, with: .color(habit.habitType.color.opacity(0.18)))
-                                    x += step
-                                }
-                            }
-                            .clipShape(RoundedRectangle(cornerRadius: 5))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 5)
-                                .strokeBorder(Color.borderStrong, lineWidth: 1.5)
-                        )
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(habit.habitType.color.opacity(0.15))
+                        .frame(height: 6)
 
-                    // Filled portion
                     if completedCount > 0 {
-                        let fillWidth = totalCount > 0
-                            ? max(geo.size.width * CGFloat(completedCount) / CGFloat(totalCount), 18)
+                        let fillWidth =
+                            totalCount > 0
+                            ? geo.size.width
+                                * min(CGFloat(completedCount) / CGFloat(totalCount), 1.0)
                             : CGFloat(0)
 
-                        RoundedRectangle(cornerRadius: 5)
+                        RoundedRectangle(cornerRadius: 3)
                             .fill(habit.habitType.color)
-                            .frame(width: fillWidth, height: 14)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 5)
-                                    .strokeBorder(Color.borderStrong, lineWidth: 1.5)
-                            )
+                            .frame(width: max(fillWidth, 6), height: 6)
                             .animation(.spring(duration: 0.3), value: completedCount)
                     }
                 }
             }
-            .frame(height: 14)
+            .frame(height: 6)
 
             // Overdue warning
             let overdueCount = habit.overdueItems.count
@@ -361,19 +341,19 @@ struct HabitDetailTypeContent: View {
 
             // Todo items
             if items.isEmpty {
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
                     Image(systemName: "checklist")
-                        .font(.system(size: 28))
+                        .font(.title2)
                         .foregroundStyle(Color.textTertiary)
                     Text("No to-do items yet")
-                        .font(.system(size: 14))
+                        .font(.subheadline)
                         .foregroundStyle(Color.textTertiary)
                     Text("Edit this habit to add items")
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundStyle(Color.textTertiary)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
+                .padding(.vertical, 10)
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(sortedTodoItems.enumerated()), id: \.element.id) { index, item in
@@ -399,16 +379,16 @@ struct HabitDetailTypeContent: View {
             let impact = UIImpactFeedbackGenerator(style: .light)
             impact.impactOccurred()
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 22, weight: .medium))
+                    .font(.system(size: 20, weight: .medium))
                     .foregroundStyle(
                         isCompleted ? habit.habitType.color : isOverdue ? .red : Color.textTertiary
                     )
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.title)
-                        .font(.system(size: 15, weight: isCompleted ? .medium : .regular))
+                        .font(.system(size: 14, weight: isCompleted ? .medium : .regular))
                         .foregroundStyle(
                             isCompleted ? Color.textTertiary : isOverdue ? .red : Color.textPrimary
                         )
@@ -445,7 +425,7 @@ struct HabitDetailTypeContent: View {
 
                 Spacer()
             }
-            .padding(.vertical, 10)
+            .padding(.vertical, 8)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -496,12 +476,12 @@ struct HabitDetailTypeContent: View {
     // MARK: - Route Content
 
     private var routeContent: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             let todayCount = habit.completionCount(on: selectedDate)
 
             RoundedRectangle(cornerRadius: 12)
                 .fill(habit.habitType.gradientColor)
-                .frame(height: 160)
+                .frame(height: 120)
                 .overlay {
                     VStack(spacing: 8) {
                         Image(systemName: "map")
@@ -524,21 +504,29 @@ struct HabitDetailTypeContent: View {
             if todayCount > 0 {
                 undoButtonView
             }
-            logPastLink
         }
     }
 
     // MARK: - Budget Content
 
     private var budgetContent: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             let todayCount = habit.completionCount(on: selectedDate)
 
-            circularDisplay(
-                value: "\(todayCount)",
-                subtitle: todayCount == 1 ? "transaction logged" : "transactions logged",
-                progress: min(Double(todayCount) / 10.0, 1.0)
-            )
+            VStack(spacing: 8) {
+                HabitCompletionRing(
+                    completionCount: todayCount,
+                    target: 10.0,
+                    accentColor: habit.habitType.color,
+                    allowMultipleCompletions: habit.allowMultipleCompletions
+                )
+                .scaleEffect(3.0)
+                .padding(.vertical, 32)
+
+                Text("\(todayCount) transaction\(todayCount == 1 ? "" : "s") logged")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.textSecondary)
+            }
 
             neoCTAButton(icon: "dollarsign.circle.fill", label: "Log Transaction") {
                 onLogCompletion()
@@ -547,26 +535,25 @@ struct HabitDetailTypeContent: View {
             if todayCount > 0 {
                 undoButtonView
             }
-            logPastLink
         }
     }
 
     // MARK: - Notes / Journal Content
 
     private var notesContent: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             let todayCount = habit.completionCount(on: selectedDate)
 
             if todayCount > 0 {
-                VStack(spacing: 8) {
+                VStack(spacing: 4) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 56))
+                        .font(.system(size: 36))
                         .foregroundStyle(habit.habitType.color)
                     Text(todayCount == 1 ? "Entry Logged" : "\(todayCount) Entries Logged")
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.system(size: 16, weight: .bold))
                         .foregroundStyle(habit.habitType.color)
                 }
-                .padding(.vertical, 16)
+                .padding(.vertical, 8)
             }
 
             neoCTAButton(
@@ -581,38 +568,10 @@ struct HabitDetailTypeContent: View {
             if todayCount > 0 {
                 undoButtonView
             }
-            logPastLink
         }
     }
 
     // MARK: - Shared Components
-
-    private func circularDisplay(value: String, subtitle: String, progress: Double) -> some View {
-        ZStack {
-            Circle()
-                .strokeBorder(habit.habitType.color.opacity(0.15), lineWidth: 10)
-                .frame(width: 180, height: 180)
-
-            Circle()
-                .trim(from: 0, to: progress)
-                .stroke(
-                    habit.habitType.color,
-                    style: StrokeStyle(lineWidth: 10, lineCap: .round)
-                )
-                .frame(width: 180, height: 180)
-                .rotationEffect(.degrees(-90))
-
-            VStack(spacing: 4) {
-                Text(value)
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.textPrimary)
-                Text(subtitle)
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.textSecondary)
-            }
-        }
-        .padding(.vertical, 8)
-    }
 
     private func actionCircleButton(icon: String, filled: Bool, action: @escaping () -> Void)
         -> some View
@@ -628,17 +587,6 @@ struct HabitDetailTypeContent: View {
                         : AnyShapeStyle(habit.habitType.color.opacity(0.12))
                 )
                 .clipShape(Circle())
-                .overlay(
-                    Circle()
-                        .strokeBorder(Color.borderStrong, lineWidth: 2)
-                )
-                .background(
-                    Circle()
-                        .fill(
-                            filled ? habit.habitType.shadowColor : Color.borderStrong.opacity(0.15)
-                        )
-                        .offset(x: 3, y: 3)
-                )
         }
     }
 
@@ -650,26 +598,14 @@ struct HabitDetailTypeContent: View {
         Button(action: action) {
             HStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: 16, weight: .semibold))
                 Text(label)
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.system(size: 15, weight: .semibold))
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(habit.habitType.color)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(Color.borderStrong, lineWidth: 2)
-            )
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(habit.habitType.shadowColor)
-                    .offset(x: 3, y: 3)
-            )
+            .padding(.vertical, 12)
+            .background(Capsule().fill(habit.habitType.color))
         }
     }
 
@@ -681,20 +617,6 @@ struct HabitDetailTypeContent: View {
             Text(text)
                 .font(.system(size: 12))
                 .foregroundStyle(Color.textTertiary)
-        }
-    }
-
-    private var logPastLink: some View {
-        Button {
-            onLogPast()
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "calendar.badge.plus")
-                    .font(.system(size: 13))
-                Text("Log Past Activity")
-                    .font(.system(size: 13, weight: .medium))
-            }
-            .foregroundStyle(habit.habitType.color)
         }
     }
 

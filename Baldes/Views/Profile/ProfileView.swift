@@ -183,6 +183,15 @@ struct ProfileView: View {
                                 iconColor: .accentYellow,
                                 iconBg: Color(hex: "FEF3C7")
                             )
+                            NeoDivider()
+                            SettingsRow(
+                                iconName: "exclamationmark.triangle.fill",
+                                title: "Storage Backdoor",
+                                iconColor: .red,
+                                iconBg: Color.red.opacity(0.15)
+                            ) {
+                                StorageBackdoorView()
+                            }
                         }
                     }
                 }

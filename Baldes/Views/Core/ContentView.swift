@@ -5,6 +5,7 @@
 //  Created by Mateus Costa on 18/02/2026.
 //
 
+import SwiftData
 import SwiftUI
 
 enum AppTab: Hashable {
@@ -14,35 +15,43 @@ enum AppTab: Hashable {
 }
 
 struct ContentView: View {
-    @State private var selectedTab: AppTab = .agenda
+    @Environment(AppRouter.self) private var appRouter
+    @Environment(\.modelContext) private var modelContext
+
     @State private var showAddScreen = false
     @State private var showProfileScreen = false
 
-    /// Intercepts the "Add" tab so `selectedTab` never actually changes to `.add`.
+    /// Intercepts the "Add" tab so `appRouter.selectedTab` never actually changes to `.add`.
     /// This prevents the NavigationStack from tearing down and losing pushed views.
     private var tabSelection: Binding<AppTab> {
         Binding(
-            get: { selectedTab },
+            get: { appRouter.selectedTab },
             set: { newValue in
                 if newValue == .add {
                     showAddScreen = true
                 } else {
-                    selectedTab = newValue
+                    appRouter.selectedTab = newValue
                 }
             }
         )
     }
 
     var body: some View {
+        @Bindable var router = appRouter
+
         TabView(selection: tabSelection) {
             Tab(value: AppTab.agenda) {
-                NavigationStack {
+                NavigationStack(path: $router.homeNavigationPath) {
                     HomeView()
                         .baldesToolbar(onProfileTap: { showProfileScreen = true })
                 }
             } label: {
-                Label("Agenda", systemImage: selectedTab == .agenda ? "text.book.closed.fill" : "text.book.closed")
-                    .environment(\.symbolVariants, .none)
+                Label(
+                    "Agenda",
+                    systemImage: appRouter.selectedTab == .agenda
+                        ? "text.book.closed.fill" : "text.book.closed"
+                )
+                .environment(\.symbolVariants, .none)
             }
 
             Tab("Add", systemImage: "plus", value: AppTab.add, role: .search) {
@@ -55,8 +64,11 @@ struct ContentView: View {
                         .baldesToolbar(onProfileTap: { showProfileScreen = true })
                 }
             } label: {
-                Label("Stats", systemImage: selectedTab == .stats ? "chart.bar.fill" : "chart.bar")
-                    .environment(\.symbolVariants, .none)
+                Label(
+                    "Stats",
+                    systemImage: appRouter.selectedTab == .stats ? "chart.bar.fill" : "chart.bar"
+                )
+                .environment(\.symbolVariants, .none)
             }
         }
         .tint(.accentOrange)
@@ -68,6 +80,26 @@ struct ContentView: View {
         .sheet(isPresented: $showProfileScreen) {
             NavigationStack {
                 ProfileView()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .didReceiveDeepLink)) { notification in
+            if let userInfo = notification.userInfo,
+                let habitID = userInfo["habitID"] as? UUID
+            {
+
+                // Fetch the habit to append to the navigation path
+                let descriptor = FetchDescriptor<HabitEntry>(
+                    predicate: #Predicate { $0.id == habitID })
+                if let habit = try? modelContext.fetch(descriptor).first {
+
+                    // Switch to Agenda tab and show details
+                    appRouter.selectedTab = .agenda
+                    appRouter.homeNavigationPath.append(habit)
+
+                    // Dismiss any sheets that might be blocking the view
+                    showAddScreen = false
+                    showProfileScreen = false
+                }
             }
         }
     }

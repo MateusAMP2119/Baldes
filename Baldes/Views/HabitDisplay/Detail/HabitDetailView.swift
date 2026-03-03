@@ -44,20 +44,8 @@ struct HabitDetailView: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 20) {
-                if habit.habitType == .todo || habit.habitType == .timed {
-                    HStack(alignment: .bottom, spacing: 0) {
-                        Image(habit.habitType.mascotImageName)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 86, height: 86)
-                            .offset(y: 4)
-
-                        HabitDetailQuoteCard(habit: habit)
-                    }
-                } else {
-                    HabitDetailMascotCard(
-                        habit: habit, selectedDate: selectedDate, streakCount: streakCount)
+            VStack(spacing: 14) {
+                if !habit.motivationQuote.isEmpty {
                     HabitDetailQuoteCard(habit: habit)
                 }
 
@@ -99,19 +87,12 @@ struct HabitDetailView: View {
                     }
                 )
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 16)
             .padding(.top, 8)
-            .padding(.bottom, 40)
+            .padding(.bottom, 24)
             .id(refreshToken)
         }
-        .background(
-            LinearGradient(
-                colors: [habit.habitType.gradientColor, .white],
-                startPoint: .top,
-                endPoint: UnitPoint(x: 0.5, y: 0.35)
-            )
-            .ignoresSafeArea()
-        )
+        .background(Color(UIColor.systemBackground).ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
