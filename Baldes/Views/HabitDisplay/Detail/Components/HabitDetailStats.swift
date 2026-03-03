@@ -219,7 +219,7 @@ struct HabitDetailStats: View {
                 }
             } else {
                 periodSelector
-                statsGrid
+                activityChart
                 recentActivityCard
             }
         }
@@ -381,72 +381,94 @@ struct HabitDetailStats: View {
     // MARK: - Period Selector
 
     private var periodSelector: some View {
-        HStack(spacing: 0) {
+        Picker("Period", selection: $selectedPeriod.animation(.easeInOut(duration: 0.2))) {
             ForEach(Array(periods.enumerated()), id: \.offset) { index, period in
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        selectedPeriod = index
-                    }
-                } label: {
-                    Text(period)
-                        .font(
-                            .system(
-                                size: 13, weight: selectedPeriod == index ? .bold : .medium)
-                        )
-                        .foregroundStyle(
-                            selectedPeriod == index ? Color.textPrimary : Color.textTertiary
-                        )
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 6)
-                        .background(
-                            selectedPeriod == index
-                                ? AnyView(
-                                    Capsule().fill(Color.white)
-                                        .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
-                                )
-                                : AnyView(EmptyView())
-                        )
+                Text(period).tag(index)
+            }
+        }
+        .pickerStyle(.segmented)
+    }
+
+    // MARK: - Activity Area Chart
+
+    private var chartData: [(String, Int)] {
+        let today = calendar.startOfDay(for: Date())
+        switch selectedPeriod {
+        case 0: // 7 days
+            return weeklyData
+        case 1: // 30 days
+            var weeks: [(String, Int)] = []
+            let start = calendar.date(byAdding: .day, value: -29, to: today)!
+            var weekStart = start
+            var weekIndex = 1
+            while weekStart <= today {
+                let weekEnd = min(calendar.date(byAdding: .day, value: 6, to: weekStart)!, today)
+                var total = 0
+                var d = weekStart
+                while d <= weekEnd {
+                    total += habit.completionLogs.filter { calendar.isDate($0, inSameDayAs: d) }.count
+                    d = calendar.date(byAdding: .day, value: 1, to: d)!
                 }
+                weeks.append(("W\(weekIndex)", total))
+                weekStart = calendar.date(byAdding: .day, value: 7, to: weekStart)!
+                weekIndex += 1
             }
+            return weeks
+        case 2: // 90 days
+            var months: [(String, Int)] = []
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMM"
+            for i in (0..<3).reversed() {
+                let monthStart = calendar.date(byAdding: .month, value: -i, to: today)!
+                let comps = calendar.dateComponents([.year, .month], from: monthStart)
+                guard let start = calendar.date(from: comps) else { continue }
+                let end = calendar.date(byAdding: .month, value: 1, to: start)!
+                let count = habit.completionLogs.filter { $0 >= start && $0 < end }.count
+                months.append((formatter.string(from: start), count))
+            }
+            return months
+        default: // All
+            var months: [(String, Int)] = []
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMM"
+            guard let earliest = habit.completionLogs.min() else { return [("—", 0)] }
+            let startComps = calendar.dateComponents([.year, .month], from: earliest)
+            guard var cursor = calendar.date(from: startComps) else { return [("—", 0)] }
+            while cursor <= today {
+                let end = calendar.date(byAdding: .month, value: 1, to: cursor)!
+                let count = habit.completionLogs.filter { $0 >= cursor && $0 < end }.count
+                months.append((formatter.string(from: cursor), count))
+                cursor = end
+            }
+            // Limit to last 12 months if too many
+            if months.count > 12 { months = Array(months.suffix(12)) }
+            return months
         }
-        .padding(4)
-        .background(Capsule().fill(Color(hex: "F5F5F5")))
     }
 
-    // MARK: - Stats Grid
-
-    private var statsGrid: some View {
-        LazyVGrid(
-            columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
-            spacing: 12
-        ) {
-            neoStatPill(value: "\(streakCount)", label: "Streak", icon: "flame.fill")
-            neoStatPill(value: "\(thisWeekRate)%", label: "This Week", icon: "chart.bar.fill")
-            neoStatPill(value: "\(totalCompletions)", label: "Total", icon: "checkmark.circle.fill")
-            neoStatPill(value: "\(bestStreak)", label: "Best", icon: "trophy.fill")
-        }
-    }
-
-    private func neoStatPill(value: String, label: String, icon: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.headline)
-                .foregroundStyle(habit.habitType.color)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(value)
-                    .font(.title3.weight(.bold))
+    private var activityChart: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            let total = chartData.reduce(0) { $0 + $1.1 }
+            HStack {
+                Text(selectedPeriod == 0 ? "This Week" : periods[selectedPeriod])
+                    .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(Color.textPrimary)
-                Text(label.uppercased())
-                    .font(.caption2.weight(.bold))
-                    .tracking(0.3)
-                    .foregroundStyle(Color.textSecondary)
+                Spacer()
+                Text("\(total) logged")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(habit.habitType.color)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Capsule().fill(habit.habitType.color.opacity(0.1)))
             }
-            Spacer()
+
+            TodoBarAreaChart(
+                data: chartData,
+                accentColor: habit.habitType.color,
+                shadowColor: habit.habitType.shadowColor
+            )
+            .animation(.smooth(duration: 0.35), value: selectedPeriod)
         }
-        .padding(12)
-        .background(Color(UIColor.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
     private var weeklyChartCard: some View {
@@ -543,8 +565,6 @@ struct HabitDetailStats: View {
                     }
                 }
                 .padding(.vertical, 4)
-                .background(Color(UIColor.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
             }
         }
     }

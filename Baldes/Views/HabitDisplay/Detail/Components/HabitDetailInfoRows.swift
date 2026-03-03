@@ -4,26 +4,22 @@ struct HabitDetailInfoRows: View {
     let habit: HabitEntry
 
     var body: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 8) {
-                Image(systemName: "calendar")
-                    .font(.subheadline)
-                    .foregroundStyle(habit.habitType.color)
-                Text(scheduleDescription)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Color.textSecondary)
-                Spacer()
-            }
+        VStack(spacing: 10) {
+            infoRow(icon: "calendar", text: scheduleDescription)
+            infoRow(icon: "target", text: targetDescription)
+        }
+    }
 
-            HStack(spacing: 8) {
-                Image(systemName: "target")
-                    .font(.subheadline)
-                    .foregroundStyle(habit.habitType.color)
-                Text(targetDescription)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Color.textSecondary)
-                Spacer()
-            }
+    private func infoRow(icon: String, text: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(habit.habitType.color)
+                .frame(width: 20)
+            Text(text)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Color.textSecondary)
+            Spacer()
         }
     }
 

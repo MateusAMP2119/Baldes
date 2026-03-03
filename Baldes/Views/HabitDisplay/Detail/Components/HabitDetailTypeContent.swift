@@ -13,8 +13,6 @@ struct HabitDetailTypeContent: View {
 
     var body: some View {
         mainContentInner
-            .padding(.top, 16)
-            .padding(.bottom, 24)
     }
 
     @ViewBuilder
@@ -51,109 +49,113 @@ struct HabitDetailTypeContent: View {
             let sessionCount = sessions.count
             let target = habit.frequency > 0 ? habit.frequency : 0
 
-            // Progress header
-            HStack {
-                Text("\(sessionCount) session\(sessionCount == 1 ? "" : "s") today")
-                    .font(.headline)
-                    .foregroundStyle(Color.textPrimary)
-                Spacer()
-                if target > 0 && sessionCount >= target {
-                    HStack(spacing: 4) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 14))
-                        Text("All done!")
-                            .font(.subheadline.weight(.bold))
-                    }
-                    .foregroundStyle(habit.habitType.color)
-                }
-            }
-
-            // Progress bar
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(habit.habitType.color.opacity(0.15))
-                        .frame(height: 6)
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(habit.habitType.color)
-                        .frame(
-                            width: target > 0
-                                ? geo.size.width * min(CGFloat(sessionCount) / CGFloat(target), 1.0)
-                                : sessionCount > 0 ? geo.size.width : 0,
-                            height: 6
+            // Compact progress row
+            HStack(spacing: 14) {
+                // Session count circle
+                ZStack {
+                    Circle()
+                        .stroke(habit.habitType.color.opacity(0.15), lineWidth: 4)
+                    Circle()
+                        .trim(
+                            from: 0,
+                            to: target > 0
+                                ? min(CGFloat(sessionCount) / CGFloat(target), 1.0)
+                                : sessionCount > 0 ? 1.0 : 0
                         )
+                        .stroke(habit.habitType.color, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
                         .animation(.spring(duration: 0.3), value: sessionCount)
+
+                    Text("\(sessionCount)")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(Color.textPrimary)
+                }
+                .frame(width: 64, height: 64)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(sessionCount) session\(sessionCount == 1 ? "" : "s") today")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(Color.textPrimary)
+                        if target > 0 && sessionCount >= target {
+                            Text("All done!")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(habit.habitType.color)
+                        }
+                    }
+
+                    HStack(spacing: 8) {
+                        if habit.timerType == 0 {
+                            let totalSec = habit.timerDurationSeconds
+                            let h = totalSec / 3600
+                            let m = (totalSec % 3600) / 60
+                            let s = totalSec % 60
+                            let durationLabel: String = {
+                                if h > 0 { return "\(h)h \(m)m" }
+                                else if m > 0 { return s > 0 ? "\(m)m \(s)s" : "\(m)m" }
+                                else { return "\(s)s" }
+                            }()
+
+                            Button {
+                                onStartCountdown()
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "timer")
+                                        .font(.system(size: 13))
+                                    Text(durationLabel)
+                                        .font(.system(size: 13, weight: .semibold))
+                                }
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(Capsule().fill(habit.habitType.color))
+                            }
+                        } else {
+                            Button {
+                                onStartStopwatch()
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "stopwatch")
+                                        .font(.system(size: 13))
+                                    Text("Start")
+                                        .font(.system(size: 13, weight: .semibold))
+                                }
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(Capsule().fill(habit.habitType.color))
+                            }
+                        }
+
+                        if sessionCount > 0 {
+                            undoButtonView
+                        }
+                    }
                 }
             }
-            .frame(height: 6)
 
-            // Session list or empty state
-            if sessions.isEmpty {
-                VStack(spacing: 6) {
-                    Image(systemName: "clock")
-                        .font(.title2)
-                        .foregroundStyle(Color.textTertiary)
-                    Text("No sessions logged yet")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.textTertiary)
-                    Text("Tap below to log a session")
-                        .font(.caption)
-                        .foregroundStyle(Color.textTertiary)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-            } else {
+            // Session list
+            if !sessions.isEmpty {
                 VStack(spacing: 0) {
                     ForEach(Array(sessions.enumerated()), id: \.offset) { index, session in
                         if index > 0 {
-                            Divider().padding(.leading, 42)
+                            Divider().padding(.leading, 32)
                         }
-                        HStack(spacing: 10) {
+                        HStack(spacing: 8) {
                             Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 18, weight: .medium))
+                                .font(.system(size: 14))
                                 .foregroundStyle(habit.habitType.color)
                             Text("Session \(index + 1)")
-                                .font(.system(size: 14))
+                                .font(.system(size: 13))
                                 .foregroundStyle(Color.textPrimary)
                             Spacer()
                             Text(completedAtFormatted(session))
-                                .font(.system(size: 12))
+                                .font(.system(size: 11))
                                 .foregroundStyle(Color.textSecondary)
                         }
-                        .padding(.vertical, 8)
+                        .padding(.vertical, 6)
                     }
                 }
-            }
-
-            // CTA buttons based on timer mode
-            if habit.timerType == 0 {
-                // Countdown mode
-                let totalSec = habit.timerDurationSeconds
-                let h = totalSec / 3600
-                let m = (totalSec % 3600) / 60
-                let s = totalSec % 60
-                let durationLabel: String = {
-                    if h > 0 {
-                        return "\(h)h \(m)m"
-                    } else if m > 0 {
-                        return s > 0 ? "\(m)m \(s)s" : "\(m)m"
-                    } else {
-                        return "\(s)s"
-                    }
-                }()
-
-                neoCTAButton(icon: "timer", label: "Start Countdown · \(durationLabel)") {
-                    onStartCountdown()
-                }
-            } else {
-                // Stopwatch mode
-                neoCTAButton(icon: "stopwatch", label: "Start Stopwatch") {
-                    onStartStopwatch()
-                }
-            }
-
-            if sessionCount > 0 {
-                undoButtonView
             }
         }
     }
@@ -164,32 +166,50 @@ struct HabitDetailTypeContent: View {
         VStack(spacing: 12) {
             let todayCount = habit.completionCount(on: selectedDate)
             let target = habit.metricTargetValue > 0 ? habit.metricTargetValue : 1
-            let progress = min(Double(todayCount) / Double(target), 1.0)
+            let percent = Int(min(Double(todayCount) / Double(target), 1.0) * 100)
             let unit = habit.metricUnit.lowercased()
 
-            let percent = Int(progress * 100)
-
-            VStack(spacing: 8) {
+            HStack(spacing: 16) {
                 HabitCompletionRing(
                     completionCount: todayCount,
                     target: Double(target),
                     accentColor: habit.habitType.color,
                     allowMultipleCompletions: habit.allowMultipleCompletions
                 )
-                .scaleEffect(3.0)
-                .padding(.vertical, 32)
+                .scaleEffect(2.6)
+                .frame(width: 90, height: 90)
 
-                Text("\(todayCount) / \(target) \(unit) logged today (\(percent)%)")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.textSecondary)
-            }
+                VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(todayCount) / \(target) \(unit)")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(Color.textPrimary)
+                        Text("\(percent)% of daily target")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.textSecondary)
+                    }
 
-            neoCTAButton(icon: "plus.circle.fill", label: "Log 1 \(unit.capitalized)") {
-                onLogCompletion()
-            }
+                    HStack(spacing: 8) {
+                        Button {
+                            onLogCompletion()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 13))
+                                Text("Log 1")
+                                    .font(.system(size: 13, weight: .semibold))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(Capsule().fill(habit.habitType.color))
+                        }
 
-            if todayCount > 0 {
-                undoButtonView
+                        if todayCount > 0 {
+                            undoButtonView
+                        }
+                    }
+                }
             }
         }
     }
@@ -200,47 +220,50 @@ struct HabitDetailTypeContent: View {
         VStack(spacing: 12) {
             let todayCount = habit.completionCount(on: selectedDate)
 
-            if todayCount > 0 {
-                VStack(spacing: 4) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 36))
-                        .foregroundStyle(habit.habitType.color)
-                    Text(dateLabel)
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(habit.habitType.color)
-                    Text("\(todayCount)\u{00D7} completed")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color.textSecondary)
-                }
-                .padding(.vertical, 8)
+            HStack(spacing: 16) {
+                HabitCompletionRing(
+                    completionCount: todayCount,
+                    target: 1.0,
+                    accentColor: habit.habitType.color,
+                    allowMultipleCompletions: habit.allowMultipleCompletions
+                )
+                .scaleEffect(2.6)
+                .frame(width: 90, height: 90)
 
-                neoCTAButton(icon: "plus.circle.fill", label: "Log Another") {
-                    onLogCompletion()
-                }
+                VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(todayCount > 0 ? dateLabel : "Not yet completed")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(Color.textPrimary)
+                        if todayCount > 0 {
+                            Text("\(todayCount)\u{00D7} completed")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Color.textSecondary)
+                        }
+                    }
 
-                undoButtonView
-            } else {
-                VStack(spacing: 8) {
-                    HabitCompletionRing(
-                        completionCount: todayCount,
-                        target: 1.0,
-                        accentColor: habit.habitType.color,
-                        allowMultipleCompletions: habit.allowMultipleCompletions
-                    )
-                    .scaleEffect(3.0)
-                    .padding(.vertical, 32)
+                    HStack(spacing: 8) {
+                        Button {
+                            onLogCompletion()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 13))
+                                Text(todayCount > 0 ? "Log Another" : "Complete")
+                                    .font(.system(size: 13, weight: .semibold))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(Capsule().fill(habit.habitType.color))
+                        }
 
-                    Text("0 goals completed")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.textSecondary)
-                }
-
-                neoCTAButton(icon: "checkmark.circle.fill", label: "Mark Complete") {
-                    onLogCompletion()
+                        if todayCount > 0 {
+                            undoButtonView
+                        }
+                    }
                 }
             }
-
-            captionRow(icon: "hand.tap", text: "Tap to log completions")
         }
     }
 
@@ -513,27 +536,47 @@ struct HabitDetailTypeContent: View {
         VStack(spacing: 12) {
             let todayCount = habit.completionCount(on: selectedDate)
 
-            VStack(spacing: 8) {
+            HStack(spacing: 16) {
                 HabitCompletionRing(
                     completionCount: todayCount,
                     target: 10.0,
                     accentColor: habit.habitType.color,
                     allowMultipleCompletions: habit.allowMultipleCompletions
                 )
-                .scaleEffect(3.0)
-                .padding(.vertical, 32)
+                .scaleEffect(2.6)
+                .frame(width: 90, height: 90)
 
-                Text("\(todayCount) transaction\(todayCount == 1 ? "" : "s") logged")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.textSecondary)
-            }
+                VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(todayCount) transaction\(todayCount == 1 ? "" : "s")")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(Color.textPrimary)
+                        Text("logged today")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.textSecondary)
+                    }
 
-            neoCTAButton(icon: "dollarsign.circle.fill", label: "Log Transaction") {
-                onLogCompletion()
-            }
+                    HStack(spacing: 8) {
+                        Button {
+                            onLogCompletion()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "dollarsign.circle.fill")
+                                    .font(.system(size: 13))
+                                Text("Log")
+                                    .font(.system(size: 13, weight: .semibold))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(Capsule().fill(habit.habitType.color))
+                        }
 
-            if todayCount > 0 {
-                undoButtonView
+                        if todayCount > 0 {
+                            undoButtonView
+                        }
+                    }
+                }
             }
         }
     }

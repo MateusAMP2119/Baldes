@@ -13,7 +13,6 @@ struct HabitDetailView: View {
     @State private var showArchiveConfirm = false
     @State private var showCountdownSheet = false
     @State private var showStopwatchSheet = false
-    @State private var refreshToken = UUID()
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     private let calendar = Calendar.current
@@ -44,13 +43,51 @@ struct HabitDetailView: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 14) {
+            VStack(spacing: 0) {
+                // Compact header
+                HStack(spacing: 10) {
+                    Text(habit.emoji)
+                        .font(.system(size: 28))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(habit.name)
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundStyle(Color.textPrimary)
+
+                        HStack(spacing: 6) {
+                            if streakCount > 0 {
+                                HStack(spacing: 3) {
+                                    Image(systemName: "flame.fill")
+                                        .font(.system(size: 10))
+                                    Text("\(streakCount)d streak")
+                                        .font(.system(size: 11, weight: .semibold))
+                                }
+                                .foregroundStyle(habit.habitType.color)
+                            }
+                        }
+                    }
+
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 4)
+                .padding(.bottom, 14)
+
+                // Motivation quote
                 if !habit.motivationQuote.isEmpty {
                     HabitDetailQuoteCard(habit: habit)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 14)
                 }
 
+                // Info
                 HabitDetailInfoRows(habit: habit)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 18)
 
+                Divider()
+
+                // Type-specific content
                 HabitDetailTypeContent(
                     habit: habit,
                     selectedDate: selectedDate,
@@ -63,52 +100,44 @@ struct HabitDetailView: View {
                     onStartCountdown: { showCountdownSheet = true },
                     onStartStopwatch: { showStopwatchSheet = true }
                 )
+                .padding(.horizontal, 20)
+                .padding(.vertical, 18)
 
+                Divider()
+
+                // Stats
                 HabitDetailStats(
                     habit: habit,
                     selectedDate: selectedDate,
                     onRemoveLastCompletion: { date in
                         withAnimation(.spring(duration: 0.3)) {
                             habit.removeLastCompletion(on: date)
-                            refreshToken = UUID()
+
                         }
                     },
                     onRemoveAllCompletions: { date in
                         withAnimation(.spring(duration: 0.3)) {
                             habit.removeAllCompletions(on: date)
-                            refreshToken = UUID()
+
                         }
                     },
                     onRemoveCompletionsFrom: { date in
                         withAnimation(.spring(duration: 0.3)) {
                             habit.removeCompletions(from: date)
-                            refreshToken = UUID()
+
                         }
                     }
                 )
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
             }
-            .padding(.horizontal, 16)
             .padding(.top, 8)
             .padding(.bottom, 24)
-            .id(refreshToken)
         }
         .background(Color(UIColor.systemBackground).ignoresSafeArea())
+        .navigationTitle("Details")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                VStack(spacing: 1) {
-                    Text(habit.name)
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(Color.textPrimary)
-                    if streakCount > 0 {
-                        HStack(spacing: 3) {
-                            Text("\(streakCount) Day Streak")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(Color.textSecondary)
-                        }
-                    }
-                }
-            }
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button {
@@ -181,7 +210,6 @@ struct HabitDetailView: View {
     private func logCompletion() {
         withAnimation(.spring(duration: 0.3)) {
             habit.addCompletion(on: selectedDate)
-            refreshToken = UUID()
         }
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()
@@ -195,7 +223,6 @@ struct HabitDetailView: View {
             } else {
                 habit.removeCompletions(from: selectedDate)
             }
-            refreshToken = UUID()
         }
     }
 
@@ -240,7 +267,7 @@ struct HabitDetailView: View {
                             Button(role: .destructive) {
                                 withAnimation(.spring(duration: 0.3)) {
                                     habit.removeLastCompletion(on: pastLogDate)
-                                    refreshToken = UUID()
+        
                                 }
                             } label: {
                                 Label("Remove 1 Entry", systemImage: "minus.circle")
@@ -248,7 +275,7 @@ struct HabitDetailView: View {
                             Button(role: .destructive) {
                                 withAnimation(.spring(duration: 0.3)) {
                                     habit.removeCompletions(from: pastLogDate)
-                                    refreshToken = UUID()
+        
                                 }
                             } label: {
                                 Label(
