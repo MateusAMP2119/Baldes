@@ -11,6 +11,7 @@ struct HabitDetailTypeContent: View {
     var onStartCountdown: () -> Void
     var onStartStopwatch: () -> Void
     var onAddNote: (GroupedActivity) -> Void
+    var onDeleteMemory: ([ActivityLogEntry]) -> Void
 
     @State private var isEditingLog = false
     @State private var selectedLogIDs: Set<UUID> = []
@@ -66,7 +67,9 @@ struct HabitDetailTypeContent: View {
                                 ? min(CGFloat(sessionCount) / CGFloat(target), 1.0)
                                 : sessionCount > 0 ? 1.0 : 0
                         )
-                        .stroke(habit.habitType.color, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .stroke(
+                            habit.habitType.color, style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                        )
                         .rotationEffect(.degrees(-90))
                         .animation(.spring(duration: 0.3), value: sessionCount)
 
@@ -95,9 +98,13 @@ struct HabitDetailTypeContent: View {
                             let m = (totalSec % 3600) / 60
                             let s = totalSec % 60
                             let durationLabel: String = {
-                                if h > 0 { return "\(h)h \(m)m" }
-                                else if m > 0 { return s > 0 ? "\(m)m \(s)s" : "\(m)m" }
-                                else { return "\(s)s" }
+                                if h > 0 {
+                                    return "\(h)h \(m)m"
+                                } else if m > 0 {
+                                    return s > 0 ? "\(m)m \(s)s" : "\(m)m"
+                                } else {
+                                    return "\(s)s"
+                                }
                             }()
 
                             Button {
@@ -248,11 +255,14 @@ struct HabitDetailTypeContent: View {
             let next = entries[i]
             let sameType = next.typeRaw == current.typeRaw
             let withinWindow = abs(next.date.timeIntervalSince(current.date)) < 120
-            if sameType && withinWindow && next.detail == current.detail && next.note == current.note {
+            if sameType && withinWindow && next.detail == current.detail
+                && next.note == current.note
+            {
                 count += 1
                 ids.append(next.id)
             } else {
-                result.append(GroupedActivity(id: current.id, entry: current, count: count, entryIDs: ids))
+                result.append(
+                    GroupedActivity(id: current.id, entry: current, count: count, entryIDs: ids))
                 current = next
                 count = 1
                 ids = [next.id]
@@ -292,10 +302,17 @@ struct HabitDetailTypeContent: View {
                                         allGrouped
                                         .filter { selectedLogIDs.contains($0.id) }
                                         .flatMap { $0.entryIDs }
+
+                                    // Stash before removing
+                                    let deleted = habit.activityLog.filter {
+                                        idsToRemove.contains($0.id)
+                                    }
+
                                     habit.activityLog.removeAll { entry in
                                         idsToRemove.contains(entry.id)
                                     }
                                     selectedLogIDs.removeAll()
+                                    onDeleteMemory(deleted)
                                 }
                             } label: {
                                 HStack(spacing: 4) {
@@ -320,7 +337,8 @@ struct HabitDetailTypeContent: View {
                         } label: {
                             Text(isEditingLog ? "Done" : "Edit")
                                 .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(isEditingLog ? habit.habitType.color : Color.textSecondary)
+                                .foregroundStyle(
+                                    isEditingLog ? habit.habitType.color : Color.textSecondary)
                         }
                     }
                 }
@@ -376,9 +394,14 @@ struct HabitDetailTypeContent: View {
                                     if !isEditingLog {
                                         Button(role: .destructive) {
                                             withAnimation {
+                                                let deleted = habit.activityLog.filter {
+                                                    group.entryIDs.contains($0.id)
+                                                }
+
                                                 habit.activityLog.removeAll { entry in
                                                     group.entryIDs.contains(entry.id)
                                                 }
+                                                onDeleteMemory(deleted)
                                             }
                                         } label: {
                                             Label("Delete", systemImage: "trash")
@@ -413,7 +436,7 @@ struct HabitDetailTypeContent: View {
                 }
                 .listStyle(.plain)
                 .scrollDisabled(true)
-                .padding(.top, -12) // Slightly pulls list up to reduce default header padding, safe for HomeView
+                .padding(.top, -12)  // Slightly pulls list up to reduce default header padding, safe for HomeView
                 .frame(
                     minHeight: CGFloat(entries.count) * 60 + CGFloat(sortedDays.prefix(7).count)
                         * 40 + 20)
@@ -442,43 +465,29 @@ struct HabitDetailTypeContent: View {
                 Text(activitySubtitle(entry, count: count))
                     .font(.system(size: 12))
                     .foregroundStyle(Color.textSecondary)
-                    .lineLimit(2)
             }
 
             Spacer()
 
-            Text(timeFormatted(entry.date))
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(Color.textTertiary)
+            if isManualLog(entry.date) {
+                HStack(spacing: 4) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 10))
+                    Text("Manual")
+                        .font(.system(size: 11, weight: .bold))
+                }
+                .foregroundStyle(.orange)
+            } else {
+                Text(timeFormatted(entry.date))
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.textTertiary)
+            }
         }
         .padding(.vertical, 6)
     }
 
     private func activitySubtitle(_ entry: ActivityLogEntry, count: Int) -> String {
-        var baseMessage: String
-        switch entry.type {
-        case .created:
-            baseMessage = "Habit created"
-        case .completed:
-            let unit = habit.metricUnit.lowercased()
-            baseMessage = count > 1 ? "Logged \(count) \(unit)" : "Logged 1 \(unit)"
-        case .uncompleted:
-            baseMessage = "Entry removed"
-        default:
-            baseMessage = ""
-        }
-
-        // If there's a system detail (like for .edited), append or use it.
-        if let detail = entry.detail, !detail.isEmpty {
-            baseMessage = baseMessage.isEmpty ? detail : "\(baseMessage) • \(detail)"
-        }
-
-        // If there's a user note, append it.
-        if let note = entry.note, !note.isEmpty {
-            baseMessage = baseMessage.isEmpty ? note : "\(baseMessage) • \(note)"
-        }
-
-        return baseMessage
+        return entry.subtitle(unit: habit.metricUnit, count: count)
     }
 
     private func dayHeaderLabel(_ date: Date) -> String {
@@ -491,6 +500,14 @@ struct HabitDetailTypeContent: View {
             formatter.dateFormat = "EEEE, MMM d"
             return formatter.string(from: date)
         }
+    }
+
+    private func isManualLog(_ date: Date) -> Bool {
+        let calendar = Calendar.current
+        if let noon = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date) {
+            return date == noon
+        }
+        return false
     }
 
     private func timeFormatted(_ date: Date) -> String {
@@ -939,14 +956,13 @@ struct HabitDetailTypeContent: View {
     }
 
     private func undoButton(count: Int) -> some View {
-        let isToday = calendar.isDateInToday(selectedDate)
         return Button {
             onUndo()
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "arrow.uturn.backward")
                     .font(.system(size: 13))
-                Text(isToday ? "Undo" : "Remove from here onwards")
+                Text("Undo")
                     .font(.system(size: 13, weight: .semibold))
             }
             .foregroundStyle(habit.habitType.color)

@@ -25,9 +25,9 @@ struct ActivityLogEntry: Codable, Hashable, Identifiable {
         LogType(rawValue: typeRaw) ?? .created
     }
 
-    init(type: LogType, detail: String? = nil, note: String? = nil) {
+    init(type: LogType, date: Date = Date(), detail: String? = nil, note: String? = nil) {
         self.id = UUID()
-        self.date = Date()
+        self.date = date
         self.typeRaw = type.rawValue
         self.detail = detail
         self.note = note
@@ -76,5 +76,30 @@ struct ActivityLogEntry: Codable, Hashable, Identifiable {
         case .doneForDay: return .yellow
         case .note: return .indigo
         }
+    }
+
+    func subtitle(unit: String = "", count: Int = 1) -> String {
+        var baseMessage: String
+        switch type {
+        case .created:
+            baseMessage = "Habit created"
+        case .completed:
+            let displayUnit = unit.isEmpty ? "" : " \(unit.lowercased())"
+            baseMessage = count > 1 ? "Logged \(count)\(displayUnit)" : "Logged 1\(displayUnit)"
+        case .uncompleted:
+            baseMessage = "Entry removed"
+        default:
+            baseMessage = ""
+        }
+
+        if let detail = detail, !detail.isEmpty, detail != note {
+            baseMessage = baseMessage.isEmpty ? detail : "\(baseMessage) • \(detail)"
+        }
+
+        if let note = note, !note.isEmpty {
+            baseMessage = baseMessage.isEmpty ? note : "\(baseMessage) • \(note)"
+        }
+
+        return baseMessage.trimmingCharacters(in: .whitespaces)
     }
 }

@@ -187,14 +187,15 @@ final class HabitEntry {
     /// Add a completion stamped at noon on the given date (for past-date logging).
     func addCompletion(on date: Date) {
         let calendar = Calendar.current
+        let logDate: Date
         if calendar.isDateInToday(date) {
-            completionLogs.append(Date())
+            logDate = Date()
         } else {
             // Stamp at noon so it sorts cleanly within the day
-            let noon = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date) ?? date
-            completionLogs.append(noon)
+            logDate = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date) ?? date
         }
-        logActivity(.completed)
+        completionLogs.append(logDate)
+        logActivity(.completed, date: logDate)
     }
 
     func removeLastCompletionToday() {
@@ -211,10 +212,11 @@ final class HabitEntry {
     func removeLastCompletion(on date: Date) {
         let calendar = Calendar.current
         if let index = completionLogs.lastIndex(where: { calendar.isDate($0, inSameDayAs: date) }) {
+            let removedDate = completionLogs[index]
             var updated = completionLogs
             updated.remove(at: index)
             completionLogs = updated
-            logActivity(.uncompleted)
+            logActivity(.uncompleted, date: removedDate)
         }
     }
 
@@ -246,19 +248,30 @@ final class HabitEntry {
 
     func toggleTodoItem(item: TodoItem, on date: Date) {
         let key = "\(Self.todoDateFormatter.string(from: date)):\(item.id.uuidString)"
+        
+        let calendar = Calendar.current
+        let logDate: Date
+        if calendar.isDateInToday(date) {
+            logDate = Date()
+        } else {
+            // Stamp at noon so it sorts cleanly within the day
+            logDate = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date) ?? date
+        }
+        
         if let existing = todoCompletionsV2.firstIndex(of: key) {
+            let removedDate = todoCompletionTimestamps[key] ?? logDate
             todoCompletionsV2.remove(at: existing)
             todoCompletionTimestamps.removeValue(forKey: key)
-            logActivity(.uncompleted, detail: item.title)
+            logActivity(.uncompleted, date: removedDate, detail: item.title)
         } else {
             todoCompletionsV2.append(key)
-            todoCompletionTimestamps[key] = Date()
-            logActivity(.completed, detail: item.title)
+            todoCompletionTimestamps[key] = logDate
+            logActivity(.completed, date: logDate, detail: item.title)
 
             // Check if all tasks are now done for this date
             let allDone = activeTodoItems.allSatisfy { isTodoItemCompleted(item: $0, on: date) }
             if allDone && activeTodoItems.count > 1 {
-                logActivity(.doneForDay)
+                logActivity(.doneForDay, date: logDate)
             }
         }
     }
@@ -513,7 +526,7 @@ final class HabitEntry {
 
     // MARK: - Activity Logging
 
-    func logActivity(_ type: ActivityLogEntry.LogType, detail: String? = nil) {
-        activityLog.append(ActivityLogEntry(type: type, detail: detail))
+    func logActivity(_ type: ActivityLogEntry.LogType, date: Date = Date(), detail: String? = nil) {
+        activityLog.append(ActivityLogEntry(type: type, date: date, detail: detail))
     }
 }

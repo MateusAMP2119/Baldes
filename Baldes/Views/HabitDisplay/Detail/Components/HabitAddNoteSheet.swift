@@ -19,7 +19,7 @@ struct HabitAddNoteSheet: View {
                     .scrollContentBackground(.hidden)
                     .padding(.horizontal, 24)
                     .padding(.top, 16)
-                    
+
                 Spacer()
             }
             .background(Color.bgPage)
@@ -39,14 +39,27 @@ struct HabitAddNoteSheet: View {
                     Button {
                         let trimmed = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
                         let newNote: String? = trimmed.isEmpty ? nil : trimmed
-                        
+
                         if let group = selectedGroup {
-                            // Apply the note to every entry in the group so they stay batched together
+                            // SwiftData structs in arrays must often be fully reassigned
+                            // to trigger `.onChange` properly across all views.
+                            var updatedLog = habit.activityLog
+
                             for id in group.entryIDs {
-                                if let index = habit.activityLog.firstIndex(where: { $0.id == id }) {
-                                    habit.activityLog[index].note = newNote
+                                if let index = updatedLog.firstIndex(where: { $0.id == id }) {
+                                    // If a legacy note was stored in `detail` instead of `note`, clear it out
+                                    // when we explicitly save a new note to avoid "Old Note • New Note" duplication
+                                    if updatedLog[index].detail == updatedLog[index].note
+                                        || (updatedLog[index].note == nil
+                                            && updatedLog[index].detail != nil)
+                                    {
+                                        updatedLog[index].detail = nil
+                                    }
+                                    updatedLog[index].note = newNote
                                 }
                             }
+
+                            habit.activityLog = updatedLog
                         }
                         onDismiss()
                     } label: {
@@ -57,8 +70,15 @@ struct HabitAddNoteSheet: View {
                 }
             }
             .onAppear {
-                if let group = selectedGroup, let existingNote = group.entry.note {
-                    noteText = existingNote
+                if let group = selectedGroup {
+                    if let existingNote = group.entry.note {
+                        noteText = existingNote
+                    } else if let detailText = group.entry.detail,
+                        group.entry.type != .completed && group.entry.type != .taskAdded
+                    {
+                        // Only prepopulate detail as note if it isn't a native detail string like "Read 20 pages"
+                        noteText = detailText
+                    }
                 }
                 isFocused = true
             }

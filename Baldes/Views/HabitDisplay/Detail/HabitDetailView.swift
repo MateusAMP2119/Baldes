@@ -14,6 +14,12 @@ struct HabitDetailView: View {
     @State private var showCountdownSheet = false
     @State private var showStopwatchSheet = false
     @State private var selectedLogGroupForNote: HabitDetailTypeContent.GroupedActivity?
+
+    // Undo buffer elevated from Content
+    @State private var deletedEntries: [ActivityLogEntry] = []
+    @State private var showUndoSnackbar = false
+    @State private var undoTimer: Timer? = nil
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     private let calendar = Calendar.current
@@ -43,70 +49,79 @@ struct HabitDetailView: View {
     // MARK: - Body
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 0) {
-                // Compact header
-                HStack(spacing: 10) {
-                    Text(habit.emoji)
-                        .font(.system(size: 28))
+        ZStack(alignment: .bottom) {
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 0) {
+                    // Compact header
+                    HStack(spacing: 10) {
+                        Text(habit.emoji)
+                            .font(.system(size: 28))
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(habit.name)
-                            .font(.system(size: streakCount > 0 ? 16 : 18, weight: .bold))
-                            .foregroundStyle(Color.textPrimary)
-                            .lineLimit(1)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(habit.name)
+                                .font(.system(size: streakCount > 0 ? 16 : 18, weight: .bold))
+                                .foregroundStyle(Color.textPrimary)
+                                .lineLimit(1)
 
-                        if streakCount > 0 {
-                            HStack(spacing: 3) {
-                                Text("\(streakCount)d streak")
-                                    .font(.system(size: 11, weight: .semibold))
+                            if streakCount > 0 {
+                                HStack(spacing: 3) {
+                                    Text("\(streakCount)d streak")
+                                        .font(.system(size: 11, weight: .semibold))
+                                }
+                                .foregroundStyle(habit.habitType.color)
+                                .transition(.opacity)
                             }
-                            .foregroundStyle(habit.habitType.color)
-                            .transition(.opacity)
                         }
+                        .frame(height: 38, alignment: .leading)
+                        .animation(.smooth(duration: 0.2), value: streakCount > 0)
+
+                        Spacer()
                     }
-                    .frame(height: 38, alignment: .leading)
-                    .animation(.smooth(duration: 0.2), value: streakCount > 0)
-
-                    Spacer()
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 4)
-                .padding(.bottom, 16)
-
-                // Motivation quote
-                if !habit.motivationQuote.isEmpty {
-                    HabitDetailQuoteCard(habit: habit)
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 16)
-                }
-
-                // Info
-                HabitDetailInfoRows(habit: habit)
                     .padding(.horizontal, 20)
+                    .padding(.top, 4)
                     .padding(.bottom, 16)
 
-                // Type-specific content
-                HabitDetailTypeContent(
-                    habit: habit,
-                    selectedDate: selectedDate,
-                    onLogCompletion: logCompletion,
-                    onUndo: undoCompletion,
-                    onLogPast: {
-                        pastLogDate = selectedDate
-                        showLogPastSheet = true
-                    },
-                    onStartCountdown: { showCountdownSheet = true },
-                    onStartStopwatch: { showStopwatchSheet = true },
-                    onAddNote: { group in 
-                        selectedLogGroupForNote = group
+                    // Motivation quote
+                    if !habit.motivationQuote.isEmpty {
+                        HabitDetailQuoteCard(habit: habit)
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 16)
                     }
-                )
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
+
+                    // Info
+                    HabitDetailInfoRows(habit: habit)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 16)
+
+                    // Type-specific content
+                    HabitDetailTypeContent(
+                        habit: habit,
+                        selectedDate: selectedDate,
+                        onLogCompletion: logCompletion,
+                        onUndo: undoCompletion,
+                        onLogPast: {
+                            pastLogDate = selectedDate
+                            showLogPastSheet = true
+                        },
+                        onStartCountdown: { showCountdownSheet = true },
+                        onStartStopwatch: { showStopwatchSheet = true },
+                        onAddNote: { group in
+                            selectedLogGroupForNote = group
+                        },
+                        onDeleteMemory: { entries in
+                            showSnackbar(for: entries)
+                        }
+                    )
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
+                }
+                .padding(.top, 8)
+                .padding(.bottom, 24)
             }
-            .padding(.top, 8)
-            .padding(.bottom, 24)
+
+            if showUndoSnackbar, !deletedEntries.isEmpty {
+                undoSnackbar
+            }
         }
         .background(Color(UIColor.systemBackground).ignoresSafeArea())
         .navigationTitle("Details")
@@ -186,6 +201,65 @@ struct HabitDetailView: View {
         }
     }
 
+    // MARK: - Undo Snackbar
+
+    private var undoSnackbar: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "trash")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(Color.textPrimary)
+
+            if deletedEntries.count == 1, let entry = deletedEntries.first {
+                Text(entry.subtitle(unit: habit.metricUnit))
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color.textPrimary)
+                    .lineLimit(1)
+            } else {
+                Text("\(deletedEntries.count) items")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color.textPrimary)
+            }
+
+            Spacer()
+
+            Button {
+                withAnimation(.spring(duration: 0.3)) {
+                    habit.activityLog.append(contentsOf: deletedEntries)
+                    deletedEntries.removeAll()
+                    showUndoSnackbar = false
+                    undoTimer?.invalidate()
+                }
+            } label: {
+                Image(systemName: "arrow.uturn.backward.circle.fill")
+                    .font(.system(size: 24))
+                    .foregroundStyle(habit.habitType.color)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .frame(maxWidth: 300)
+        .glassEffect()
+        .clipShape(Capsule())
+        .padding(.bottom, 24)
+        .shadow(color: Color.black.opacity(0.1), radius: 10, y: 5)
+        .transition(.move(edge: .bottom).combined(with: .opacity).combined(with: .scale))
+    }
+
+    private func showSnackbar(for entries: [ActivityLogEntry]) {
+        deletedEntries = entries
+        withAnimation(.spring(duration: 0.3)) {
+            showUndoSnackbar = true
+        }
+
+        undoTimer?.invalidate()
+        undoTimer = Timer.scheduledTimer(withTimeInterval: 4.0, repeats: false) { _ in
+            withAnimation(.spring(duration: 0.3)) {
+                showUndoSnackbar = false
+                deletedEntries.removeAll()
+            }
+        }
+    }
+
     // MARK: - Actions
 
     private func logCompletion() {
@@ -197,13 +271,8 @@ struct HabitDetailView: View {
     }
 
     private func undoCompletion() {
-        let isToday = calendar.isDateInToday(selectedDate)
         withAnimation(.spring(duration: 0.3)) {
-            if isToday {
-                habit.removeLastCompletion(on: selectedDate)
-            } else {
-                habit.removeCompletions(from: selectedDate)
-            }
+            habit.removeLastCompletion(on: selectedDate)
         }
     }
 
@@ -248,7 +317,7 @@ struct HabitDetailView: View {
                             Button(role: .destructive) {
                                 withAnimation(.spring(duration: 0.3)) {
                                     habit.removeLastCompletion(on: pastLogDate)
-        
+
                                 }
                             } label: {
                                 Label("Remove 1 Entry", systemImage: "minus.circle")
@@ -256,7 +325,7 @@ struct HabitDetailView: View {
                             Button(role: .destructive) {
                                 withAnimation(.spring(duration: 0.3)) {
                                     habit.removeCompletions(from: pastLogDate)
-        
+
                                 }
                             } label: {
                                 Label(
@@ -362,6 +431,158 @@ struct HabitDetailView: View {
     return PreviewWrapper()
 }
 
+#Preview("Past Day - Yesterday") {
+    struct PreviewWrapper: View {
+        @State private var habit: HabitEntry?
+        let container: ModelContainer
+
+        init() {
+            let config = ModelConfiguration(isStoredInMemoryOnly: true)
+            let c = try! ModelContainer(for: HabitEntry.self, configurations: config)
+            self.container = c
+        }
+
+        var body: some View {
+            NavigationStack {
+                if let habit {
+                    // Injecting yesterday's date
+                    HabitDetailView(
+                        habit: habit,
+                        selectedDate: Calendar.current.date(byAdding: .day, value: -1, to: Date())!)
+                }
+            }
+            .modelContainer(container)
+            .onAppear { setupHabit() }
+        }
+
+        private func setupHabit() {
+            let h = HabitEntry(
+                name: "Past Habit",
+                emoji: "⏪",
+                habitTypeRaw: "metrics",
+                motivationQuote: "Reflect on yesterday.",
+                hasTime: false,
+                scheduleTime: nil,
+                frequency: 1,
+                selectedDays: [],
+                startDate: Calendar.current.date(byAdding: .day, value: -5, to: Date())!,
+                endDateEnabled: false,
+                endDate: nil,
+                reminderEnabled: false,
+                reminderTime: nil,
+                completionLogs: []
+            )
+            h.metricTargetValue = 10
+            h.metricUnit = "Pages"
+            h.allowMultipleCompletions = true
+
+            let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+            let twoDaysAgo = Calendar.current.date(byAdding: .day, value: -2, to: Date())!
+
+            h.addCompletion(on: twoDaysAgo)
+            h.addCompletion(on: yesterday)
+            h.addCompletion(on: yesterday)
+            h.addCompletion(on: yesterday)
+
+            h.activityLog = [
+                ActivityLogEntry(type: .created),
+                ActivityLogEntry(type: .completed, detail: "Read prologue"),
+                ActivityLogEntry(
+                    type: .completed, detail: "Read chapter 1", note: "It was a great start"),
+                ActivityLogEntry(type: .completed, detail: "Read chapter 2"),
+                ActivityLogEntry(type: .completed, detail: "Started chapter 3"),
+            ]
+            // Date adjustments for visual layout purposes in the log
+            for i in 1..<h.activityLog.count {
+                h.activityLog[i].date = Calendar.current.date(
+                    byAdding: .hour, value: i, to: twoDaysAgo)!
+                if i > 2 {
+                    h.activityLog[i].date = Calendar.current.date(
+                        byAdding: .minute, value: i * 15, to: yesterday)!
+                }
+            }
+
+            container.mainContext.insert(h)
+            habit = h
+        }
+    }
+
+    return PreviewWrapper()
+}
+
+#Preview("Future Day - Tomorrow") {
+    struct PreviewWrapper: View {
+        @State private var habit: HabitEntry?
+        let container: ModelContainer
+
+        init() {
+            let config = ModelConfiguration(isStoredInMemoryOnly: true)
+            let c = try! ModelContainer(for: HabitEntry.self, configurations: config)
+            self.container = c
+        }
+
+        var body: some View {
+            NavigationStack {
+                if let habit {
+                    // Injecting tomorrow's date
+                    HabitDetailView(
+                        habit: habit,
+                        selectedDate: Calendar.current.date(byAdding: .day, value: 1, to: Date())!)
+                }
+            }
+            .modelContainer(container)
+            .onAppear { setupHabit() }
+        }
+
+        private func setupHabit() {
+            let h = HabitEntry(
+                name: "Future Habit",
+                emoji: "⏩",
+                habitTypeRaw: "metrics",
+                motivationQuote: "Prepare for tomorrow.",
+                hasTime: true,
+                scheduleTime: Date().addingTimeInterval(3600),
+                frequency: 1,
+                selectedDays: [],
+                startDate: Calendar.current.date(byAdding: .day, value: -5, to: Date())!,
+                endDateEnabled: false,
+                endDate: nil,
+                reminderEnabled: false,
+                reminderTime: nil,
+                completionLogs: []
+            )
+            h.metricTargetValue = 100
+            h.metricUnit = "Pages"
+            h.allowMultipleCompletions = true
+
+            let today = Date()
+            let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+
+            h.addCompletion(on: yesterday)
+            h.addCompletion(on: today)
+            h.addCompletion(on: today)
+
+            h.activityLog = [
+                ActivityLogEntry(type: .created),
+                ActivityLogEntry(type: .completed, detail: "Read 20 pages", note: "A solid start"),
+                ActivityLogEntry(type: .completed, detail: "Read 35 pages"),
+                ActivityLogEntry(type: .completed, detail: "Read 50 pages"),
+            ]
+
+            // Backdate the logs slightly
+            for i in 1..<h.activityLog.count {
+                if i == 1 { h.activityLog[i].date = yesterday }
+                if i > 1 { h.activityLog[i].date = today }
+            }
+
+            container.mainContext.insert(h)
+            habit = h
+        }
+    }
+
+    return PreviewWrapper()
+}
+
 #Preview("Metrics") {
     struct PreviewWrapper: View {
         @State private var habit: HabitEntry?
@@ -413,7 +634,8 @@ struct HabitDetailView: View {
                     ActivityLogEntry(type: .completed),
                     ActivityLogEntry(type: .completed),
                     ActivityLogEntry(type: .edited, detail: "Changed target to 8"),
-                    ActivityLogEntry(type: .note, detail: "Felt great today, drank more than usual"),
+                    ActivityLogEntry(
+                        type: .note, detail: "Felt great today, drank more than usual"),
                 ]
                 container.mainContext.insert(h)
                 habit = h
