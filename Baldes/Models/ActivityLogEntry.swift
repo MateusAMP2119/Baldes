@@ -63,13 +63,13 @@ struct ActivityLogEntry: Codable, Hashable, Identifiable {
 
     var tintColor: Color {
         switch type {
-        case .created: return .green
+        case .created: return .blue
         case .completed: return .green
         case .uncompleted: return Color.textTertiary
         case .edited: return .orange
         case .archived: return .red
-        case .restored: return .blue
-        case .taskAdded: return .green
+        case .restored: return .teal
+        case .taskAdded: return .mint
         case .taskRemoved: return .orange
         case .doneForDay: return .yellow
         case .note: return .indigo

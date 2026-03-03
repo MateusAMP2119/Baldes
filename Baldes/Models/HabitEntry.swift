@@ -194,6 +194,7 @@ final class HabitEntry {
             let noon = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date) ?? date
             completionLogs.append(noon)
         }
+        logActivity(.completed)
     }
 
     func removeLastCompletionToday() {
@@ -202,6 +203,7 @@ final class HabitEntry {
             var updated = completionLogs
             updated.remove(at: index)
             completionLogs = updated
+            logActivity(.uncompleted)
         }
     }
 
@@ -212,6 +214,7 @@ final class HabitEntry {
             var updated = completionLogs
             updated.remove(at: index)
             completionLogs = updated
+            logActivity(.uncompleted)
         }
     }
 

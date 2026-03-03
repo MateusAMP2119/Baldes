@@ -214,8 +214,161 @@ struct HabitDetailTypeContent: View {
                     }
                 }
             }
+
+            MetricsTrendChart(
+                habit: habit,
+                selectedDate: selectedDate,
+                dayCount: 7
+            )
+
+            metricsActivityLog
         }
         .sensoryFeedback(.impact, trigger: todayCount)
+    }
+
+    private struct GroupedActivity: Identifiable {
+        let id: UUID
+        let entry: ActivityLogEntry
+        let count: Int
+    }
+
+    private func groupEntries(_ entries: [ActivityLogEntry]) -> [GroupedActivity] {
+        guard !entries.isEmpty else { return [] }
+        var result: [GroupedActivity] = []
+        var current = entries[0]
+        var count = 1
+
+        for i in 1..<entries.count {
+            let next = entries[i]
+            let sameType = next.typeRaw == current.typeRaw
+            let withinWindow = abs(next.date.timeIntervalSince(current.date)) < 120
+            if sameType && withinWindow && next.detail == current.detail {
+                count += 1
+            } else {
+                result.append(GroupedActivity(id: current.id, entry: current, count: count))
+                current = next
+                count = 1
+            }
+        }
+        result.append(GroupedActivity(id: current.id, entry: current, count: count))
+        return result
+    }
+
+    private var metricsActivityLog: some View {
+        let relevantTypes: Set<String> = ["completed", "uncompleted", "edited", "created", "note"]
+        let entries = habit.activityLog
+            .filter { relevantTypes.contains($0.typeRaw) }
+            .sorted { $0.date > $1.date }
+        let dayGrouped = Dictionary(grouping: entries) { entry in
+            calendar.startOfDay(for: entry.date)
+        }
+        let sortedDays = dayGrouped.keys.sorted(by: >)
+
+        return VStack(alignment: .leading, spacing: 12) {
+            Text("Activity")
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(Color.textPrimary)
+
+            if entries.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 13))
+                    Text("No activity yet")
+                        .font(.system(size: 13))
+                }
+                .foregroundStyle(Color.textTertiary)
+            } else {
+                VStack(spacing: 16) {
+                    ForEach(sortedDays.prefix(7), id: \.self) { day in
+                        let dayEntries = dayGrouped[day] ?? []
+                        let grouped = groupEntries(dayEntries)
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(dayHeaderLabel(day))
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Color.textSecondary)
+
+                            VStack(spacing: 0) {
+                                ForEach(Array(grouped.enumerated()), id: \.element.id) { index, group in
+                                    if index > 0 {
+                                        Divider().padding(.leading, 30)
+                                    }
+                                    activityRow(group.entry, count: group.count)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func activityRow(_ entry: ActivityLogEntry, count: Int) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: entry.icon)
+                .font(.system(size: 14))
+                .foregroundStyle(entry.tintColor)
+                .frame(width: 22)
+
+            VStack(alignment: .leading, spacing: 1) {
+                HStack(spacing: 4) {
+                    Text(entry.title)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Color.textPrimary)
+                    if count > 1 {
+                        Text("\u{00D7}\(count)")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(Color.textSecondary)
+                    }
+                }
+                Text(activitySubtitle(entry, count: count))
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.textSecondary)
+                    .lineLimit(2)
+            }
+
+            Spacer()
+
+            Text(timeFormatted(entry.date))
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Color.textTertiary)
+        }
+        .padding(.vertical, 6)
+    }
+
+    private func activitySubtitle(_ entry: ActivityLogEntry, count: Int) -> String {
+        if let detail = entry.detail {
+            return detail
+        }
+        switch entry.type {
+        case .created:
+            return "Habit created"
+        case .completed:
+            let unit = habit.metricUnit.lowercased()
+            return count > 1 ? "Logged \(count) \(unit)" : "Logged 1 \(unit)"
+        case .uncompleted:
+            return "Entry removed"
+        default:
+            return ""
+        }
+    }
+
+    private func dayHeaderLabel(_ date: Date) -> String {
+        if calendar.isDateInToday(date) {
+            return "Today"
+        } else if calendar.isDateInYesterday(date) {
+            return "Yesterday"
+        } else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "EEEE, MMM d"
+            return formatter.string(from: date)
+        }
+    }
+
+    private func timeFormatted(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f.string(from: date)
     }
 
     // MARK: - Daily Goals Content

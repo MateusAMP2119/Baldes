@@ -407,6 +407,14 @@ struct HabitDetailView: View {
                 )
                 h.metricTargetValue = 8
                 h.metricUnit = "glasses"
+                h.activityLog = [
+                    ActivityLogEntry(type: .created),
+                    ActivityLogEntry(type: .completed),
+                    ActivityLogEntry(type: .completed),
+                    ActivityLogEntry(type: .completed),
+                    ActivityLogEntry(type: .edited, detail: "Changed target to 8"),
+                    ActivityLogEntry(type: .note, detail: "Felt great today, drank more than usual"),
+                ]
                 container.mainContext.insert(h)
                 habit = h
             }
