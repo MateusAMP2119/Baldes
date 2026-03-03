@@ -10,7 +10,10 @@ struct HabitDetailTypeContent: View {
     var onLogPast: () -> Void
     var onStartCountdown: () -> Void
     var onStartStopwatch: () -> Void
-    var onAddNote: () -> Void
+    var onAddNote: (GroupedActivity) -> Void
+
+    @State private var isEditingLog = false
+    @State private var selectedLogIDs: Set<UUID> = []
 
     var body: some View {
         mainContentInner
@@ -210,9 +213,6 @@ struct HabitDetailTypeContent: View {
                             .padding(.vertical, 8)
                             .background(Capsule().fill(habit.habitType.color))
                         }
-                        .onLongPressGesture {
-                            onAddNote()
-                        }
 
                         undoButton(count: todayCount)
                     }
@@ -230,10 +230,11 @@ struct HabitDetailTypeContent: View {
         .sensoryFeedback(.impact, trigger: todayCount)
     }
 
-    private struct GroupedActivity: Identifiable {
+    struct GroupedActivity: Identifiable {
         let id: UUID
         let entry: ActivityLogEntry
         let count: Int
+        let entryIDs: [UUID]
     }
 
     private func groupEntries(_ entries: [ActivityLogEntry]) -> [GroupedActivity] {
@@ -241,25 +242,28 @@ struct HabitDetailTypeContent: View {
         var result: [GroupedActivity] = []
         var current = entries[0]
         var count = 1
+        var ids: [UUID] = [current.id]
 
         for i in 1..<entries.count {
             let next = entries[i]
             let sameType = next.typeRaw == current.typeRaw
             let withinWindow = abs(next.date.timeIntervalSince(current.date)) < 120
-            if sameType && withinWindow && next.detail == current.detail {
+            if sameType && withinWindow && next.detail == current.detail && next.note == current.note {
                 count += 1
+                ids.append(next.id)
             } else {
-                result.append(GroupedActivity(id: current.id, entry: current, count: count))
+                result.append(GroupedActivity(id: current.id, entry: current, count: count, entryIDs: ids))
                 current = next
                 count = 1
+                ids = [next.id]
             }
         }
-        result.append(GroupedActivity(id: current.id, entry: current, count: count))
+        result.append(GroupedActivity(id: current.id, entry: current, count: count, entryIDs: ids))
         return result
     }
 
     private var metricsActivityLog: some View {
-        let relevantTypes: Set<String> = ["completed", "uncompleted", "edited", "created", "note"]
+        let relevantTypes: Set<String> = ["completed", "uncompleted", "edited", "created"]
         let entries = habit.activityLog
             .filter { relevantTypes.contains($0.typeRaw) }
             .sorted { $0.date > $1.date }
@@ -268,10 +272,59 @@ struct HabitDetailTypeContent: View {
         }
         let sortedDays = dayGrouped.keys.sorted(by: >)
 
-        return VStack(alignment: .leading, spacing: 12) {
-            Text("Activity")
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(Color.textPrimary)
+        return VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text("Activity")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Color.textPrimary)
+
+                Spacer()
+
+                if !entries.isEmpty {
+                    HStack(spacing: 12) {
+                        if isEditingLog && !selectedLogIDs.isEmpty {
+                            Button {
+                                withAnimation {
+                                    let allGrouped = sortedDays.prefix(7).flatMap { day in
+                                        groupEntries(dayGrouped[day] ?? [])
+                                    }
+                                    let idsToRemove =
+                                        allGrouped
+                                        .filter { selectedLogIDs.contains($0.id) }
+                                        .flatMap { $0.entryIDs }
+                                    habit.activityLog.removeAll { entry in
+                                        idsToRemove.contains(entry.id)
+                                    }
+                                    selectedLogIDs.removeAll()
+                                }
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "trash")
+                                        .font(.system(size: 11))
+                                    Text("\(selectedLogIDs.count)")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .contentTransition(.numericText())
+                                }
+                                .foregroundStyle(.red)
+                            }
+                            .transition(.move(edge: .trailing).combined(with: .opacity))
+                        }
+
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                isEditingLog.toggle()
+                                if !isEditingLog {
+                                    selectedLogIDs.removeAll()
+                                }
+                            }
+                        } label: {
+                            Text(isEditingLog ? "Done" : "Edit")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(isEditingLog ? habit.habitType.color : Color.textSecondary)
+                        }
+                    }
+                }
+            }
 
             if entries.isEmpty {
                 HStack(spacing: 6) {
@@ -282,27 +335,85 @@ struct HabitDetailTypeContent: View {
                 }
                 .foregroundStyle(Color.textTertiary)
             } else {
-                VStack(spacing: 16) {
+                List {
                     ForEach(sortedDays.prefix(7), id: \.self) { day in
                         let dayEntries = dayGrouped[day] ?? []
                         let grouped = groupEntries(dayEntries)
 
-                        VStack(alignment: .leading, spacing: 6) {
+                        Section {
+                            ForEach(grouped) { group in
+                                HStack(spacing: 10) {
+                                    if isEditingLog {
+                                        Image(
+                                            systemName: selectedLogIDs.contains(group.id)
+                                                ? "checkmark.circle.fill" : "circle"
+                                        )
+                                        .font(.system(size: 20))
+                                        .foregroundStyle(
+                                            selectedLogIDs.contains(group.id)
+                                                ? habit.habitType.color : Color.textTertiary
+                                        )
+                                        .onTapGesture {
+                                            withAnimation(.easeInOut(duration: 0.15)) {
+                                                if selectedLogIDs.contains(group.id) {
+                                                    selectedLogIDs.remove(group.id)
+                                                } else {
+                                                    selectedLogIDs.insert(group.id)
+                                                }
+                                            }
+                                        }
+                                        .transition(.move(edge: .leading).combined(with: .opacity))
+                                    }
+
+                                    activityRow(group.entry, count: group.count)
+                                }
+                                .listRowInsets(
+                                    EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+                                )
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(Color.clear)
+                                .swipeActions(edge: .leading, allowsFullSwipe: !isEditingLog) {
+                                    if !isEditingLog {
+                                        Button(role: .destructive) {
+                                            withAnimation {
+                                                habit.activityLog.removeAll { entry in
+                                                    group.entryIDs.contains(entry.id)
+                                                }
+                                            }
+                                        } label: {
+                                            Label("Delete", systemImage: "trash")
+                                        }
+                                    }
+                                }
+                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                    if !isEditingLog {
+                                        Button {
+                                            onAddNote(group)
+                                        } label: {
+                                            Label("Note", systemImage: "square.and.pencil")
+                                        }
+                                        .tint(habit.habitType.color)
+                                    }
+                                }
+                            }
+                        } header: {
                             Text(dayHeaderLabel(day))
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(Color.textSecondary)
-
-                            VStack(spacing: 0) {
-                                ForEach(Array(grouped.enumerated()), id: \.element.id) { index, group in
-                                    if index > 0 {
-                                        Divider().padding(.leading, 30)
-                                    }
-                                    activityRow(group.entry, count: group.count)
-                                }
-                            }
+                                .textCase(nil)
+                                .listRowInsets(
+                                    EdgeInsets(top: 8, leading: 0, bottom: 4, trailing: 0)
+                                )
+                                .listRowBackground(Color.clear)
                         }
                     }
                 }
+                .listStyle(.plain)
+                .scrollDisabled(true)
+                .padding(.top, -12) // Slightly pulls list up to reduce default header padding, safe for HomeView
+                .frame(
+                    minHeight: CGFloat(entries.count) * 60 + CGFloat(sortedDays.prefix(7).count)
+                        * 40 + 20)
             }
         }
     }
@@ -341,20 +452,30 @@ struct HabitDetailTypeContent: View {
     }
 
     private func activitySubtitle(_ entry: ActivityLogEntry, count: Int) -> String {
-        if let detail = entry.detail {
-            return detail
-        }
+        var baseMessage: String
         switch entry.type {
         case .created:
-            return "Habit created"
+            baseMessage = "Habit created"
         case .completed:
             let unit = habit.metricUnit.lowercased()
-            return count > 1 ? "Logged \(count) \(unit)" : "Logged 1 \(unit)"
+            baseMessage = count > 1 ? "Logged \(count) \(unit)" : "Logged 1 \(unit)"
         case .uncompleted:
-            return "Entry removed"
+            baseMessage = "Entry removed"
         default:
-            return ""
+            baseMessage = ""
         }
+
+        // If there's a system detail (like for .edited), append or use it.
+        if let detail = entry.detail, !detail.isEmpty {
+            baseMessage = baseMessage.isEmpty ? detail : "\(baseMessage) • \(detail)"
+        }
+
+        // If there's a user note, append it.
+        if let note = entry.note, !note.isEmpty {
+            baseMessage = baseMessage.isEmpty ? note : "\(baseMessage) • \(note)"
+        }
+
+        return baseMessage
     }
 
     private func dayHeaderLabel(_ date: Date) -> String {

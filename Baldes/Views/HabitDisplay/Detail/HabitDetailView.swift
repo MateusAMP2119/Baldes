@@ -13,7 +13,7 @@ struct HabitDetailView: View {
     @State private var showArchiveConfirm = false
     @State private var showCountdownSheet = false
     @State private var showStopwatchSheet = false
-    @State private var showAddNoteSheet = false
+    @State private var selectedLogGroupForNote: HabitDetailTypeContent.GroupedActivity?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     private let calendar = Calendar.current
@@ -98,7 +98,9 @@ struct HabitDetailView: View {
                     },
                     onStartCountdown: { showCountdownSheet = true },
                     onStartStopwatch: { showStopwatchSheet = true },
-                    onAddNote: { showAddNoteSheet = true }
+                    onAddNote: { group in 
+                        selectedLogGroupForNote = group
+                    }
                 )
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
@@ -153,9 +155,9 @@ struct HabitDetailView: View {
             .presentationDetents([.large])
             .presentationBackground(Color.bgPage)
         }
-        .sheet(isPresented: $showAddNoteSheet) {
-            HabitAddNoteSheet(habit: habit, selectedDate: selectedDate) {
-                showAddNoteSheet = false
+        .sheet(item: $selectedLogGroupForNote) { group in
+            HabitAddNoteSheet(habit: habit, selectedDate: selectedDate, selectedGroup: group) {
+                selectedLogGroupForNote = nil
             }
             .presentationDetents([.medium])
             .presentationBackground(Color.bgPage)

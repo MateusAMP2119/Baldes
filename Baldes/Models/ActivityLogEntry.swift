@@ -6,6 +6,7 @@ struct ActivityLogEntry: Codable, Hashable, Identifiable {
     var date: Date
     var typeRaw: String
     var detail: String?
+    var note: String?
 
     enum LogType: String, Codable {
         case created
@@ -24,11 +25,12 @@ struct ActivityLogEntry: Codable, Hashable, Identifiable {
         LogType(rawValue: typeRaw) ?? .created
     }
 
-    init(type: LogType, detail: String? = nil) {
+    init(type: LogType, detail: String? = nil, note: String? = nil) {
         self.id = UUID()
         self.date = Date()
         self.typeRaw = type.rawValue
         self.detail = detail
+        self.note = note
     }
 
     var icon: String {

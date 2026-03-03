@@ -3,6 +3,7 @@ import SwiftUI
 struct HabitAddNoteSheet: View {
     let habit: HabitEntry
     let selectedDate: Date
+    let selectedGroup: HabitDetailTypeContent.GroupedActivity?
     var onDismiss: () -> Void
 
     @State private var noteText = ""
@@ -38,15 +39,24 @@ struct HabitAddNoteSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         let trimmed = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if !trimmed.isEmpty {
-                            habit.logActivity(.note, detail: trimmed)
+                        let newNote: String? = trimmed.isEmpty ? nil : trimmed
+                        
+                        if let group = selectedGroup {
+                            // Apply the note to every entry in the group so they stay batched together
+                            for id in group.entryIDs {
+                                if let index = habit.activityLog.firstIndex(where: { $0.id == id }) {
+                                    habit.activityLog[index].note = newNote
+                                }
+                            }
                         }
                         onDismiss()
                     }
-                    .disabled(noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
             .onAppear {
+                if let group = selectedGroup, let existingNote = group.entry.note {
+                    noteText = existingNote
+                }
                 isFocused = true
             }
         }
