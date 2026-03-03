@@ -127,9 +127,7 @@ struct HabitDetailTypeContent: View {
                             }
                         }
 
-                        if sessionCount > 0 {
-                            undoButtonView
-                        }
+                        undoButton(count: sessionCount)
                     }
                 }
             }
@@ -163,55 +161,58 @@ struct HabitDetailTypeContent: View {
     // MARK: - Metrics Content
 
     private var metricsContent: some View {
-        VStack(spacing: 12) {
-            let todayCount = habit.completionCount(on: selectedDate)
-            let target = habit.metricTargetValue > 0 ? habit.metricTargetValue : 1
-            let percent = Int(min(Double(todayCount) / Double(target), 1.0) * 100)
-            let unit = habit.metricUnit.lowercased()
+        let todayCount = habit.completionCount(on: selectedDate)
+        let target = habit.metricTargetValue > 0 ? habit.metricTargetValue : 1
+        let unit = habit.metricUnit.lowercased()
 
-            HStack(spacing: 16) {
-                HabitCompletionRing(
-                    completionCount: todayCount,
-                    target: Double(target),
-                    accentColor: habit.habitType.color,
-                    allowMultipleCompletions: habit.allowMultipleCompletions
-                )
-                .scaleEffect(2.6)
-                .frame(width: 90, height: 90)
+        return HStack(spacing: 16) {
+            // Left: Progress ring
+            HabitCompletionRing(
+                completionCount: todayCount,
+                target: Double(target),
+                accentColor: habit.habitType.color,
+                allowMultipleCompletions: habit.allowMultipleCompletions,
+                size: 64
+            )
 
-                VStack(alignment: .leading, spacing: 8) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("\(todayCount) / \(target) \(unit)")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(Color.textPrimary)
-                        Text("\(percent)% of daily target")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color.textSecondary)
+            // Right: Count + stepper
+            VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(todayCount) / \(target) \(unit)")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Color.textPrimary)
+                        .contentTransition(.numericText())
+                        .animation(.snappy, value: todayCount)
+                }
+
+                HStack(spacing: 10) {
+                    Button {
+                        onUndo()
+                    } label: {
+                        Image(systemName: "minus")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(todayCount > 0 ? habit.habitType.color : Color.textTertiary)
+                            .frame(width: 34, height: 34)
+                            .background(
+                                Circle()
+                                    .fill(todayCount > 0 ? habit.habitType.color.opacity(0.12) : Color.textTertiary.opacity(0.08))
+                            )
                     }
+                    .disabled(todayCount == 0)
 
-                    HStack(spacing: 8) {
-                        Button {
-                            onLogCompletion()
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.system(size: 13))
-                                Text("Log 1")
-                                    .font(.system(size: 13, weight: .semibold))
-                            }
+                    Button {
+                        onLogCompletion()
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .background(Capsule().fill(habit.habitType.color))
-                        }
-
-                        if todayCount > 0 {
-                            undoButtonView
-                        }
+                            .frame(width: 34, height: 34)
+                            .background(Circle().fill(habit.habitType.color))
                     }
                 }
             }
         }
+        .sensoryFeedback(.impact, trigger: todayCount)
     }
 
     // MARK: - Daily Goals Content
@@ -225,10 +226,9 @@ struct HabitDetailTypeContent: View {
                     completionCount: todayCount,
                     target: 1.0,
                     accentColor: habit.habitType.color,
-                    allowMultipleCompletions: habit.allowMultipleCompletions
+                    allowMultipleCompletions: habit.allowMultipleCompletions,
+                    size: 64
                 )
-                .scaleEffect(2.6)
-                .frame(width: 90, height: 90)
 
                 VStack(alignment: .leading, spacing: 8) {
                     VStack(alignment: .leading, spacing: 2) {
@@ -258,9 +258,7 @@ struct HabitDetailTypeContent: View {
                             .background(Capsule().fill(habit.habitType.color))
                         }
 
-                        if todayCount > 0 {
-                            undoButtonView
-                        }
+                        undoButton(count: todayCount)
                     }
                 }
             }
@@ -524,9 +522,7 @@ struct HabitDetailTypeContent: View {
                 onLogCompletion()
             }
 
-            if todayCount > 0 {
-                undoButtonView
-            }
+            undoButton(count: todayCount)
         }
     }
 
@@ -541,10 +537,9 @@ struct HabitDetailTypeContent: View {
                     completionCount: todayCount,
                     target: 10.0,
                     accentColor: habit.habitType.color,
-                    allowMultipleCompletions: habit.allowMultipleCompletions
+                    allowMultipleCompletions: habit.allowMultipleCompletions,
+                    size: 64
                 )
-                .scaleEffect(2.6)
-                .frame(width: 90, height: 90)
 
                 VStack(alignment: .leading, spacing: 8) {
                     VStack(alignment: .leading, spacing: 2) {
@@ -572,9 +567,7 @@ struct HabitDetailTypeContent: View {
                             .background(Capsule().fill(habit.habitType.color))
                         }
 
-                        if todayCount > 0 {
-                            undoButtonView
-                        }
+                        undoButton(count: todayCount)
                     }
                 }
             }
@@ -608,9 +601,7 @@ struct HabitDetailTypeContent: View {
                 onLogCompletion()
             }
 
-            if todayCount > 0 {
-                undoButtonView
-            }
+            undoButton(count: todayCount)
         }
     }
 
@@ -663,7 +654,7 @@ struct HabitDetailTypeContent: View {
         }
     }
 
-    private var undoButtonView: some View {
+    private func undoButton(count: Int) -> some View {
         let isToday = calendar.isDateInToday(selectedDate)
         return Button {
             onUndo()
@@ -676,6 +667,8 @@ struct HabitDetailTypeContent: View {
             }
             .foregroundStyle(habit.habitType.color)
         }
+        .disabled(count == 0)
+        .opacity(count > 0 ? 1.0 : 0.4)
     }
 
     private var dateLabel: String {

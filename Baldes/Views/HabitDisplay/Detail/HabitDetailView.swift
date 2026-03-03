@@ -51,21 +51,23 @@ struct HabitDetailView: View {
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(habit.name)
-                            .font(.system(size: 18, weight: .bold))
+                            .font(.system(size: streakCount > 0 ? 16 : 18, weight: .bold))
                             .foregroundStyle(Color.textPrimary)
+                            .lineLimit(1)
 
-                        HStack(spacing: 6) {
-                            if streakCount > 0 {
-                                HStack(spacing: 3) {
-                                    Image(systemName: "flame.fill")
-                                        .font(.system(size: 10))
-                                    Text("\(streakCount)d streak")
-                                        .font(.system(size: 11, weight: .semibold))
-                                }
-                                .foregroundStyle(habit.habitType.color)
+                        if streakCount > 0 {
+                            HStack(spacing: 3) {
+                                Image(systemName: "flame.fill")
+                                    .font(.system(size: 10))
+                                Text("\(streakCount)d streak")
+                                    .font(.system(size: 11, weight: .semibold))
                             }
+                            .foregroundStyle(habit.habitType.color)
+                            .transition(.opacity)
                         }
                     }
+                    .frame(height: 38, alignment: .leading)
+                    .animation(.smooth(duration: 0.2), value: streakCount > 0)
 
                     Spacer()
                 }
