@@ -17,6 +17,7 @@ struct ActivityLogEntry: Codable, Hashable, Identifiable {
         case taskAdded
         case taskRemoved
         case doneForDay
+        case note
     }
 
     var type: LogType {
@@ -41,6 +42,7 @@ struct ActivityLogEntry: Codable, Hashable, Identifiable {
         case .taskAdded: return "plus"
         case .taskRemoved: return "minus"
         case .doneForDay: return "star.fill"
+        case .note: return "note.text"
         }
     }
 
@@ -55,6 +57,7 @@ struct ActivityLogEntry: Codable, Hashable, Identifiable {
         case .taskAdded: return "Task added"
         case .taskRemoved: return "Task removed"
         case .doneForDay: return "Done for the day"
+        case .note: return "Note"
         }
     }
 
@@ -69,6 +72,7 @@ struct ActivityLogEntry: Codable, Hashable, Identifiable {
         case .taskAdded: return .green
         case .taskRemoved: return .orange
         case .doneForDay: return .yellow
+        case .note: return .indigo
         }
     }
 }

@@ -10,6 +10,7 @@ struct HabitDetailTypeContent: View {
     var onLogPast: () -> Void
     var onStartCountdown: () -> Void
     var onStartStopwatch: () -> Void
+    var onAddNote: () -> Void
 
     var body: some View {
         mainContentInner
@@ -165,49 +166,51 @@ struct HabitDetailTypeContent: View {
         let target = habit.metricTargetValue > 0 ? habit.metricTargetValue : 1
         let unit = habit.metricUnit.lowercased()
 
-        return HStack(spacing: 16) {
-            // Left: Progress ring
-            HabitCompletionRing(
-                completionCount: todayCount,
-                target: Double(target),
-                accentColor: habit.habitType.color,
-                allowMultipleCompletions: habit.allowMultipleCompletions,
-                size: 64
-            )
+        return VStack(spacing: 12) {
 
-            // Right: Count + stepper
-            VStack(alignment: .leading, spacing: 10) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("\(todayCount) / \(target) \(unit)")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(Color.textPrimary)
-                        .contentTransition(.numericText())
-                        .animation(.snappy, value: todayCount)
-                }
+            HStack(spacing: 16) {
+                HabitCompletionRing(
+                    completionCount: todayCount,
+                    target: Double(target),
+                    accentColor: habit.habitType.color,
+                    allowMultipleCompletions: habit.allowMultipleCompletions,
+                    size: 64
+                )
 
-                HStack(spacing: 10) {
-                    Button {
-                        onUndo()
-                    } label: {
-                        Image(systemName: "minus")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(todayCount > 0 ? habit.habitType.color : Color.textTertiary)
-                            .frame(width: 34, height: 34)
-                            .background(
-                                Circle()
-                                    .fill(todayCount > 0 ? habit.habitType.color.opacity(0.12) : Color.textTertiary.opacity(0.08))
-                            )
+                VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(todayCount) / \(target) \(unit)")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(Color.textPrimary)
+                            .contentTransition(.numericText())
+                            .animation(.snappy, value: todayCount)
+                        if todayCount >= target {
+                            Text("Goal reached!")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(habit.habitType.color)
+                        }
                     }
-                    .disabled(todayCount == 0)
 
-                    Button {
-                        onLogCompletion()
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 14, weight: .bold))
+                    HStack(spacing: 8) {
+                        Button {
+                            onLogCompletion()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 13))
+                                Text("New Entry")
+                                    .font(.system(size: 13, weight: .semibold))
+                            }
                             .foregroundStyle(.white)
-                            .frame(width: 34, height: 34)
-                            .background(Circle().fill(habit.habitType.color))
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(Capsule().fill(habit.habitType.color))
+                        }
+                        .onLongPressGesture {
+                            onAddNote()
+                        }
+
+                        undoButton(count: todayCount)
                     }
                 }
             }

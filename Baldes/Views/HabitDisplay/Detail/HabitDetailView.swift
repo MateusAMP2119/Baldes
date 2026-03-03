@@ -13,6 +13,7 @@ struct HabitDetailView: View {
     @State private var showArchiveConfirm = false
     @State private var showCountdownSheet = false
     @State private var showStopwatchSheet = false
+    @State private var showAddNoteSheet = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     private let calendar = Calendar.current
@@ -87,8 +88,6 @@ struct HabitDetailView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 18)
 
-                Divider()
-
                 // Type-specific content
                 HabitDetailTypeContent(
                     habit: habit,
@@ -100,38 +99,11 @@ struct HabitDetailView: View {
                         showLogPastSheet = true
                     },
                     onStartCountdown: { showCountdownSheet = true },
-                    onStartStopwatch: { showStopwatchSheet = true }
+                    onStartStopwatch: { showStopwatchSheet = true },
+                    onAddNote: { showAddNoteSheet = true }
                 )
                 .padding(.horizontal, 20)
                 .padding(.vertical, 18)
-
-                Divider()
-
-                // Stats
-                HabitDetailStats(
-                    habit: habit,
-                    selectedDate: selectedDate,
-                    onRemoveLastCompletion: { date in
-                        withAnimation(.spring(duration: 0.3)) {
-                            habit.removeLastCompletion(on: date)
-
-                        }
-                    },
-                    onRemoveAllCompletions: { date in
-                        withAnimation(.spring(duration: 0.3)) {
-                            habit.removeAllCompletions(on: date)
-
-                        }
-                    },
-                    onRemoveCompletionsFrom: { date in
-                        withAnimation(.spring(duration: 0.3)) {
-                            habit.removeCompletions(from: date)
-
-                        }
-                    }
-                )
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
             }
             .padding(.top, 8)
             .padding(.bottom, 24)
@@ -181,6 +153,13 @@ struct HabitDetailView: View {
                 showStopwatchSheet = false
             }
             .presentationDetents([.large])
+            .presentationBackground(Color.bgPage)
+        }
+        .sheet(isPresented: $showAddNoteSheet) {
+            HabitAddNoteSheet(habit: habit, selectedDate: selectedDate) {
+                showAddNoteSheet = false
+            }
+            .presentationDetents([.medium])
             .presentationBackground(Color.bgPage)
         }
         .sheet(isPresented: $showEditSheet) {
@@ -374,6 +353,60 @@ struct HabitDetailView: View {
                         Calendar.current.date(byAdding: .day, value: -2, to: Date())!,
                     ]
                 )
+                container.mainContext.insert(h)
+                habit = h
+            }
+        }
+    }
+
+    return PreviewWrapper()
+}
+
+#Preview("Metrics") {
+    struct PreviewWrapper: View {
+        @State private var habit: HabitEntry?
+        let container: ModelContainer
+
+        init() {
+            let config = ModelConfiguration(isStoredInMemoryOnly: true)
+            let c = try! ModelContainer(for: HabitEntry.self, configurations: config)
+            self.container = c
+        }
+
+        var body: some View {
+            NavigationStack {
+                if let habit {
+                    HabitDetailView(habit: habit, selectedDate: .now)
+                }
+            }
+            .modelContainer(container)
+            .onAppear {
+                let cal = Calendar.current
+                let h = HabitEntry(
+                    name: "Water Intake",
+                    emoji: "\u{1F4A7}",
+                    habitTypeRaw: "metrics",
+                    motivationQuote: "Stay hydrated, stay sharp.",
+                    hasTime: false,
+                    scheduleTime: nil,
+                    frequency: 1,
+                    selectedDays: [],
+                    startDate: cal.date(byAdding: .month, value: -1, to: Date())!,
+                    endDateEnabled: false,
+                    endDate: nil,
+                    reminderEnabled: false,
+                    reminderTime: nil,
+                    completionLogs: [
+                        Date(),
+                        Date(),
+                        Date(),
+                        cal.date(byAdding: .day, value: -1, to: Date())!,
+                        cal.date(byAdding: .day, value: -1, to: Date())!,
+                        cal.date(byAdding: .day, value: -2, to: Date())!,
+                    ]
+                )
+                h.metricTargetValue = 8
+                h.metricUnit = "glasses"
                 container.mainContext.insert(h)
                 habit = h
             }
