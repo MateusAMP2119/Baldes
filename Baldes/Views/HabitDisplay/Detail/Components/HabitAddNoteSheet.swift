@@ -11,33 +11,32 @@ struct HabitAddNoteSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 16) {
+            VStack(spacing: 0) {
                 TextEditor(text: $noteText)
                     .focused($isFocused)
                     .font(.body)
                     .foregroundStyle(Color.textPrimary)
                     .scrollContentBackground(.hidden)
-                    .frame(minHeight: 120)
-                    .padding(12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.textTertiary.opacity(0.08))
-                    )
-
+                    .padding(.horizontal, 24)
+                    .padding(.top, 16)
+                    
                 Spacer()
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .background(Color.bgPage)
             .navigationTitle("Add Note")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button {
                         onDismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Color.textSecondary)
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button {
                         let trimmed = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
                         let newNote: String? = trimmed.isEmpty ? nil : trimmed
                         
@@ -50,6 +49,10 @@ struct HabitAddNoteSheet: View {
                             }
                         }
                         onDismiss()
+                    } label: {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(habit.habitType.color)
                     }
                 }
             }

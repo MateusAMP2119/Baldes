@@ -382,7 +382,9 @@ struct HabitDetailTypeContent: View {
                                             }
                                         } label: {
                                             Label("Delete", systemImage: "trash")
+                                                .labelStyle(.iconOnly)
                                         }
+                                        .tint(.red)
                                     }
                                 }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -391,6 +393,7 @@ struct HabitDetailTypeContent: View {
                                             onAddNote(group)
                                         } label: {
                                             Label("Note", systemImage: "square.and.pencil")
+                                                .labelStyle(.iconOnly)
                                         }
                                         .tint(habit.habitType.color)
                                     }
