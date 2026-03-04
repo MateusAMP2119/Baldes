@@ -651,15 +651,34 @@ struct HabitDetailView: View {
                 )
                 h.metricTargetValue = 8
                 h.metricUnit = "glasses"
-                h.activityLog = [
+
+                let today = Date()
+                let yesterday = cal.date(byAdding: .day, value: -1, to: today)!
+                let twoDaysAgo = cal.date(byAdding: .day, value: -2, to: today)!
+
+                var logs: [ActivityLogEntry] = [
                     ActivityLogEntry(type: .created),
-                    ActivityLogEntry(type: .completed),
-                    ActivityLogEntry(type: .completed),
-                    ActivityLogEntry(type: .completed),
-                    ActivityLogEntry(type: .edited, detail: "Changed target to 8"),
-                    ActivityLogEntry(
-                        type: .note, detail: "Felt great today, drank more than usual"),
                 ]
+                // Today: 4 entries
+                for i in 0..<4 {
+                    var e = ActivityLogEntry(type: .completed, detail: "Drank glass \(i + 1)")
+                    e.date = cal.date(byAdding: .hour, value: 8 + i, to: cal.startOfDay(for: today))!
+                    logs.append(e)
+                }
+                // Yesterday: 3 entries
+                for i in 0..<3 {
+                    var e = ActivityLogEntry(type: .completed, detail: "Drank glass \(i + 1)")
+                    e.date = cal.date(byAdding: .hour, value: 9 + i, to: cal.startOfDay(for: yesterday))!
+                    logs.append(e)
+                }
+                // 2 days ago: 2 entries
+                for i in 0..<2 {
+                    var e = ActivityLogEntry(type: .completed, detail: "Drank glass \(i + 1)")
+                    e.date = cal.date(byAdding: .hour, value: 10 + i, to: cal.startOfDay(for: twoDaysAgo))!
+                    logs.append(e)
+                }
+
+                h.activityLog = logs
                 container.mainContext.insert(h)
                 habit = h
             }

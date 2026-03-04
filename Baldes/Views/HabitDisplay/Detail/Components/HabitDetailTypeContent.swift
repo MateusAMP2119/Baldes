@@ -15,6 +15,7 @@ struct HabitDetailTypeContent: View {
 
     @State private var isEditingLog = false
     @State private var selectedLogIDs: Set<UUID> = []
+    @State private var showAllActivity = false
 
     var body: some View {
         mainContentInner
@@ -285,6 +286,15 @@ struct HabitDetailTypeContent: View {
         }
         let sortedDays = dayGrouped.keys.sorted(by: >)
 
+        let maxCollapsedItems = 5
+        let allDays = sortedDays.prefix(7)
+        let allGroupedByDay: [(day: Date, groups: [GroupedActivity])] = allDays.map { day in
+            (day: day, groups: groupEntries(dayGrouped[day] ?? []))
+        }
+        let totalGrouped = allGroupedByDay.reduce(0) { $0 + $1.groups.count }
+        let hasMoreThanCap = totalGrouped > maxCollapsedItems
+        let isCapped = !showAllActivity && hasMoreThanCap
+
         return VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text("Activity")
@@ -298,9 +308,7 @@ struct HabitDetailTypeContent: View {
                         if isEditingLog && !selectedLogIDs.isEmpty {
                             Button {
                                 withAnimation {
-                                    let allGrouped = sortedDays.prefix(7).flatMap { day in
-                                        groupEntries(dayGrouped[day] ?? [])
-                                    }
+                                    let allGrouped = allGroupedByDay.flatMap { $0.groups }
                                     let idsToRemove =
                                         allGrouped
                                         .filter { selectedLogIDs.contains($0.id) }
@@ -349,6 +357,18 @@ struct HabitDetailTypeContent: View {
                                 .foregroundStyle(
                                     isEditingLog ? habit.habitType.color : Color.textSecondary)
                         }
+
+                        if hasMoreThanCap {
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.25)) {
+                                    showAllActivity.toggle()
+                                }
+                            } label: {
+                                Text(showAllActivity ? "See Less" : "See All")
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundStyle(habit.habitType.color)
+                            }
+                        }
                     }
                 }
             }
@@ -362,13 +382,26 @@ struct HabitDetailTypeContent: View {
                 }
                 .foregroundStyle(Color.textTertiary)
             } else {
-                List {
-                    ForEach(sortedDays.prefix(7), id: \.self) { day in
-                        let dayEntries = dayGrouped[day] ?? []
-                        let grouped = groupEntries(dayEntries)
+                // Build the visible subset with global item cap
+                let visibleByDay: [(day: Date, groups: [GroupedActivity])] = {
+                    if !isCapped { return Array(allGroupedByDay) }
+                    var remaining = maxCollapsedItems
+                    var result: [(day: Date, groups: [GroupedActivity])] = []
+                    for pair in allGroupedByDay {
+                        guard remaining > 0 else { break }
+                        let slice = Array(pair.groups.prefix(remaining))
+                        result.append((day: pair.day, groups: slice))
+                        remaining -= slice.count
+                    }
+                    return result
+                }()
 
+                let visibleEntryCount = visibleByDay.reduce(0) { $0 + $1.groups.count }
+
+                List {
+                    ForEach(visibleByDay, id: \.day) { pair in
                         Section {
-                            ForEach(grouped) { group in
+                            ForEach(pair.groups) { group in
                                 HStack(spacing: 10) {
                                     if isEditingLog {
                                         Image(
@@ -438,7 +471,7 @@ struct HabitDetailTypeContent: View {
                                 }
                             }
                         } header: {
-                            Text(dayHeaderLabel(day))
+                            Text(dayHeaderLabel(pair.day))
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(Color.textSecondary)
                                 .textCase(nil)
@@ -451,10 +484,11 @@ struct HabitDetailTypeContent: View {
                 }
                 .listStyle(.plain)
                 .scrollDisabled(true)
-                .padding(.top, -12)  // Slightly pulls list up to reduce default header padding, safe for HomeView
+                .padding(.top, -12)
                 .frame(
-                    minHeight: CGFloat(entries.count) * 60 + CGFloat(sortedDays.prefix(7).count)
-                        * 40 + 20)
+                    minHeight: CGFloat(visibleEntryCount) * 60
+                        + CGFloat(visibleByDay.count) * 40 + 20)
+
             }
         }
     }
