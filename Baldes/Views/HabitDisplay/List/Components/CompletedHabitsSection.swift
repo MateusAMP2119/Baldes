@@ -4,6 +4,7 @@ struct CompletedHabitsSection: View {
     let completedHabits: [HabitEntry]
     @Binding var isExpanded: Bool
     var onRestoreCompletedTodo: (HabitEntry) -> Void
+    var onSelectHabit: ((HabitEntry) -> Void)?
     @Environment(\.heroNamespace) private var heroNamespace
 
     var body: some View {
@@ -41,7 +42,9 @@ struct CompletedHabitsSection: View {
             if isExpanded {
                 VStack(alignment: .leading, spacing: 12) {
                     ForEach(completedHabits) { habit in
-                        NavigationLink(value: habit) {
+                        Button {
+                            onSelectHabit?(habit)
+                        } label: {
                             HStack(spacing: 8) {
                                 Text(habit.emoji)
                                     .font(.system(size: 14))

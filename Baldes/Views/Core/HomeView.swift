@@ -8,6 +8,7 @@ struct HomeView: View {
     @State private var showConfetti = false
     @State private var searchText = ""
     @Query private var allHabits: [HabitEntry]
+    @State private var selectedHabitForDetail: HabitEntry?
     @Namespace private var heroNamespace
 
     private let calendar = Calendar.current
@@ -86,7 +87,7 @@ struct HomeView: View {
                     .padding(.horizontal, 24)
                     .padding(.bottom, 16)
                     .padding(.top, 8)
-                    
+
                     WeekStripView(
                         selectedDate: $selectedDate,
                         weekOffset: $weekOffset,
@@ -94,7 +95,14 @@ struct HomeView: View {
                         dayCompletionCounts: weekCompletionCounts
                     )
                     .padding(.bottom, 28)
-                    HabitsListView(selectedDate: selectedDate, searchText: searchText, showConfetti: $showConfetti)
+                    HabitsListView(
+                        selectedDate: selectedDate,
+                        searchText: searchText,
+                        showConfetti: $showConfetti,
+                        onSelectHabit: { habit in
+                            selectedHabitForDetail = habit
+                        }
+                    )
                 }
                 .padding(.bottom, 100)
             }
@@ -108,9 +116,11 @@ struct HomeView: View {
             }
         }
         .environment(\.heroNamespace, heroNamespace)
-        .navigationDestination(for: HabitEntry.self) { habit in
-            HabitDetailView(habit: habit, selectedDate: selectedDate)
-                .navigationTransition(.zoom(sourceID: habit.id, in: heroNamespace))
+        .fullScreenCover(item: $selectedHabitForDetail) { habit in
+            NavigationStack {
+                HabitDetailView(habit: habit, selectedDate: selectedDate)
+            }
+            .navigationTransition(.zoom(sourceID: habit.id, in: heroNamespace))
         }
         .sheet(isPresented: $showCalendarPicker) {
             CalendarPickerView(selectedDate: $selectedDate, weekOffset: $weekOffset)

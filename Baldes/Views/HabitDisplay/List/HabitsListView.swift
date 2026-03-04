@@ -17,13 +17,15 @@ struct HabitsListView: View {
     @State private var archivedSectionExpanded = false
     @State private var todoQuickCompleteHabit: HabitEntry?
     @Binding var showConfetti: Bool
+    var onSelectHabit: ((HabitEntry) -> Void)? = nil
 
     private var isSearching: Bool {
         !searchText.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     private var visibleHabits: [HabitEntry] {
-        let base = isSearching
+        let base =
+            isSearching
             ? allHabits.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
             : allHabits.filter { $0.isScheduled(on: selectedDate) }
         return base
@@ -65,7 +67,9 @@ struct HabitsListView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            if scheduledHabits.isEmpty && anytimeHabits.isEmpty && completedHabits.isEmpty && archivedHabits.isEmpty {
+            if scheduledHabits.isEmpty && anytimeHabits.isEmpty && completedHabits.isEmpty
+                && archivedHabits.isEmpty
+            {
                 emptyState
             } else {
                 // Incomplete setup warning
@@ -89,7 +93,8 @@ struct HabitsListView: View {
                         onDeleteHabit: deleteHabit,
                         onCompleteHabit: completeHabit,
                         onQuickCompleteTodo: { todoQuickCompleteHabit = $0 },
-                        onEditHabit: { habitToEdit = $0 }
+                        onEditHabit: { habitToEdit = $0 },
+                        onSelectHabit: onSelectHabit
                     )
                 }
                 if !anytimeHabits.isEmpty {
@@ -103,14 +108,16 @@ struct HabitsListView: View {
                         onDeleteHabit: deleteHabit,
                         onCompleteHabit: completeHabit,
                         onQuickCompleteTodo: { todoQuickCompleteHabit = $0 },
-                        onEditHabit: { habitToEdit = $0 }
+                        onEditHabit: { habitToEdit = $0 },
+                        onSelectHabit: onSelectHabit
                     )
                 }
                 if !completedHabits.isEmpty {
                     CompletedHabitsSection(
                         completedHabits: completedHabits,
                         isExpanded: $completedSectionExpanded,
-                        onRestoreCompletedTodo: restoreCompletedTodo
+                        onRestoreCompletedTodo: restoreCompletedTodo,
+                        onSelectHabit: onSelectHabit
                     )
                 }
                 if !archivedHabits.isEmpty {

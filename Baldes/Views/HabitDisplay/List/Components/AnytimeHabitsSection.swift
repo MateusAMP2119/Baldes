@@ -11,6 +11,7 @@ struct AnytimeHabitsSection: View {
     var onCompleteHabit: (HabitEntry) -> Void
     var onQuickCompleteTodo: (HabitEntry) -> Void
     var onEditHabit: (HabitEntry) -> Void
+    var onSelectHabit: ((HabitEntry) -> Void)?
 
     private var heightMeasuringView: some View {
         VStack(spacing: 0) {
@@ -80,8 +81,12 @@ struct AnytimeHabitsSection: View {
     @ViewBuilder
     private func anytimeHabitRow(habit: HabitEntry, index: Int) -> some View {
         ZStack {
-            NavigationLink(value: habit) { EmptyView() }
-                .opacity(0)
+            Button {
+                onSelectHabit?(habit)
+            } label: {
+                EmptyView()
+            }
+            .opacity(0)
             AnytimeHabitRowView(
                 habit: habit,
                 selectedDate: selectedDate

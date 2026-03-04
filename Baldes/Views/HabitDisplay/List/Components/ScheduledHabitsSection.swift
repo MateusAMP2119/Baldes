@@ -11,6 +11,7 @@ struct ScheduledHabitsSection: View {
     var onCompleteHabit: (HabitEntry) -> Void
     var onQuickCompleteTodo: (HabitEntry) -> Void
     var onEditHabit: (HabitEntry) -> Void
+    var onSelectHabit: ((HabitEntry) -> Void)?
 
     private var heightMeasuringView: some View {
         VStack(spacing: 0) {
@@ -63,19 +64,23 @@ struct ScheduledHabitsSection: View {
             .padding(.horizontal, 12)
 
             heightMeasuringView
-            .onPreferenceChange(HabitsListHeightKey.self) { scheduledCardHeight = $0 }
-            .overlay {
-                listView
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+                .onPreferenceChange(HabitsListHeightKey.self) { scheduledCardHeight = $0 }
+                .overlay {
+                    listView
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }
 
     @ViewBuilder
     private func scheduledHabitRow(habit: HabitEntry, index: Int) -> some View {
         ZStack {
-            NavigationLink(value: habit) { EmptyView() }
-                .opacity(0)
+            Button {
+                onSelectHabit?(habit)
+            } label: {
+                EmptyView()
+            }
+            .opacity(0)
             HabitRowView(
                 habit: habit,
                 selectedDate: selectedDate

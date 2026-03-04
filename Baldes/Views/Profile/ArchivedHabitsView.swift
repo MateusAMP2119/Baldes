@@ -4,6 +4,8 @@ import SwiftUI
 struct ArchivedHabitsView: View {
     @Query private var allHabits: [HabitEntry]
     @Environment(\.modelContext) private var modelContext
+    @State private var selectedHabitForDetail: HabitEntry?
+    @Namespace private var heroNamespace
 
     private var archivedHabits: [HabitEntry] {
         allHabits
@@ -25,10 +27,13 @@ struct ArchivedHabitsView: View {
                     VStack(spacing: 0) {
                         ForEach(Array(archivedHabits.enumerated()), id: \.element.id) {
                             index, habit in
-                            NavigationLink(value: habit) {
+                            Button {
+                                selectedHabitForDetail = habit
+                            } label: {
                                 archivedRow(habit: habit)
                             }
                             .buttonStyle(.plain)
+                            .modifier(HeroSourceModifier(id: habit.id, namespace: heroNamespace))
 
                             if index < archivedHabits.count - 1 {
                                 Rectangle()
@@ -58,6 +63,13 @@ struct ArchivedHabitsView: View {
         .background(Color.bgPage.ignoresSafeArea())
         .navigationTitle("Archived")
         .navigationBarTitleDisplayMode(.large)
+        .environment(\.heroNamespace, heroNamespace)
+        .fullScreenCover(item: $selectedHabitForDetail) { habit in
+            NavigationStack {
+                HabitDetailView(habit: habit, selectedDate: Date())
+            }
+            .navigationTransition(.zoom(sourceID: habit.id, in: heroNamespace))
+        }
     }
 
     // MARK: - Row
