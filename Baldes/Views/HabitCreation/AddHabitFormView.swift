@@ -41,6 +41,7 @@ struct AddHabitFormView: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 40)
             }
+            .scrollDismissesKeyboard(.interactively)
         }
         .animation(.spring(duration: 0.35), value: vm.habitType)
         .navigationTitle(isEditing ? "Edit Habit" : "New Habit")
@@ -58,6 +59,13 @@ struct AddHabitFormView: View {
                         .foregroundStyle(vm.habitType.color)
                 }
                 .animation(.easeInOut(duration: 0.3), value: vm.habitType)
+            }
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                }
+                .fontWeight(.medium)
             }
         }
         .alert("Notifications Disabled", isPresented: $vm.showNotificationDeniedAlert) {

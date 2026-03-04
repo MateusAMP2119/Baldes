@@ -76,7 +76,7 @@ struct HabitFormQuoteField: View {
                     TextField("Write your own motivation...", text: $text, axis: .vertical)
                         .font(.system(size: 13))
                         .foregroundStyle(Color.textPrimary)
-                        .lineLimit(2...5)
+                        .lineLimit(2...)
                         .id(flipID)
                         .transition(.blurReplace)
                         .onChange(of: text) { _, newValue in
