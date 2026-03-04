@@ -107,7 +107,7 @@ struct HabitRowView: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .background(
-            habit.isCompleted && !habit.allowMultipleCompletions
+            habit.isCompleted(on: selectedDate) && !habit.allowMultipleCompletions
                 ? habit.accentColor.opacity(0.04)
                 : Color.white
         )

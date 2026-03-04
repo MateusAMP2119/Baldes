@@ -7,7 +7,7 @@ struct ArchivedHabitsView: View {
 
     private var archivedHabits: [HabitEntry] {
         allHabits
-            .filter { $0.archivedDate != nil || $0.isCompleted }
+            .filter { $0.archivedDate != nil || $0.isCompleted(on: Date()) }
             .sorted {
                 // Most recently archived first
                 let dateA = $0.archivedDate ?? .distantPast
@@ -84,7 +84,7 @@ struct ArchivedHabitsView: View {
                         )
 
                     // Status
-                    if habit.isCompleted {
+                    if habit.isCompleted(on: Date()) {
                         Text("Completed")
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(Color.accentGreen)

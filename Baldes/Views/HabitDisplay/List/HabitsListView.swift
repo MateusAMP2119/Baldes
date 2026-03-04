@@ -31,7 +31,7 @@ struct HabitsListView: View {
 
     private var scheduledHabits: [HabitEntry] {
         visibleHabits
-            .filter { $0.hasTime && !$0.isCompleted }
+            .filter { $0.hasTime && !$0.isCompleted(on: selectedDate) }
             .sorted {
                 if $0.sortOrder != $1.sortOrder {
                     return $0.sortOrder < $1.sortOrder
@@ -42,7 +42,7 @@ struct HabitsListView: View {
 
     private var anytimeHabits: [HabitEntry] {
         visibleHabits
-            .filter { !$0.hasTime && !$0.isCompleted }
+            .filter { !$0.hasTime && !$0.isCompleted(on: selectedDate) }
             .sorted {
                 if $0.sortOrder != $1.sortOrder {
                     return $0.sortOrder < $1.sortOrder
@@ -53,7 +53,7 @@ struct HabitsListView: View {
 
     private var completedHabits: [HabitEntry] {
         visibleHabits
-            .filter { $0.isCompleted }
+            .filter { $0.isCompleted(on: selectedDate) }
             .sorted { $0.createdAt > $1.createdAt }
     }
 

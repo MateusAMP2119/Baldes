@@ -467,23 +467,23 @@ final class HabitEntry {
         archivedDate = nil
     }
 
-    /// Whether this habit is effectively "done" and should appear in the completed section.
-    var isCompleted: Bool {
+    /// Whether this habit is effectively "done" on the given date and should appear in the completed section.
+    func isCompleted(on date: Date) -> Bool {
         if habitType == .todo && frequency == 0 {
             return allTodosCompletedGlobally
         }
 
-        let countToday = completionCount(on: Date())
+        let count = completionCount(on: date)
 
         if habitType == .metrics {
             if allowMultipleCompletions {
                 return false
             }
             let target = metricTargetValue > 0 ? metricTargetValue : 1
-            return countToday >= target
+            return count >= target
         }
 
-        if !allowMultipleCompletions && countToday > 0 {
+        if !allowMultipleCompletions && count > 0 {
             return true
         }
         return false
