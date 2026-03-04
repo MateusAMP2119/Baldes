@@ -4,6 +4,7 @@ struct ScheduledHabitsSection: View {
     let scheduledHabits: [HabitEntry]
     let selectedDate: Date
     @Binding var scheduledCardHeight: CGFloat
+    @Environment(\.heroNamespace) private var heroNamespace
 
     var onMoveHabits: (IndexSet, Int) -> Void
     var onDeleteHabit: (HabitEntry) -> Void
@@ -80,6 +81,7 @@ struct ScheduledHabitsSection: View {
                 selectedDate: selectedDate
             )
         }
+        .modifier(HeroSourceModifier(id: habit.id, namespace: heroNamespace))
         .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
         .listRowInsets(EdgeInsets())
         .listRowSeparator(.hidden)

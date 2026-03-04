@@ -8,6 +8,7 @@ struct HomeView: View {
     @State private var showConfetti = false
     @State private var searchText = ""
     @Query private var allHabits: [HabitEntry]
+    @Namespace private var heroNamespace
 
     private let calendar = Calendar.current
 
@@ -106,8 +107,10 @@ struct HomeView: View {
                     .transition(.identity)
             }
         }
+        .environment(\.heroNamespace, heroNamespace)
         .navigationDestination(for: HabitEntry.self) { habit in
             HabitDetailView(habit: habit, selectedDate: selectedDate)
+                .navigationTransition(.zoom(sourceID: habit.id, in: heroNamespace))
         }
         .sheet(isPresented: $showCalendarPicker) {
             CalendarPickerView(selectedDate: $selectedDate, weekOffset: $weekOffset)

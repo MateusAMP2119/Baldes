@@ -4,7 +4,12 @@ import UIKit
 
 struct HabitDetailView: View {
     let habit: HabitEntry
-    let selectedDate: Date
+    @State private var selectedDate: Date
+
+    init(habit: HabitEntry, selectedDate: Date) {
+        self.habit = habit
+        self._selectedDate = State(initialValue: selectedDate)
+    }
 
     @State private var showLogPastSheet = false
     @State private var pastLogDate = Date()
@@ -23,6 +28,19 @@ struct HabitDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     private let calendar = Calendar.current
+
+    // MARK: - Day Navigation
+
+    private var canGoBack: Bool {
+        let previous = calendar.date(byAdding: .day, value: -1, to: selectedDate)!
+        return calendar.startOfDay(for: previous) >= calendar.startOfDay(for: habit.startDate)
+    }
+
+    private var canGoForward: Bool {
+        let next = calendar.date(byAdding: .day, value: 1, to: selectedDate)!
+        let upperBound = habit.endDateEnabled ? (habit.endDate ?? Date()) : Date()
+        return calendar.startOfDay(for: next) <= calendar.startOfDay(for: upperBound)
+    }
 
     // MARK: - Computed Properties
 
@@ -58,6 +76,22 @@ struct HabitDetailView: View {
             let formatter = DateFormatter()
             formatter.dateFormat = "MMM d"
             return "Details (\(formatter.string(from: selectedDate)))"
+        }
+    }
+
+    // MARK: - Day Navigation (toolbar title)
+
+    private var dayNavigationTitle: String {
+        if calendar.isDateInToday(selectedDate) {
+            return "Today"
+        } else if calendar.isDateInYesterday(selectedDate) {
+            return "Yesterday"
+        } else if calendar.isDateInTomorrow(selectedDate) {
+            return "Tomorrow"
+        } else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "EEE, MMM d"
+            return formatter.string(from: selectedDate)
         }
     }
 
@@ -139,9 +173,48 @@ struct HabitDetailView: View {
             }
         }
         .background(Color(UIColor.systemBackground).ignoresSafeArea())
-        .navigationTitle(dynamicTitle)
+        .navigationBarBackButtonHidden()
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+            }
+
+            ToolbarItem(placement: .principal) {
+                HStack(spacing: 6) {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedDate = calendar.date(byAdding: .day, value: -1, to: selectedDate)!
+                        }
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(canGoBack ? Color.textSecondary : .clear)
+                    }
+                    .disabled(!canGoBack)
+
+                    Text(dayNavigationTitle)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Color.textPrimary)
+
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedDate = calendar.date(byAdding: .day, value: 1, to: selectedDate)!
+                        }
+                    } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(canGoForward ? Color.textSecondary : .clear)
+                    }
+                    .disabled(!canGoForward)
+                }
+            }
+
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button {

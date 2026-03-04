@@ -4,6 +4,7 @@ struct CompletedHabitsSection: View {
     let completedHabits: [HabitEntry]
     @Binding var isExpanded: Bool
     var onRestoreCompletedTodo: (HabitEntry) -> Void
+    @Environment(\.heroNamespace) private var heroNamespace
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -74,6 +75,7 @@ struct CompletedHabitsSection: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .modifier(HeroSourceModifier(id: habit.id, namespace: heroNamespace))
                     }
                 }
                 .transition(.opacity)
