@@ -362,6 +362,10 @@ struct HabitDetailView: View {
         withAnimation(.spring(duration: 0.3)) {
             habit.addCompletion(on: selectedDate)
         }
+        
+        // Reschedule notifications because completion status changed
+        NotificationManager.shared.scheduleNotifications(for: habit)
+        
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()
     }
@@ -370,6 +374,9 @@ struct HabitDetailView: View {
         withAnimation(.spring(duration: 0.3)) {
             habit.removeLastCompletion(on: selectedDate)
         }
+        
+        // Reschedule notifications because completion status changed
+        NotificationManager.shared.scheduleNotifications(for: habit)
     }
 
     // MARK: - Log Past Activity Sheet

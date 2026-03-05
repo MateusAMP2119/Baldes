@@ -747,6 +747,10 @@ struct HabitDetailTypeContent: View {
                 let toggleDate = isOneTimeTodo ? Date() : selectedDate
                 habit.toggleTodoItem(item: item, on: toggleDate)
             }
+            
+            // Reschedule notifications because completion status changed
+            NotificationManager.shared.scheduleNotifications(for: habit)
+            
             let impact = UIImpactFeedbackGenerator(style: .light)
             impact.impactOccurred()
         } label: {

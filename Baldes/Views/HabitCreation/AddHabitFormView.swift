@@ -63,7 +63,8 @@ struct AddHabitFormView: View {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("Done") {
-                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    UIApplication.shared.sendAction(
+                        #selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                 }
                 .fontWeight(.medium)
             }
@@ -142,7 +143,9 @@ struct AddHabitFormView: View {
                     accentColor: vm.habitType.color,
                     isOn: $vm.reminderEnabled,
                     reminderTime: $vm.timedReminderTime,
-                    additionalReminderTimes: $vm.timedAdditionalReminderTimes
+                    additionalReminderTimes: $vm.timedAdditionalReminderTimes,
+                    recurrenceInterval: $vm.reminderRecurrenceInterval,
+                    stopRemindersOnCompletion: $vm.stopRemindersOnCompletion
                 )
 
                 HabitFormMultipleCompletionsToggle(
@@ -188,7 +191,9 @@ struct AddHabitFormView: View {
                     accentColor: vm.habitType.color,
                     isOn: $vm.reminderEnabled,
                     reminderTime: $vm.reminderTime,
-                    additionalReminderTimes: $vm.additionalReminderTimes
+                    additionalReminderTimes: $vm.additionalReminderTimes,
+                    recurrenceInterval: $vm.reminderRecurrenceInterval,
+                    stopRemindersOnCompletion: $vm.stopRemindersOnCompletion
                 )
             }
             .onChange(of: vm.todoScheduleTime) { _, newValue in
@@ -225,7 +230,9 @@ struct AddHabitFormView: View {
                     label: "Budget Reminder",
                     isOn: $vm.budgetReminder,
                     reminderTime: $vm.budgetReminderTime,
-                    additionalReminderTimes: $vm.budgetAdditionalReminderTimes
+                    additionalReminderTimes: $vm.budgetAdditionalReminderTimes,
+                    recurrenceInterval: $vm.reminderRecurrenceInterval,
+                    stopRemindersOnCompletion: $vm.stopRemindersOnCompletion
                 )
             }
 
@@ -277,7 +284,9 @@ struct AddHabitFormView: View {
                 accentColor: vm.habitType.color,
                 isOn: $vm.reminderEnabled,
                 reminderTime: $vm.reminderTime,
-                additionalReminderTimes: $vm.additionalReminderTimes
+                additionalReminderTimes: $vm.additionalReminderTimes,
+                recurrenceInterval: $vm.reminderRecurrenceInterval,
+                stopRemindersOnCompletion: $vm.stopRemindersOnCompletion
             )
 
             HabitFormMultipleCompletionsToggle(

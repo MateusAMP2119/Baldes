@@ -25,6 +25,8 @@ final class HabitEntry {
     var reminderEnabled: Bool
     var reminderTime: Date?
     var additionalReminderTimes: [Date] = []
+    var reminderRecurrenceInterval: Int = 0  // Recurrence in seconds, 0 = none
+    var stopRemindersOnCompletion: Bool = true
 
     // Todo — legacy fields (kept for automatic migration)
     var todoItems: [String] = []
@@ -506,6 +508,8 @@ final class HabitEntry {
         reminderEnabled: Bool,
         reminderTime: Date?,
         additionalReminderTimes: [Date] = [],
+        reminderRecurrenceInterval: Int = 0,
+        stopRemindersOnCompletion: Bool = true,
         todoItems: [TodoItem] = [],
         completionLogs: [Date] = [],
         sortOrder: Int = 0
@@ -527,6 +531,8 @@ final class HabitEntry {
         self.reminderEnabled = reminderEnabled
         self.reminderTime = reminderTime
         self.additionalReminderTimes = additionalReminderTimes
+        self.reminderRecurrenceInterval = reminderRecurrenceInterval
+        self.stopRemindersOnCompletion = stopRemindersOnCompletion
         self.todoItemsData = todoItems
         self.completionLogs = completionLogs
 

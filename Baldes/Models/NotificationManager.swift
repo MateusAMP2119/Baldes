@@ -56,88 +56,118 @@ final class NotificationManager {
         // Remove any existing notifications for this habit first
         cancelNotifications(for: habit)
 
-        guard habit.reminderEnabled, let reminderTime = habit.reminderTime else { return }
+        guard habit.reminderEnabled, habit.reminderTime != nil else { return }
 
-        // We'll define an array of all reminder times to schedule
         let calendar = Calendar.current
-        var allTimes: [Date] = []
+        let today = calendar.startOfDay(for: Date())
+
+        // Ensure we have at least one base reminder time to work with
+        var baseTimes: [Date] = []
         if let primary = habit.reminderTime {
-            allTimes.append(primary)
+            baseTimes.append(primary)
         }
-        allTimes.append(contentsOf: habit.additionalReminderTimes)
+        baseTimes.append(contentsOf: habit.additionalReminderTimes)
+        guard !baseTimes.isEmpty else { return }
 
-        for (index, reminderTime) in allTimes.enumerated() {
-            let hour = calendar.component(.hour, from: reminderTime)
-            let minute = calendar.component(.minute, from: reminderTime)
+        // We will schedule up to 14 days ahead, capped at 60 total notifications per habit
+        let maxDaysAhead = 14
+        let maxNotifications = 60
+        var notificationsScheduled = 0
 
-            let content = UNMutableNotificationContent()
-            content.title = "\(habit.emoji) \(habit.name)"
+        // Determine which days to schedule for based on frequency
+        var targetDates: [Date] = []
 
-            // If the quote matches a preset, append the author attribution
-            if let match = NotificationManager.presetQuotes.first(where: {
-                $0.text == habit.motivationQuote
-            }) {
-                content.body = "\"\(habit.motivationQuote)\" — \(match.author)"
-            } else {
-                content.body = habit.motivationQuote
+        switch habit.frequency {
+        case 0:  // Once
+            // Only schedule if the start date is today or in the future
+            if calendar.startOfDay(for: habit.startDate) >= today {
+                targetDates.append(calendar.startOfDay(for: habit.startDate))
+            }
+        case 1:  // Daily
+            for dayOffset in 0..<maxDaysAhead {
+                if let futureDate = calendar.date(byAdding: .day, value: dayOffset, to: today) {
+                    targetDates.append(futureDate)
+                }
+            }
+        case 2:  // Custom
+            for dayOffset in 0..<maxDaysAhead {
+                if let futureDate = calendar.date(byAdding: .day, value: dayOffset, to: today) {
+                    // Swift calendar weekday: 1=Sun, 2=Mon...
+                    // habit.selectedDays: 0=Mon, 1=Tue... 6=Sun
+                    let weekday = calendar.component(.weekday, from: futureDate)
+                    let habitDay = weekday == 1 ? 6 : weekday - 2
+
+                    if habit.selectedDays.contains(habitDay) {
+                        targetDates.append(futureDate)
+                    }
+                }
+            }
+        default:
+            break
+        }
+
+        // Generate notifications for the target dates
+        for targetDate in targetDates {
+            if notificationsScheduled >= maxNotifications { break }
+
+            // Skip scheduling for this day if the habit is already completed on this day
+            if habit.isCompleted(on: targetDate) {
+                continue
             }
 
-            content.sound = .default
+            for (baseIndex, baseTime) in baseTimes.enumerated() {
+                if notificationsScheduled >= maxNotifications { break }
 
-            switch habit.frequency {
-            case 0:  // Once
+                // Construct the exact Date for this reminder on the target day
+                let hour = calendar.component(.hour, from: baseTime)
+                let minute = calendar.component(.minute, from: baseTime)
+                let second = calendar.component(.second, from: baseTime)
+
                 var dateComponents = calendar.dateComponents(
-                    [.year, .month, .day], from: habit.startDate)
+                    [.year, .month, .day], from: targetDate)
                 dateComponents.hour = hour
                 dateComponents.minute = minute
+                dateComponents.second = second
 
-                let trigger = UNCalendarNotificationTrigger(
-                    dateMatching: dateComponents, repeats: false)
-                let request = UNNotificationRequest(
-                    identifier: notificationID(for: habit, suffix: "once-time\(index)"),
-                    content: content,
-                    trigger: trigger
-                )
-                UNUserNotificationCenter.current().add(request)
+                guard let scheduledDateTime = calendar.date(from: dateComponents) else { continue }
 
-            case 1:  // Daily
-                var dateComponents = DateComponents()
-                dateComponents.hour = hour
-                dateComponents.minute = minute
-
-                let trigger = UNCalendarNotificationTrigger(
-                    dateMatching: dateComponents, repeats: true)
-                let request = UNNotificationRequest(
-                    identifier: notificationID(for: habit, suffix: "daily-time\(index)"),
-                    content: content,
-                    trigger: trigger
-                )
-                UNUserNotificationCenter.current().add(request)
-
-            case 2:  // Custom — one notification per selected weekday
-                // selectedDays uses 0=Mon … 6=Sun
-                // Calendar weekday uses 1=Sun, 2=Mon … 7=Sat
-                for day in habit.selectedDays {
-                    // 0(Mon)->2, 1(Tue)->3, … 5(Sat)->7, 6(Sun)->1
-                    let calendarWeekday = day == 6 ? 1 : day + 2
-
-                    var dateComponents = DateComponents()
-                    dateComponents.hour = hour
-                    dateComponents.minute = minute
-                    dateComponents.weekday = calendarWeekday
-
-                    let trigger = UNCalendarNotificationTrigger(
-                        dateMatching: dateComponents, repeats: true)
-                    let request = UNNotificationRequest(
-                        identifier: notificationID(for: habit, suffix: "day\(day)-time\(index)"),
-                        content: content,
-                        trigger: trigger
-                    )
-                    UNUserNotificationCenter.current().add(request)
+                // If it's today and the time has already passed, skip the base time
+                if scheduledDateTime < Date() {
+                    continue
                 }
 
-            default:
-                break
+                scheduleSingleNotification(
+                    for: habit, at: dateComponents,
+                    suffix: "day-\(targetDate.timeIntervalSince1970)-base\(baseIndex)")
+                notificationsScheduled += 1
+
+                // Apply recurrence if interval > 0
+                if habit.reminderRecurrenceInterval > 0 {
+                    var currentRecurrenceTime = scheduledDateTime
+                    let intervalSeconds = TimeInterval(habit.reminderRecurrenceInterval)
+                    var recurrenceCount = 1
+
+                    while notificationsScheduled < maxNotifications {
+                        currentRecurrenceTime.addTimeInterval(intervalSeconds)
+
+                        // Stop recursing if we cross into the next day
+                        if !calendar.isDate(currentRecurrenceTime, inSameDayAs: targetDate) {
+                            break
+                        }
+
+                        let recComponents = calendar.dateComponents(
+                            [.year, .month, .day, .hour, .minute, .second],
+                            from: currentRecurrenceTime)
+
+                        scheduleSingleNotification(
+                            for: habit, at: recComponents,
+                            suffix:
+                                "day-\(targetDate.timeIntervalSince1970)-base\(baseIndex)-rec\(recurrenceCount)"
+                        )
+                        notificationsScheduled += 1
+                        recurrenceCount += 1
+                    }
+                }
             }
         }
 
@@ -145,6 +175,31 @@ final class NotificationManager {
         if habit.habitType == .todo {
             scheduleDeadlineNotifications(for: habit)
         }
+    }
+
+    private func scheduleSingleNotification(
+        for habit: HabitEntry, at components: DateComponents, suffix: String
+    ) {
+        let content = UNMutableNotificationContent()
+        content.title = "\(habit.emoji) \(habit.name)"
+
+        if let match = NotificationManager.presetQuotes.first(where: {
+            $0.text == habit.motivationQuote
+        }) {
+            content.body = "\"\(habit.motivationQuote)\" — \(match.author)"
+        } else {
+            content.body = habit.motivationQuote
+        }
+
+        content.sound = .default
+
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        let request = UNNotificationRequest(
+            identifier: notificationID(for: habit, suffix: suffix),
+            content: content,
+            trigger: trigger
+        )
+        UNUserNotificationCenter.current().add(request)
     }
 
     // MARK: - Deadline Notifications
@@ -192,20 +247,27 @@ final class NotificationManager {
     // MARK: - Cancel
 
     func cancelNotifications(for habit: HabitEntry) {
-        // Support up to 10 notification time slots to cover primary + additional reminders during cancellation
-        var ids: [String] = []
-        for i in 0..<10 {
-            ids.append(notificationID(for: habit, suffix: "once-time\(i)"))
-            ids.append(notificationID(for: habit, suffix: "daily-time\(i)"))
-            for day in 0...6 {
-                ids.append(notificationID(for: habit, suffix: "day\(day)-time\(i)"))
+        // We now use dynamic prefixes based on the habit ID, and since we generate many unique identifiers
+        // we should remove all pending/delivered notifications that start with the habit ID prefix
+
+        let center = UNUserNotificationCenter.current()
+        let prefix = "habit-\(habit.id.uuidString)"
+
+        center.getPendingNotificationRequests { requests in
+            let idsToRemove = requests.map { $0.identifier }.filter { $0.hasPrefix(prefix) }
+            if !idsToRemove.isEmpty {
+                center.removePendingNotificationRequests(withIdentifiers: idsToRemove)
             }
         }
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
-        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ids)
 
-        // Also cancel any deadline notifications
-        cancelDeadlineNotifications(for: habit)
+        center.getDeliveredNotifications { notifications in
+            let idsToRemove = notifications.map { $0.request.identifier }.filter {
+                $0.hasPrefix(prefix)
+            }
+            if !idsToRemove.isEmpty {
+                center.removeDeliveredNotifications(withIdentifiers: idsToRemove)
+            }
+        }
     }
 
     // MARK: - Helpers

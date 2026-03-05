@@ -132,16 +132,23 @@ struct HabitFormReminderToggle: View {
     @Binding var isOn: Bool
     @Binding var reminderTime: Date
     @Binding var additionalReminderTimes: [Date]
+    @Binding var recurrenceInterval: Int
+    @Binding var stopRemindersOnCompletion: Bool
+
+    @State private var showCustomRecurrence: Bool = false
 
     init(
         accentColor: Color, label: String = "Active", isOn: Binding<Bool>,
-        reminderTime: Binding<Date>, additionalReminderTimes: Binding<[Date]>
+        reminderTime: Binding<Date>, additionalReminderTimes: Binding<[Date]>,
+        recurrenceInterval: Binding<Int>, stopRemindersOnCompletion: Binding<Bool>
     ) {
         self.accentColor = accentColor
         self.label = label
         self._isOn = isOn
         self._reminderTime = reminderTime
         self._additionalReminderTimes = additionalReminderTimes
+        self._recurrenceInterval = recurrenceInterval
+        self._stopRemindersOnCompletion = stopRemindersOnCompletion
     }
 
     var body: some View {
@@ -182,6 +189,115 @@ struct HabitFormReminderToggle: View {
                     }
                     .datePickerStyle(.compact)
                     .tint(accentColor)
+
+                    Divider()
+                        .padding(.horizontal, 16)
+
+                    // Recurrence Interval
+                    HStack {
+                        Text("Recurrence")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.textSecondary)
+
+                        Spacer()
+
+                        Picker(
+                            "Recurrence",
+                            selection: Binding(
+                                get: {
+                                    let predefined = [0, 900, 1800, 2700, 3600, 7200]
+                                    if showCustomRecurrence { return -1 }
+                                    return predefined.contains(recurrenceInterval)
+                                        ? recurrenceInterval : -1
+                                },
+                                set: { newValue in
+                                    if newValue == -1 {
+                                        showCustomRecurrence = true
+                                        if recurrenceInterval == 0 {
+                                            recurrenceInterval = 1800
+                                        }
+                                    } else {
+                                        showCustomRecurrence = false
+                                        recurrenceInterval = newValue
+                                    }
+                                }
+                            )
+                        ) {
+                            Text("None").tag(0)
+                            Text("15 mins").tag(900)
+                            Text("30 mins").tag(1800)
+                            Text("45 mins").tag(2700)
+                            Text("1 hour").tag(3600)
+                            Text("2 hours").tag(7200)
+                            Text("Custom...").tag(-1)
+                        }
+                        .tint(accentColor)
+                    }
+
+                    if showCustomRecurrence {
+                        Divider()
+                            .padding(.horizontal, 16)
+
+                        HStack(spacing: 8) {
+                            durationWheel(
+                                label: "hr",
+                                selection: Binding(
+                                    get: { recurrenceInterval / 3600 },
+                                    set: {
+                                        recurrenceInterval = $0 * 3600 + (recurrenceInterval % 3600)
+                                    }
+                                ),
+                                range: 0..<24
+                            )
+                            durationWheel(
+                                label: "min",
+                                selection: Binding(
+                                    get: { (recurrenceInterval % 3600) / 60 },
+                                    set: {
+                                        recurrenceInterval =
+                                            (recurrenceInterval / 3600) * 3600 + $0 * 60
+                                            + (recurrenceInterval % 60)
+                                    }
+                                ),
+                                range: 0..<60
+                            )
+                            durationWheel(
+                                label: "sec",
+                                selection: Binding(
+                                    get: { recurrenceInterval % 60 },
+                                    set: {
+                                        recurrenceInterval = (recurrenceInterval / 60) * 60 + $0
+                                    }
+                                ),
+                                range: 0..<60
+                            )
+                        }
+                        .frame(height: 120)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .onAppear {
+                            UIPickerView.appearance().subviews.forEach { subview in
+                                subview.backgroundColor = .clear
+                            }
+                        }
+                    }
+
+                    if recurrenceInterval > 0 {
+                        Divider()
+                            .padding(.horizontal, 16)
+
+                        HStack {
+                            Text("Stop when completed")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(Color.textSecondary)
+
+                            Spacer()
+
+                            Toggle("", isOn: $stopRemindersOnCompletion)
+                                .labelsHidden()
+                                .tint(accentColor)
+                        }
+                    }
 
                     // Additional Reminders
                     ForEach(Array(additionalReminderTimes.enumerated()), id: \.offset) { index, _ in
@@ -241,6 +357,25 @@ struct HabitFormReminderToggle: View {
             .padding(.vertical, 14)
             .background(Color(hex: "F5F5F5"))
             .cornerRadius(16)
+        }
+    }
+
+    private func durationWheel(label: String, selection: Binding<Int>, range: Range<Int>)
+        -> some View
+    {
+        HStack(spacing: 4) {
+            Picker(label, selection: selection) {
+                ForEach(range, id: \.self) { value in
+                    Text("\(value)").tag(value)
+                }
+            }
+            .pickerStyle(.wheel)
+            .frame(width: 50)
+            .clipped()
+
+            Text(label)
+                .font(.system(size: 14))
+                .foregroundStyle(Color.textSecondary)
         }
     }
 }

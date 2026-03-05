@@ -205,6 +205,10 @@ struct HabitsListView: View {
             // Remove today's completions so the habit returns to active
             habit.removeAllCompletions(on: selectedDate)
         }
+
+        // Reschedule notifications because completion status changed
+        NotificationManager.shared.scheduleNotifications(for: habit)
+
         let impact = UIImpactFeedbackGenerator(style: .light)
         impact.impactOccurred()
     }
@@ -215,6 +219,9 @@ struct HabitsListView: View {
         withAnimation(.spring(duration: 0.3)) {
             habit.addCompletion(on: selectedDate)
         }
+
+        // Reschedule notifications because completion status changed
+        NotificationManager.shared.scheduleNotifications(for: habit)
 
         // Escalating haptics + sound based on completion count
         switch countBefore {

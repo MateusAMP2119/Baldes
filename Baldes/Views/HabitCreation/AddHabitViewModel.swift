@@ -18,6 +18,7 @@ final class AddHabitViewModel {
     var hasTime = true
     var selectedDays: Set<Int> = [0, 1, 2, 3, 4]
     var reminderEnabled = true
+    var reminderRecurrenceInterval = 0
     var reminderTime: Date = {
         let calendar = Calendar.current
         var components = calendar.dateComponents([.year, .month, .day], from: Date())
@@ -26,6 +27,7 @@ final class AddHabitViewModel {
         return calendar.date(from: components) ?? Date()
     }()
     var additionalReminderTimes: [Date] = []
+    var stopRemindersOnCompletion = true
     var allowMultipleCompletions = false
 
     // Common schedule state
@@ -150,6 +152,7 @@ final class AddHabitViewModel {
         hasTime = habit.hasTime
         selectedDays = Set(habit.selectedDays)
         reminderEnabled = habit.reminderEnabled
+        reminderRecurrenceInterval = habit.reminderRecurrenceInterval
 
         allowMultipleCompletions = habit.allowMultipleCompletions
 
@@ -333,6 +336,8 @@ final class AddHabitViewModel {
             if existing.reminderEnabled != reminderEnabled
                 || existing.reminderTime != resolvedReminderTime
                 || existing.additionalReminderTimes != resolvedAdditionalReminders
+                || existing.reminderRecurrenceInterval != reminderRecurrenceInterval
+                || existing.stopRemindersOnCompletion != stopRemindersOnCompletion
             {
                 changes.append((.edited, "Reminders updated"))
             }
@@ -362,6 +367,8 @@ final class AddHabitViewModel {
             existing.reminderEnabled = reminderEnabled
             existing.reminderTime = resolvedReminderTime
             existing.additionalReminderTimes = resolvedAdditionalReminders
+            existing.reminderRecurrenceInterval = reminderRecurrenceInterval
+            existing.stopRemindersOnCompletion = stopRemindersOnCompletion
             existing.todoItemsData = todoItems
             existing.timerType = timerType
             existing.timerDurationSeconds =
@@ -409,6 +416,8 @@ final class AddHabitViewModel {
                 reminderEnabled: reminderEnabled,
                 reminderTime: resolvedReminderTime,
                 additionalReminderTimes: resolvedAdditionalReminders,
+                reminderRecurrenceInterval: reminderRecurrenceInterval,
+                stopRemindersOnCompletion: stopRemindersOnCompletion,
                 todoItems: todoItems,
                 sortOrder: allHabitsCount
             )
