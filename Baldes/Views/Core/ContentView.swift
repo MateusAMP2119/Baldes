@@ -73,9 +73,7 @@ struct ContentView: View {
         }
         .tint(.accentOrange)
         .sheet(isPresented: $showAddScreen) {
-            NavigationStack {
-                AddHabitView(dismissSheet: { showAddScreen = false })
-            }
+            QuickAddHabitView(dismissSheet: { showAddScreen = false })
         }
         .sheet(isPresented: $showProfileScreen) {
             NavigationStack {

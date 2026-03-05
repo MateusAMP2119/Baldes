@@ -7,14 +7,25 @@ struct AddHabitFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var allHabits: [HabitEntry]
 
-    init(habitType: HabitType, existingHabit: HabitEntry? = nil, dismissSheet: (() -> Void)? = nil)
+    struct Prefill {
+        var name: String
+        var emoji: String
+        var motivationQuote: String
+    }
+
+    init(habitType: HabitType, existingHabit: HabitEntry? = nil, dismissSheet: (() -> Void)? = nil, prefill: Prefill? = nil)
     {
-        _viewModel = State(
-            initialValue: AddHabitViewModel(
-                habitType: habitType,
-                existingHabit: existingHabit,
-                dismissSheet: dismissSheet
-            ))
+        let vm = AddHabitViewModel(
+            habitType: habitType,
+            existingHabit: existingHabit,
+            dismissSheet: dismissSheet
+        )
+        if let prefill {
+            vm.habitName = prefill.name
+            vm.habitEmoji = prefill.emoji
+            vm.motivationQuote = prefill.motivationQuote
+        }
+        _viewModel = State(initialValue: vm)
     }
 
     private var isEditing: Bool { viewModel.existingHabit != nil }
@@ -22,11 +33,7 @@ struct AddHabitFormView: View {
     var body: some View {
         @Bindable var vm = viewModel
 
-        ZStack {
-            HabitFormBackground(gradientColor: vm.habitType.gradientColor)
-                .animation(.easeInOut(duration: 0.4), value: vm.habitType)
-
-            ScrollView(.vertical, showsIndicators: false) {
+        ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 24) {
                     HabitFormMascotSection(
                         imageName: vm.habitType.mascotImageName,
@@ -42,7 +49,7 @@ struct AddHabitFormView: View {
                 .padding(.bottom, 40)
             }
             .scrollDismissesKeyboard(.interactively)
-        }
+        .background(Color.bgPage)
         .animation(.spring(duration: 0.35), value: vm.habitType)
         .navigationTitle(isEditing ? "Edit Habit" : "New Habit")
         .navigationBarTitleDisplayMode(.inline)
