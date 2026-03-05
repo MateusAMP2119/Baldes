@@ -21,25 +21,10 @@ struct ContentView: View {
     @State private var showAddScreen = false
     @State private var showProfileScreen = false
 
-    /// Intercepts the "Add" tab so `appRouter.selectedTab` never actually changes to `.add`.
-    /// This prevents the NavigationStack from tearing down and losing pushed views.
-    private var tabSelection: Binding<AppTab> {
-        Binding(
-            get: { appRouter.selectedTab },
-            set: { newValue in
-                if newValue == .add {
-                    showAddScreen = true
-                } else {
-                    appRouter.selectedTab = newValue
-                }
-            }
-        )
-    }
-
     var body: some View {
         @Bindable var router = appRouter
 
-        TabView(selection: tabSelection) {
+        TabView(selection: $router.selectedTab) {
             Tab(value: AppTab.agenda) {
                 NavigationStack(path: $router.homeNavigationPath) {
                     HomeView()
@@ -55,7 +40,10 @@ struct ContentView: View {
             }
 
             Tab("Add", systemImage: "plus", value: AppTab.add, role: .search) {
-                Color.clear
+                NavigationStack {
+                    Color.clear
+                        .baldesToolbar(onProfileTap: { showProfileScreen = true })
+                }
             }
 
             Tab(value: AppTab.stats) {
@@ -72,6 +60,11 @@ struct ContentView: View {
             }
         }
         .tint(.accentOrange)
+        .onChange(of: appRouter.selectedTab) { oldValue, newValue in
+            guard newValue == .add else { return }
+            appRouter.selectedTab = oldValue
+            showAddScreen = true
+        }
         .sheet(isPresented: $showAddScreen) {
             QuickAddHabitView(dismissSheet: { showAddScreen = false })
         }
