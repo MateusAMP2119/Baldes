@@ -8,18 +8,23 @@ struct QuickAddHabitView: View {
     @Query private var allHabits: [HabitEntry]
 
     @State private var selectedType: HabitType?
-    @State private var showFullForm = false
-    @State private var currentDetent: PresentationDetent = .medium
+    @State private var showConfig = false
+    @State private var selectedDetent: PresentationDetent = .medium
     @FocusState private var isFocused: Bool
 
     var dismissSheet: (() -> Void)?
 
-    init(dismissSheet: (() -> Void)? = nil) {
+    init(
+        initialType: HabitType? = nil,
+        dismissSheet: (() -> Void)? = nil
+    ) {
+        let typeToUse = initialType ?? .dailyGoals
         _viewModel = State(
             initialValue: AddHabitViewModel(
-                habitType: .dailyGoals,
+                habitType: typeToUse,
                 dismissSheet: dismissSheet
             ))
+        _selectedType = State(initialValue: initialType)
         self.dismissSheet = dismissSheet
     }
 
@@ -27,15 +32,11 @@ struct QuickAddHabitView: View {
         selectedType?.color ?? .accentOrange
     }
 
-    private var mascotName: String {
-        selectedType?.mascotImageName ?? "new"
-    }
-
     private var nameIsEmpty: Bool {
         viewModel.habitName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    private var canProceed: Bool {
+    private var canProceedToStep2: Bool {
         !nameIsEmpty && selectedType != nil
     }
 
@@ -44,8 +45,8 @@ struct QuickAddHabitView: View {
 
         NavigationStack {
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 0) {
-                    // MARK: - Name
+                VStack(spacing: 20) {
+                    // Name
                     ZStack(alignment: .topLeading) {
                         if vm.habitName.isEmpty {
                             Text("What's your next good habit?")
@@ -63,32 +64,23 @@ struct QuickAddHabitView: View {
                             .scrollContentBackground(.hidden)
                             .frame(minHeight: 40)
                     }
-                    .padding(.horizontal, 24)
                     .padding(.top, 8)
 
-                    Divider()
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 12)
-
-                    // MARK: - Motivation
+                    // Motivation
                     HabitFormQuoteField(
                         accentColor: accentColor,
                         text: $vm.motivationQuote
                     )
-                    .padding(.horizontal, 24)
 
-                    Divider()
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 12)
-
-                    // MARK: - Habit Type
+                    // Habit Type
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Type")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(Color.textPrimary)
 
                         LazyVGrid(
-                            columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4),
+                            columns: Array(
+                                repeating: GridItem(.flexible(), spacing: 10), count: 4),
                             spacing: 10
                         ) {
                             ForEach(HabitType.allCases) { type in
@@ -107,7 +99,9 @@ struct QuickAddHabitView: View {
                                     VStack(spacing: 5) {
                                         Image(systemName: type.iconName)
                                             .font(.system(size: 18, weight: .semibold))
-                                            .foregroundStyle(isSelected ? .white : type.color)
+                                            .foregroundStyle(
+                                                isSelected ? .white : type.color
+                                            )
                                             .frame(width: 40, height: 40)
                                             .background(
                                                 RoundedRectangle(cornerRadius: 12)
@@ -121,7 +115,8 @@ struct QuickAddHabitView: View {
                                         Text(type.title)
                                             .font(.system(size: 11, weight: .medium))
                                             .foregroundStyle(
-                                                isSelected ? type.color : Color.textSecondary
+                                                isSelected
+                                                    ? type.color : Color.textSecondary
                                             )
                                             .lineLimit(1)
                                     }
@@ -130,28 +125,15 @@ struct QuickAddHabitView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 24)
                 }
+                .padding(.horizontal, 24)
                 .padding(.bottom, 24)
             }
             .scrollDismissesKeyboard(.interactively)
             .background(Color.bgPage)
+            .navigationTitle("New Habit")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .principal) {
-                    HStack(spacing: 6) {
-                        Image(mascotName)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 40)
-
-                        Text("New Habit")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(Color.textPrimary)
-                    }
-                    .padding(.trailing, 28)
-                    .animation(.spring(duration: 0.3), value: mascotName)
-                }
                 ToolbarItem(placement: .cancellationAction) {
                     Button {
                         if let dismissSheet {
@@ -165,43 +147,34 @@ struct QuickAddHabitView: View {
                             .foregroundStyle(Color.textSecondary)
                     }
                 }
+
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         isFocused = false
                         withAnimation {
-                            currentDetent = .large
+                            selectedDetent = .large
                         }
-                        showFullForm = true
+                        showConfig = true
                     } label: {
-                        Image(systemName: "checkmark")
+                        Text("Next")
                             .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(canProceed ? accentColor : Color.textTertiary)
+                            .foregroundStyle(canProceedToStep2 ? accentColor : Color.textTertiary)
                     }
-                    .disabled(!canProceed)
+                    .disabled(!canProceedToStep2)
                 }
             }
-            .navigationDestination(isPresented: $showFullForm) {
-                AddHabitFormView(
-                    habitType: viewModel.habitType,
-                    dismissSheet: dismissSheet,
-                    prefill: AddHabitFormView.Prefill(
-                        name: viewModel.habitName,
-                        emoji: viewModel.habitEmoji,
-                        motivationQuote: viewModel.motivationQuote
-                    )
+            .navigationDestination(isPresented: $showConfig) {
+                HabitConfigurationView(
+                    viewModel: viewModel,
+                    dismissSheet: dismissSheet ?? { dismiss() }
                 )
             }
             .onAppear {
                 isFocused = true
             }
         }
-        .presentationDetents([.medium, .large], selection: $currentDetent)
+        .presentationDetents([.medium, .large], selection: $selectedDetent)
         .presentationDragIndicator(.hidden)
-        .onChange(of: showFullForm) { _, isShowing in
-            withAnimation {
-                currentDetent = isShowing ? .large : .medium
-            }
-        }
     }
 }
 

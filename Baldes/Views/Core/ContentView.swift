@@ -66,7 +66,9 @@ struct ContentView: View {
             showAddScreen = true
         }
         .sheet(isPresented: $showAddScreen) {
-            QuickAddHabitView(dismissSheet: { showAddScreen = false })
+            QuickAddHabitView(
+                dismissSheet: { showAddScreen = false }
+            )
         }
         .sheet(isPresented: $showProfileScreen) {
             NavigationStack {

@@ -3,7 +3,8 @@ import SwiftData
 import SwiftUI
 
 @Observable
-final class AddHabitViewModel {
+final class AddHabitViewModel: Identifiable {
+    let id = UUID()
     var habitType: HabitType
     var existingHabit: HabitEntry?
     var dismissSheet: (() -> Void)?

@@ -35,7 +35,10 @@ struct AddHabitView: View {
         .navigationTitle("New Habit")
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(for: HabitType.self) { type in
-            AddHabitFormView(habitType: type, dismissSheet: dismissSheet)
+            QuickAddHabitView(
+                initialType: type,
+                dismissSheet: dismissSheet
+            )
         }
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
