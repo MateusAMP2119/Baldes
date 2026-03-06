@@ -1,13 +1,10 @@
 import SwiftData
 import SwiftUI
 
-struct HabitConfigurationView: View {
-    @Bindable var viewModel: AddHabitViewModel
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
-    @Query private var allHabits: [HabitEntry]
+// MARK: - Inline Configuration Content (used inside QuickAddHabitView)
 
-    var dismissSheet: () -> Void
+struct HabitConfigurationContent: View {
+    @Bindable var viewModel: AddHabitViewModel
 
     private var accentColor: Color {
         viewModel.habitType.color
@@ -15,19 +12,6 @@ struct HabitConfigurationView: View {
 
     private var hasConfigStep: Bool {
         viewModel.habitType != .dailyGoals
-    }
-
-    private var contextualTitle: String {
-        switch viewModel.habitType {
-        case .timed: "Set up Timer"
-        case .metrics: "Set up Metric"
-        case .todo: "Set up Checklist"
-        case .routes: "Set up Route"
-        case .budgets: "Set up Budget"
-        case .notes: "Set up Notes"
-        case .journal: "Set up Journal"
-        case .dailyGoals: "Finish Habit"
-        }
     }
 
     var body: some View {
@@ -78,24 +62,56 @@ struct HabitConfigurationView: View {
             .padding(.top, 12)
             .padding(.bottom, 24)
         }
-        .background(Color.bgPage)
-        .navigationTitle(contextualTitle)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button {
-                    viewModel.save(
-                        modelContext: modelContext,
-                        allHabitsCount: allHabits.count,
-                        dismiss: dismiss
-                    )
-                    dismissSheet()
-                } label: {
-                    Text("Save")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(accentColor)
+    }
+}
+
+// MARK: - Standalone Configuration View (for edit flows)
+
+struct HabitConfigurationView: View {
+    @Bindable var viewModel: AddHabitViewModel
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @Query private var allHabits: [HabitEntry]
+
+    var dismissSheet: () -> Void
+
+    private var accentColor: Color {
+        viewModel.habitType.color
+    }
+
+    private var contextualTitle: String {
+        switch viewModel.habitType {
+        case .timed: "Set up Timer"
+        case .metrics: "Set up Metric"
+        case .todo: "Set up Checklist"
+        case .routes: "Set up Route"
+        case .budgets: "Set up Budget"
+        case .notes: "Set up Notes"
+        case .journal: "Set up Journal"
+        case .dailyGoals: "Finish Habit"
+        }
+    }
+
+    var body: some View {
+        HabitConfigurationContent(viewModel: viewModel)
+            .background(Color.bgPage)
+            .navigationTitle(contextualTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        viewModel.save(
+                            modelContext: modelContext,
+                            allHabitsCount: allHabits.count,
+                            dismiss: dismiss
+                        )
+                        dismissSheet()
+                    } label: {
+                        Text("Save")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(accentColor)
+                    }
                 }
             }
-        }
     }
 }
