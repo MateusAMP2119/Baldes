@@ -128,14 +128,12 @@ struct QuickAddHabitView: View {
                         } label: {
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(canProceedToStep2 ? accentColor : Color.textTertiary)
+                                .foregroundStyle(
+                                    canProceedToStep2 ? accentColor : Color.textTertiary)
                         }
                         .disabled(!canProceedToStep2)
                     }
                 }
-            }
-            .onAppear {
-                isFocused = true
             }
         }
         .presentationDetents([.medium, .large], selection: $selectedDetent)

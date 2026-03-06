@@ -22,10 +22,12 @@ struct EmojiTextField: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: UITextField, context: Context) {
-        if shouldFocus && !uiView.isFirstResponder {
-            uiView.becomeFirstResponder()
-        } else if !shouldFocus && uiView.isFirstResponder {
-            uiView.resignFirstResponder()
+        DispatchQueue.main.async {
+            if self.shouldFocus && !uiView.isFirstResponder {
+                uiView.becomeFirstResponder()
+            } else if !self.shouldFocus && uiView.isFirstResponder {
+                uiView.resignFirstResponder()
+            }
         }
     }
 
@@ -40,7 +42,10 @@ struct EmojiTextField: UIViewRepresentable {
             self.onDismiss = onDismiss
         }
 
-        func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        func textField(
+            _ textField: UITextField, shouldChangeCharactersIn range: NSRange,
+            replacementString string: String
+        ) -> Bool {
             // Take only the first emoji character
             if let first = string.first, first.isEmoji {
                 emoji = String(first)
@@ -61,8 +66,8 @@ private class EmojiUITextField: UITextField {
     }
 }
 
-private extension Character {
-    var isEmoji: Bool {
+extension Character {
+    fileprivate var isEmoji: Bool {
         unicodeScalars.first?.properties.isEmoji ?? false
     }
 }
