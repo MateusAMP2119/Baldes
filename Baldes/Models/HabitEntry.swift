@@ -40,8 +40,40 @@ final class HabitEntry {
     var todoCompletionTimestamps: [String: Date] = [:]  // key = "yyyy-MM-dd:uuid"
 
     // Timed habit settings
-    var timerType: Int = 0  // 0 = Countdown, 1 = Stopwatch
-    var timerDurationSeconds: Int = 0  // Total duration for countdown mode
+    var timerType: Int = 0  // 0 = Countdown, 1 = Stopwatch (legacy)
+    var timerDurationSeconds: Int = 0  // Total duration for countdown mode (legacy)
+
+    // Timed — Frequency (pillar 1)
+    var timedFrequencyModeRaw: Int = 0
+    var timedFixedCount: Int = 3
+
+    // Timed — Execution Mode (pillar 3)
+    var timedExecutionModeRaw: Int = 0
+    var timedCountdownSeconds: Int = 0
+    var timedWorkSeconds: Int = 1500
+    var timedRestSeconds: Int = 300
+    var timedRounds: Int = 4
+    var timedBlockStartTime: Date?
+    var timedBlockEndTime: Date?
+
+    // Timed — When: Recurrence
+    var timedRecurrenceTypeRaw: Int = 0
+    var timedRecurrenceUnitRaw: Int = 0
+    var timedRecurrenceInterval: Int = 2
+
+    // Timed — When: Trigger
+    var timedTriggerTypeRaw: Int = 0
+    var timedLinkedHabitID: UUID?
+    var timedGeofenceData: Data?
+
+    // Timed — When: Time Window
+    var timedTimeWindowRaw: Int = 0  // TimedTimeWindow raw value
+    var timedWindowStartTime: Date?  // For .between
+    var timedWindowEndTime: Date?  // For .between
+    var timedExactTime: Date?  // For .exactTime
+
+    // Timed — Reminders
+    var timedReminderConfigData: Data?  // Encoded TimedReminderConfig
 
     // Completion tracking
     var completionLogs: [Date] = []
@@ -110,6 +142,50 @@ final class HabitEntry {
 
     var accentColor: Color {
         habitType.color
+    }
+
+    var timedFrequencyMode: TimedFrequencyMode {
+        TimedFrequencyMode(rawValue: timedFrequencyModeRaw) ?? .single
+    }
+
+    var timedExecutionMode: TimedExecutionMode {
+        TimedExecutionMode(rawValue: timedExecutionModeRaw) ?? .stopwatch
+    }
+
+    var timedRecurrenceType: TimedRecurrenceType {
+        TimedRecurrenceType(rawValue: timedRecurrenceTypeRaw) ?? .daily
+    }
+
+    var timedRecurrenceUnit: TimedRecurrenceUnit {
+        TimedRecurrenceUnit(rawValue: timedRecurrenceUnitRaw) ?? .days
+    }
+
+    var timedTriggerType: TimedTriggerType {
+        TimedTriggerType(rawValue: timedTriggerTypeRaw) ?? .manual
+    }
+
+    var timedTimeWindow: TimedTimeWindow {
+        TimedTimeWindow(rawValue: timedTimeWindowRaw) ?? .allDay
+    }
+
+    var timedGeofence: GeofenceTrigger? {
+        get {
+            guard let data = timedGeofenceData else { return nil }
+            return try? JSONDecoder().decode(GeofenceTrigger.self, from: data)
+        }
+        set {
+            timedGeofenceData = newValue.flatMap { try? JSONEncoder().encode($0) }
+        }
+    }
+
+    var timedReminderConfig: TimedReminderConfig {
+        get {
+            guard let data = timedReminderConfigData else { return TimedReminderConfig() }
+            return (try? JSONDecoder().decode(TimedReminderConfig.self, from: data)) ?? TimedReminderConfig()
+        }
+        set {
+            timedReminderConfigData = try? JSONEncoder().encode(newValue)
+        }
     }
 
     /// True when the habit still has unconfigured fields.

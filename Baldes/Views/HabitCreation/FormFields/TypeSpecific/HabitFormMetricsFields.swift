@@ -4,7 +4,7 @@ import SwiftUI
 
 /// A grouped iOS-style card that combines direction selection and
 /// target value into a single unified card, matching the style
-/// of ScheduleGroupedCard and TimerGroupedCard.
+/// of ScheduleGroupedCard.
 struct MetricsGroupedCard: View {
     let label: String
     let accentColor: Color

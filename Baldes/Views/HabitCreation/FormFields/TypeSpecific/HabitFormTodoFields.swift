@@ -4,7 +4,7 @@ import SwiftUI
 
 /// A grouped iOS-style card that displays checklist items in a unified
 /// card with inline editing, matching the style of MetricsGroupedCard,
-/// TimerGroupedCard, and ScheduleGroupedCard.
+/// and ScheduleGroupedCard.
 struct ChecklistGroupedCard: View {
     let label: String
     let accentColor: Color

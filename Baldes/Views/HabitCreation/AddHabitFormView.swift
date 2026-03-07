@@ -125,45 +125,51 @@ struct AddHabitFormView: View {
         switch vm.habitType {
         case .timed:
             VStack(spacing: 16) {
-                TimerGroupedCard(
-                    label: "Timer",
+                TimedFrequencyCard(
                     accentColor: vm.habitType.color,
-                    timerType: $vm.timerType,
-                    hours: $vm.durationHours,
-                    minutes: $vm.durationMinutes,
-                    seconds: $vm.durationSeconds
+                    mode: $vm.timedFrequencyMode,
+                    fixedCount: $vm.timedFixedCount,
                 )
 
-                ScheduleGroupedCard(
-                    label: "Track for",
+                TimedExecutionModeCard(
                     accentColor: vm.habitType.color,
-                    startDate: $vm.trackStartDate,
-                    frequency: $vm.frequency,
-                    hasTime: $vm.hasTime,
-                    scheduleTime: $vm.timedScheduleTime,
+                    mode: $vm.timedExecutionMode,
+                    countdownHours: $vm.countdownHours,
+                    countdownMinutes: $vm.countdownMinutes,
+                    countdownSeconds: $vm.countdownSeconds,
+                    workMinutes: $vm.workMinutes,
+                    workSeconds: $vm.workSeconds,
+                    restMinutes: $vm.restMinutes,
+                    restSeconds: $vm.restSeconds,
+                    rounds: $vm.intervalRounds,
+                    blockStartTime: $vm.blockStartTime,
+                    blockEndTime: $vm.blockEndTime
+                )
+
+                TimedWhenCard(
+                    accentColor: vm.habitType.color,
+                    recurrenceType: $vm.timedRecurrenceType,
                     selectedDays: $vm.selectedDays,
+                    recurrenceUnit: $vm.timedRecurrenceUnit,
+                    recurrenceInterval: $vm.timedRecurrenceInterval,
+                    startDate: $vm.trackStartDate,
                     endDateEnabled: $vm.timedEndDateEnabled,
-                    endDate: $vm.timedEndDate
+                    endDate: $vm.timedEndDate,
+                    triggerType: $vm.timedTriggerType,
+                    linkedHabitID: $vm.timedLinkedHabitID,
+                    availableHabits: allHabits.filter { $0.habitType == .timed && $0.id != vm.existingHabit?.id },
+                    geofence: $vm.timedGeofence,
+                    timeWindow: $vm.timedTimeWindow,
+                    windowStartTime: $vm.timedWindowStartTime,
+                    windowEndTime: $vm.timedWindowEndTime,
+                    exactTime: $vm.timedExactTime
                 )
 
-                HabitFormReminderToggle(
+                TimedRemindersCard(
                     accentColor: vm.habitType.color,
-                    isOn: $vm.reminderEnabled,
-                    reminderTime: $vm.timedReminderTime,
-                    additionalReminderTimes: $vm.timedAdditionalReminderTimes,
-                    recurrenceInterval: $vm.reminderRecurrenceInterval,
-                    stopRemindersOnCompletion: $vm.stopRemindersOnCompletion
-                )
-
-                HabitFormMultipleCompletionsToggle(
-                    accentColor: vm.habitType.color,
-                    isOn: $vm.allowMultipleCompletions
+                    config: $vm.timedReminderConfig
                 )
             }
-            .onChange(of: vm.timedScheduleTime) { _, newValue in
-                vm.timedReminderTime = newValue
-            }
-            .animation(.spring(duration: 0.3), value: vm.timerType)
 
         case .dailyGoals:
             VStack(spacing: 16) {

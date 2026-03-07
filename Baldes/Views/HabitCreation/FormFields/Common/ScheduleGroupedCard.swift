@@ -59,13 +59,13 @@ struct ScheduleGroupedCard: View {
                     }
                 }
             }
-            .background(Color(hex: "F5F5F5"))
-            .cornerRadius(16)
+            .background(Color(UIColor.secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
         }
         .environment(\.locale, Locale(identifier: "en_GB"))
-        .animation(.spring(duration: 0.3), value: frequency)
-        .animation(.spring(duration: 0.3), value: hasTime)
-        .animation(.spring(duration: 0.3), value: endDateEnabled)
+        .animation(.default, value: frequency)
+        .animation(.default, value: hasTime)
+        .animation(.default, value: endDateEnabled)
     }
 
     // MARK: - Frequency Segmented Control
@@ -90,8 +90,8 @@ struct ScheduleGroupedCard: View {
             displayedComponents: .date
         ) {
             Text(frequency == 0 ? "Date" : "Start Date")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Color.textSecondary)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
         .datePickerStyle(.compact)
         .tint(accentColor)
@@ -104,8 +104,8 @@ struct ScheduleGroupedCard: View {
     private var setTimeToggleRow: some View {
         HStack {
             Text("Set Time")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Color.textSecondary)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
 
             Spacer()
 
@@ -125,8 +125,8 @@ struct ScheduleGroupedCard: View {
             displayedComponents: .hourAndMinute
         ) {
             Text("Time")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Color.textSecondary)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
         .datePickerStyle(.compact)
         .tint(accentColor)
@@ -138,31 +138,29 @@ struct ScheduleGroupedCard: View {
     // MARK: - Active Days
 
     private var activeDaysRow: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                ForEach(0..<7, id: \.self) { index in
-                    let isSelected = selectedDays.contains(index)
+        HStack(spacing: 8) {
+            ForEach(0..<7, id: \.self) { index in
+                let isSelected = selectedDays.contains(index)
 
-                    Button {
-                        if isSelected {
-                            selectedDays.remove(index)
-                        } else {
-                            selectedDays.insert(index)
-                        }
-                    } label: {
-                        ZStack {
-                            Circle()
-                                .fill(isSelected ? accentColor : .white)
-                                .frame(width: 38, height: 38)
-
-                            Text(dayLabels[index])
-                                .font(.system(size: 13, weight: isSelected ? .bold : .semibold))
-                                .foregroundStyle(isSelected ? .white : Color.textTertiary)
-                        }
+                Button {
+                    if isSelected {
+                        selectedDays.remove(index)
+                    } else {
+                        selectedDays.insert(index)
                     }
-                    .buttonStyle(.plain)
-                    .frame(maxWidth: .infinity)
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(isSelected ? accentColor : Color(UIColor.tertiarySystemGroupedBackground))
+                            .frame(width: 38, height: 38)
+
+                        Text(dayLabels[index])
+                            .font(.subheadline.weight(isSelected ? .bold : .medium))
+                            .foregroundStyle(isSelected ? Color.white : Color(UIColor.tertiaryLabel))
+                    }
                 }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
             }
         }
         .padding(.horizontal, 16)
@@ -174,8 +172,8 @@ struct ScheduleGroupedCard: View {
     private var endDateToggleRow: some View {
         HStack {
             Text("End Date")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Color.textSecondary)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
 
             Spacer()
 
@@ -196,8 +194,8 @@ struct ScheduleGroupedCard: View {
             displayedComponents: .date
         ) {
             Text("Until")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Color.textSecondary)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
         .datePickerStyle(.compact)
         .tint(accentColor)
@@ -249,7 +247,7 @@ struct ScheduleGroupedCard: View {
                     .padding(.horizontal, 24)
                 }
             }
-            .background(Color(hex: "F8F8F8"))
+            .background(Color(UIColor.systemGroupedBackground))
         }
     }
 
@@ -276,7 +274,7 @@ struct ScheduleGroupedCard: View {
             ScrollView {
                 VStack(spacing: 20) {
                     ScheduleGroupedCard(
-                        label: "Track for",
+                        label: "Schedule",
                         accentColor: .orange,
                         startDate: $startDate,
                         frequency: $frequency,
@@ -289,7 +287,7 @@ struct ScheduleGroupedCard: View {
                     .padding(.horizontal, 24)
                 }
             }
-            .background(Color(hex: "F8F8F8"))
+            .background(Color(UIColor.systemGroupedBackground))
         }
     }
 
@@ -329,7 +327,7 @@ struct ScheduleGroupedCard: View {
                     .padding(.horizontal, 24)
                 }
             }
-            .background(Color(hex: "F8F8F8"))
+            .background(Color(UIColor.systemGroupedBackground))
         }
     }
 

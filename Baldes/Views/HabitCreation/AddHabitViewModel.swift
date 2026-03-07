@@ -43,14 +43,8 @@ final class AddHabitViewModel: Identifiable {
         return calendar.date(from: components) ?? Date()
     }()
 
-    // MARK: - Timed State
-    var timerType = 0  // 0 = Countdown, 1 = Stopwatch
-    var durationHours = 1
-    var durationMinutes = 30
-    var durationSeconds = 5
+    // MARK: - Timed Schedule State
     var trackStartDate = Date()
-    var trackDurationType = 1  // 0 = 7 days, 1 = 30 days, 2 = custom
-    var trackCustomEndDate = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
     var timedEndDateEnabled = true
     var timedEndDate = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
     var timedScheduleTime: Date = {
@@ -68,6 +62,72 @@ final class AddHabitViewModel: Identifiable {
         return calendar.date(from: components) ?? Date()
     }()
     var timedAdditionalReminderTimes: [Date] = []
+
+    // MARK: - Timed: Frequency (pillar 1)
+    var timedFrequencyMode: TimedFrequencyMode = .single
+    var timedFixedCount = 3
+
+    // MARK: - Timed: Execution Mode (pillar 3)
+    var timedExecutionMode: TimedExecutionMode = .stopwatch
+    var countdownHours = 1
+    var countdownMinutes = 30
+    var countdownSeconds = 0
+    var workMinutes = 25
+    var workSeconds = 0
+    var restMinutes = 5
+    var restSeconds = 0
+    var intervalRounds = 4
+    var blockStartTime: Date = {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: Date())
+        components.hour = 9
+        components.minute = 0
+        return calendar.date(from: components) ?? Date()
+    }()
+    var blockEndTime: Date = {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: Date())
+        components.hour = 10
+        components.minute = 0
+        return calendar.date(from: components) ?? Date()
+    }()
+
+    // MARK: - Timed: When — Recurrence
+    var timedRecurrenceType: TimedRecurrenceType = .daily
+    var timedRecurrenceUnit: TimedRecurrenceUnit = .days
+    var timedRecurrenceInterval = 2
+
+    // MARK: - Timed: When — Trigger
+    var timedTriggerType: TimedTriggerType = .manual
+    var timedLinkedHabitID: UUID? = nil
+    var timedGeofence: GeofenceTrigger? = nil
+
+    // MARK: - Timed: When — Time Window
+    var timedTimeWindow: TimedTimeWindow = .allDay
+    var timedWindowStartTime: Date = {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: Date())
+        components.hour = 9
+        components.minute = 0
+        return calendar.date(from: components) ?? Date()
+    }()
+    var timedWindowEndTime: Date = {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: Date())
+        components.hour = 12
+        components.minute = 0
+        return calendar.date(from: components) ?? Date()
+    }()
+    var timedExactTime: Date = {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: Date())
+        components.hour = 9
+        components.minute = 0
+        return calendar.date(from: components) ?? Date()
+    }()
+
+    // MARK: - Timed: Reminders (pillar 5)
+    var timedReminderConfig = TimedReminderConfig()
 
     // MARK: - Daily Goals State
     var dailyGoalFromDate = Date()
@@ -200,11 +260,52 @@ final class AddHabitViewModel: Identifiable {
             trackStartDate = habit.startDate
             timedEndDateEnabled = habit.endDateEnabled
             if let end = habit.endDate { timedEndDate = end }
-            timerType = habit.timerType
+            // Map legacy timerType to execution mode if new fields are default
+            if habit.timedExecutionModeRaw == 0 && habit.timerType == 1 {
+                timedExecutionMode = .stopwatch
+            }
             let total = habit.timerDurationSeconds
-            durationHours = total / 3600
-            durationMinutes = (total % 3600) / 60
-            durationSeconds = total % 60
+            if total > 0 && habit.timedCountdownSeconds == 0 {
+                countdownHours = total / 3600
+                countdownMinutes = (total % 3600) / 60
+                countdownSeconds = total % 60
+            }
+
+            // Frequency (pillar 1)
+            timedFrequencyMode = habit.timedFrequencyMode
+            timedFixedCount = habit.timedFixedCount
+
+            // Execution Mode (pillar 3)
+            timedExecutionMode = habit.timedExecutionMode
+            countdownHours = habit.timedCountdownSeconds / 3600
+            countdownMinutes = (habit.timedCountdownSeconds % 3600) / 60
+            countdownSeconds = habit.timedCountdownSeconds % 60
+            workMinutes = habit.timedWorkSeconds / 60
+            workSeconds = habit.timedWorkSeconds % 60
+            restMinutes = habit.timedRestSeconds / 60
+            restSeconds = habit.timedRestSeconds % 60
+            intervalRounds = habit.timedRounds
+            if let start = habit.timedBlockStartTime { blockStartTime = start }
+            if let end = habit.timedBlockEndTime { blockEndTime = end }
+
+            // Trigger (pillar 2)
+            timedTriggerType = habit.timedTriggerType
+            timedLinkedHabitID = habit.timedLinkedHabitID
+            timedGeofence = habit.timedGeofence
+
+            // Recurrence
+            timedRecurrenceType = habit.timedRecurrenceType
+            timedRecurrenceUnit = habit.timedRecurrenceUnit
+            timedRecurrenceInterval = habit.timedRecurrenceInterval
+
+            // Time Window (pillar 4)
+            timedTimeWindow = habit.timedTimeWindow
+            if let t = habit.timedExactTime { timedExactTime = t }
+            if let t = habit.timedWindowStartTime { timedWindowStartTime = t }
+            if let t = habit.timedWindowEndTime { timedWindowEndTime = t }
+
+            // Reminders (pillar 5)
+            timedReminderConfig = habit.timedReminderConfig
         case .budgets:
             budgetStartDate = habit.startDate
             budgetEndDateEnabled = habit.endDateEnabled
@@ -371,9 +472,38 @@ final class AddHabitViewModel: Identifiable {
             existing.reminderRecurrenceInterval = reminderRecurrenceInterval
             existing.stopRemindersOnCompletion = stopRemindersOnCompletion
             existing.todoItemsData = todoItems
-            existing.timerType = timerType
-            existing.timerDurationSeconds =
-                durationHours * 3600 + durationMinutes * 60 + durationSeconds
+            existing.timerType = timedExecutionMode == .stopwatch ? 1 : 0
+            existing.timerDurationSeconds = countdownHours * 3600 + countdownMinutes * 60 + countdownSeconds
+
+            // Timed pillars
+            existing.timedFrequencyModeRaw = timedFrequencyMode.rawValue
+            existing.timedFixedCount = timedFixedCount
+            existing.timedExecutionModeRaw = timedExecutionMode.rawValue
+            existing.timedCountdownSeconds = countdownHours * 3600 + countdownMinutes * 60 + countdownSeconds
+            existing.timedWorkSeconds = workMinutes * 60 + workSeconds
+            existing.timedRestSeconds = restMinutes * 60 + restSeconds
+            existing.timedRounds = intervalRounds
+            existing.timedBlockStartTime = timedExecutionMode == .fixedBlock ? blockStartTime : nil
+            existing.timedBlockEndTime = timedExecutionMode == .fixedBlock ? blockEndTime : nil
+
+            // Trigger (pillar 2)
+            existing.timedTriggerTypeRaw = timedTriggerType.rawValue
+            existing.timedLinkedHabitID = timedTriggerType == .afterHabit ? timedLinkedHabitID : nil
+            existing.timedGeofence = timedTriggerType == .location ? timedGeofence : nil
+
+            // Recurrence
+            existing.timedRecurrenceTypeRaw = timedRecurrenceType.rawValue
+            existing.timedRecurrenceUnitRaw = timedRecurrenceUnit.rawValue
+            existing.timedRecurrenceInterval = timedRecurrenceInterval
+
+            // Time Window (pillar 4)
+            existing.timedTimeWindowRaw = timedTimeWindow.rawValue
+            existing.timedExactTime = timedTimeWindow == .exactTime ? timedExactTime : nil
+            existing.timedWindowStartTime = timedTimeWindow == .between ? timedWindowStartTime : nil
+            existing.timedWindowEndTime = timedTimeWindow == .between ? timedWindowEndTime : nil
+
+            // Reminders (pillar 5)
+            existing.timedReminderConfig = timedReminderConfig
             existing.allowMultipleCompletions = allowMultipleCompletions
             existing.metricTargetValue = targetValue ?? 0
             existing.metricIsIncrease = isIncrease
@@ -422,9 +552,38 @@ final class AddHabitViewModel: Identifiable {
                 todoItems: todoItems,
                 sortOrder: allHabitsCount
             )
-            entry.timerType = timerType
-            entry.timerDurationSeconds =
-                durationHours * 3600 + durationMinutes * 60 + durationSeconds
+            entry.timerType = timedExecutionMode == .stopwatch ? 1 : 0
+            entry.timerDurationSeconds = countdownHours * 3600 + countdownMinutes * 60 + countdownSeconds
+
+            // Timed pillars
+            entry.timedFrequencyModeRaw = timedFrequencyMode.rawValue
+            entry.timedFixedCount = timedFixedCount
+            entry.timedExecutionModeRaw = timedExecutionMode.rawValue
+            entry.timedCountdownSeconds = countdownHours * 3600 + countdownMinutes * 60 + countdownSeconds
+            entry.timedWorkSeconds = workMinutes * 60 + workSeconds
+            entry.timedRestSeconds = restMinutes * 60 + restSeconds
+            entry.timedRounds = intervalRounds
+            entry.timedBlockStartTime = timedExecutionMode == .fixedBlock ? blockStartTime : nil
+            entry.timedBlockEndTime = timedExecutionMode == .fixedBlock ? blockEndTime : nil
+
+            // Trigger (pillar 2)
+            entry.timedTriggerTypeRaw = timedTriggerType.rawValue
+            entry.timedLinkedHabitID = timedTriggerType == .afterHabit ? timedLinkedHabitID : nil
+            entry.timedGeofence = timedTriggerType == .location ? timedGeofence : nil
+
+            // Recurrence
+            entry.timedRecurrenceTypeRaw = timedRecurrenceType.rawValue
+            entry.timedRecurrenceUnitRaw = timedRecurrenceUnit.rawValue
+            entry.timedRecurrenceInterval = timedRecurrenceInterval
+
+            // Time Window (pillar 4)
+            entry.timedTimeWindowRaw = timedTimeWindow.rawValue
+            entry.timedExactTime = timedTimeWindow == .exactTime ? timedExactTime : nil
+            entry.timedWindowStartTime = timedTimeWindow == .between ? timedWindowStartTime : nil
+            entry.timedWindowEndTime = timedTimeWindow == .between ? timedWindowEndTime : nil
+
+            // Reminders (pillar 5)
+            entry.timedReminderConfig = timedReminderConfig
             entry.allowMultipleCompletions = allowMultipleCompletions
             entry.metricTargetValue = targetValue ?? 0
             entry.metricIsIncrease = isIncrease

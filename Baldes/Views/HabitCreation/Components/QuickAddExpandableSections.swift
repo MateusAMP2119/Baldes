@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 // MARK: - Type Picker Section
@@ -134,13 +135,25 @@ struct QuickAddTypeFields: View {
     var body: some View {
         switch viewModel.habitType {
         case .timed:
-            TimerGroupedCard(
-                label: "Timer",
+            TimedFrequencyCard(
                 accentColor: viewModel.habitType.color,
-                timerType: $viewModel.timerType,
-                hours: $viewModel.durationHours,
-                minutes: $viewModel.durationMinutes,
-                seconds: $viewModel.durationSeconds
+                mode: $viewModel.timedFrequencyMode,
+                fixedCount: $viewModel.timedFixedCount,
+            )
+
+            TimedExecutionModeCard(
+                accentColor: viewModel.habitType.color,
+                mode: $viewModel.timedExecutionMode,
+                countdownHours: $viewModel.countdownHours,
+                countdownMinutes: $viewModel.countdownMinutes,
+                countdownSeconds: $viewModel.countdownSeconds,
+                workMinutes: $viewModel.workMinutes,
+                workSeconds: $viewModel.workSeconds,
+                restMinutes: $viewModel.restMinutes,
+                restSeconds: $viewModel.restSeconds,
+                rounds: $viewModel.intervalRounds,
+                blockStartTime: $viewModel.blockStartTime,
+                blockEndTime: $viewModel.blockEndTime
             )
 
         case .dailyGoals:
@@ -209,21 +222,34 @@ struct QuickAddTypeFields: View {
 
 struct QuickAddScheduleSection: View {
     @Bindable var viewModel: AddHabitViewModel
+    @Query private var allHabits: [HabitEntry]
 
     var body: some View {
         VStack(spacing: 16) {
             switch viewModel.habitType {
             case .timed:
-                ScheduleGroupedCard(
-                    label: "Track for",
+                TimedWhenCard(
                     accentColor: viewModel.habitType.color,
-                    startDate: $viewModel.trackStartDate,
-                    frequency: $viewModel.frequency,
-                    hasTime: $viewModel.hasTime,
-                    scheduleTime: $viewModel.timedScheduleTime,
+                    recurrenceType: $viewModel.timedRecurrenceType,
                     selectedDays: $viewModel.selectedDays,
+                    recurrenceUnit: $viewModel.timedRecurrenceUnit,
+                    recurrenceInterval: $viewModel.timedRecurrenceInterval,
+                    startDate: $viewModel.trackStartDate,
                     endDateEnabled: $viewModel.timedEndDateEnabled,
-                    endDate: $viewModel.timedEndDate
+                    endDate: $viewModel.timedEndDate,
+                    triggerType: $viewModel.timedTriggerType,
+                    linkedHabitID: $viewModel.timedLinkedHabitID,
+                    availableHabits: allHabits.filter { $0.habitType == .timed && $0.id != viewModel.existingHabit?.id },
+                    geofence: $viewModel.timedGeofence,
+                    timeWindow: $viewModel.timedTimeWindow,
+                    windowStartTime: $viewModel.timedWindowStartTime,
+                    windowEndTime: $viewModel.timedWindowEndTime,
+                    exactTime: $viewModel.timedExactTime
+                )
+
+                TimedRemindersCard(
+                    accentColor: viewModel.habitType.color,
+                    config: $viewModel.timedReminderConfig
                 )
 
             case .todo:
