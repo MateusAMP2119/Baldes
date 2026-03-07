@@ -3,7 +3,7 @@ import SwiftUI
 struct HabitAddNoteSheet: View {
     let habit: HabitEntry
     let selectedDate: Date
-    let selectedGroup: HabitDetailTypeContent.GroupedActivity?
+    let selectedGroup: GroupedActivity?
     var onDismiss: () -> Void
 
     @State private var noteText = ""

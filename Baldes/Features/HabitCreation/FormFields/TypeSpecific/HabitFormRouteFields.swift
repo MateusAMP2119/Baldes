@@ -1,140 +1,6 @@
 import MapKit
 import SwiftUI
 
-// MARK: - MKPolyline Coordinates Helper
-
-extension MKPolyline {
-    var coordinates: [CLLocationCoordinate2D] {
-        var coords = [CLLocationCoordinate2D](repeating: CLLocationCoordinate2D(), count: pointCount)
-        getCoordinates(&coords, range: NSRange(location: 0, length: pointCount))
-        return coords
-    }
-}
-
-// MARK: - Route Search Service
-
-@Observable
-final class RouteSearchService: NSObject {
-    var searchText = ""
-    var suggestions: [MKLocalSearchCompletion] = []
-    var isSearching = false
-
-    private let completer = MKLocalSearchCompleter()
-    private var debounceTask: Task<Void, Never>?
-
-    override init() {
-        super.init()
-        completer.delegate = self
-        completer.resultTypes = [.address, .pointOfInterest]
-    }
-
-    func updateSearch() {
-        debounceTask?.cancel()
-        let query = searchText.trimmingCharacters(in: .whitespaces)
-        guard !query.isEmpty else {
-            suggestions = []
-            isSearching = false
-            return
-        }
-        isSearching = true
-        debounceTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(300))
-            guard !Task.isCancelled else { return }
-            completer.queryFragment = query
-        }
-    }
-
-    @MainActor
-    func resolveCompletion(_ completion: MKLocalSearchCompletion) async -> RouteStop? {
-        let request = MKLocalSearch.Request(completion: completion)
-        do {
-            let response = try await MKLocalSearch(request: request).start()
-            guard let item = response.mapItems.first else { return nil }
-            let coord = item.placemark.coordinate
-            let name = item.name ?? completion.title
-            return RouteStop(
-                name: name,
-                latitude: coord.latitude,
-                longitude: coord.longitude
-            )
-        } catch {
-            return nil
-        }
-    }
-
-    @MainActor
-    func reverseGeocode(_ coordinate: CLLocationCoordinate2D) async -> RouteStop? {
-        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        do {
-            let placemarks = try await CLGeocoder().reverseGeocodeLocation(location)
-            let name = placemarks.first?.name ?? String(
-                format: "%.4f, %.4f", coordinate.latitude, coordinate.longitude
-            )
-            return RouteStop(
-                name: name,
-                latitude: coordinate.latitude,
-                longitude: coordinate.longitude
-            )
-        } catch {
-            return RouteStop(
-                name: String(format: "%.4f, %.4f", coordinate.latitude, coordinate.longitude),
-                latitude: coordinate.latitude,
-                longitude: coordinate.longitude
-            )
-        }
-    }
-
-    func clear() {
-        searchText = ""
-        suggestions = []
-        isSearching = false
-        debounceTask?.cancel()
-    }
-
-    @MainActor
-    func calculateRoutes(
-        between stops: [RouteStop],
-        transportType: MKDirectionsTransportType
-    ) async -> [MKRoute] {
-        let coordinates = stops.compactMap(\.coordinate)
-        guard coordinates.count >= 2 else { return [] }
-
-        var routes: [MKRoute] = []
-        for i in 0..<(coordinates.count - 1) {
-            let request = MKDirections.Request()
-            request.source = MKMapItem(placemark: MKPlacemark(coordinate: coordinates[i]))
-            request.destination = MKMapItem(placemark: MKPlacemark(coordinate: coordinates[i + 1]))
-            request.transportType = transportType
-
-            do {
-                let response = try await MKDirections(request: request).calculate()
-                if let route = response.routes.first {
-                    routes.append(route)
-                }
-            } catch {
-                // Skip this segment if directions fail
-            }
-        }
-        return routes
-    }
-}
-
-extension RouteSearchService: MKLocalSearchCompleterDelegate {
-    func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
-        Task { @MainActor in
-            suggestions = Array(completer.results.prefix(5))
-            isSearching = false
-        }
-    }
-
-    func completer(_ completer: MKLocalSearchCompleter, didFailWithError error: Error) {
-        Task { @MainActor in
-            suggestions = []
-            isSearching = false
-        }
-    }
-}
-
 // MARK: - Route Grouped Card
 
 /// A grouped iOS-style card that combines transport mode selection,
@@ -363,13 +229,16 @@ struct RouteGroupedCard: View {
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(accentColor)
 
-            TextField("Search for a place...", text: Binding(
-                get: { searchService.searchText },
-                set: { newValue in
-                    searchService.searchText = newValue
-                    searchService.updateSearch()
-                }
-            ))
+            TextField(
+                "Search for a place...",
+                text: Binding(
+                    get: { searchService.searchText },
+                    set: { newValue in
+                        searchService.searchText = newValue
+                        searchService.updateSearch()
+                    }
+                )
+            )
             .font(.system(size: 15))
             .foregroundStyle(Color.textPrimary)
             .focused($isNewStopFocused)
@@ -496,49 +365,6 @@ struct RouteGroupedCard: View {
     private var divider: some View {
         Divider()
             .padding(.horizontal, 16)
-    }
-}
-
-// MARK: - Route Stop Model
-
-struct RouteStop: Equatable, Identifiable {
-    let id = UUID()
-    var name: String
-    var latitude: Double?
-    var longitude: Double?
-    var date: Date?
-
-    var coordinate: CLLocationCoordinate2D? {
-        guard let latitude, let longitude else { return nil }
-        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-    }
-}
-
-// MARK: - Transport Mode
-
-enum TransportMode: Int, CaseIterable {
-    case walking = 0
-    case driving = 1
-
-    var label: String {
-        switch self {
-        case .walking: "Walk"
-        case .driving: "Car"
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .walking: "figure.walk"
-        case .driving: "car"
-        }
-    }
-
-    var mkTransportType: MKDirectionsTransportType {
-        switch self {
-        case .walking: .walking
-        case .driving: .automobile
-        }
     }
 }
 
