@@ -42,6 +42,7 @@ struct TimedTriggerSection: View {
     @State private var searchText = ""
     @State private var completer = LocationCompleter()
     @State private var mapPosition: MapCameraPosition = .automatic
+    @State private var isSearchingLocation = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -113,61 +114,25 @@ struct TimedTriggerSection: View {
     }
 
     private var showLocationSearch: Bool {
-        geofence == nil
+        geofence == nil || isSearchingLocation
     }
 
-    private func updateMapPosition(for geo: GeofenceTrigger?) {
-        if let geo = geo {
-            let region = MKCoordinateRegion(
-                center: geo.coordinate,
-                latitudinalMeters: geo.radius * 3.5,
-                longitudinalMeters: geo.radius * 3.5
-            )
-            mapPosition = .region(region)
-        } else {
-            // Default: broader region
-            let region = MKCoordinateRegion(
-                center: CLLocationCoordinate2D(latitude: 40.0, longitude: -3.7),
-                latitudinalMeters: 5_000_000,
-                longitudinalMeters: 5_000_000
-            )
+    private func updateMapPosition(for geo: GeofenceTrigger) {
+        let span = geo.radius * 3.5
+        let region = MKCoordinateRegion(
+            center: geo.coordinate,
+            latitudinalMeters: span,
+            longitudinalMeters: span
+        )
+        withAnimation(.easeInOut(duration: 0.4)) {
             mapPosition = .region(region)
         }
     }
 
     private var locationRow: some View {
         VStack(spacing: 0) {
-            // Map — always visible
-            Map(position: $mapPosition) {
-                if let geo = geofence {
-                    MapCircle(center: geo.coordinate, radius: geo.radius)
-                        .foregroundStyle(accentColor.opacity(0.2))
-                        .stroke(accentColor, lineWidth: 2)
-                    Annotation("", coordinate: geo.coordinate) {
-                        Image(systemName: "mappin.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(accentColor)
-                            .background(Circle().fill(Color(UIColor.systemBackground)).padding(2))
-                    }
-                }
-            }
-            .frame(height: 160)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .allowsHitTesting(false)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .onAppear {
-                updateMapPosition(for: geofence)
-            }
-            .onChange(of: geofence) { _, newGeo in
-                withAnimation(.easeInOut(duration: 0.5)) {
-                    updateMapPosition(for: newGeo)
-                }
-            }
-
-            // Search bar (when no geofence or actively searching)
+            // Search bar (when no geofence or tapped "Change")
             if showLocationSearch {
-                rowDivider
                 HStack {
                     Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                     TextField("Search for a place", text: $searchText)
@@ -214,12 +179,12 @@ struct TimedTriggerSection: View {
                         .buttonStyle(.plain)
                     }
                 }
+
+                rowDivider
             }
 
             // Location config (when geofence is set)
             if let geo = geofence {
-                rowDivider
-
                 // Location name + change
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
@@ -231,18 +196,95 @@ struct TimedTriggerSection: View {
                     Spacer()
                     Button {
                         withAnimation {
-                            geofence = nil
-                            searchText = ""
-                            completer.results = []
+                            isSearchingLocation.toggle()
+                            if isSearchingLocation {
+                                searchText = ""
+                                completer.results = []
+                            }
                         }
                     } label: {
-                        Text("Change")
+                        Text(isSearchingLocation ? "Cancel" : "Change")
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(accentColor)
                     }
                     .buttonStyle(.plain)
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
+
+                rowDivider
+
+                // Trigger when — arriving / leaving
+                HStack {
+                    Text("Trigger when")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                    Spacer()
+                    Picker(
+                        "Trigger when",
+                        selection: Binding(
+                            get: { geo.onEntry },
+                            set: { geofence?.onEntry = $0 }
+                        )
+                    ) {
+                        Text("Arriving").tag(true)
+                        Text("Leaving").tag(false)
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 200)
+                }
+                .padding(.horizontal, 16).padding(.vertical, 10)
+
+                rowDivider
+            }
+
+            // Map — visible once a location is picked
+            if let geo = geofence {
+                MapReader { proxy in
+                    Map(position: $mapPosition) {
+                        MapCircle(center: geo.coordinate, radius: geo.radius)
+                            .foregroundStyle(accentColor.opacity(0.15))
+                            .stroke(accentColor, lineWidth: 2)
+
+                        Annotation("", coordinate: geo.coordinate) {
+                            VStack(spacing: 0) {
+                                Image(systemName: "mappin.circle.fill")
+                                    .symbolRenderingMode(.palette)
+                                    .foregroundStyle(.white, accentColor)
+                                    .font(.system(size: 36))
+
+                                Image(systemName: "arrowtriangle.down.fill")
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(accentColor)
+                                    .offset(y: -8)
+                            }
+                            .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+                            .offset(y: -19)  // offset so the tip is exactly at the coordinate
+                            .gesture(
+                                DragGesture(coordinateSpace: .global)
+                                    .onChanged { value in
+                                        if let newCoord = proxy.convert(
+                                            value.location, from: .global)
+                                        {
+                                            geofence?.latitude = newCoord.latitude
+                                            geofence?.longitude = newCoord.longitude
+                                        }
+                                    }
+                            )
+                        }
+                    }
+                    .onTapGesture { screenPoint in
+                        if let newCoord = proxy.convert(screenPoint, from: .local) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                geofence?.latitude = newCoord.latitude
+                                geofence?.longitude = newCoord.longitude
+                            }
+                        }
+                    }
+                    .frame(height: 180)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .onAppear { updateMapPosition(for: geo) }
+                }
 
                 rowDivider
 
@@ -258,32 +300,15 @@ struct TimedTriggerSection: View {
                     Slider(
                         value: Binding(
                             get: { geo.radius },
-                            set: { geofence?.radius = $0 }
+                            set: {
+                                geofence?.radius = $0
+                                if let g = geofence { updateMapPosition(for: g) }
+                            }
                         ),
-                        in: 50...1000,
-                        step: 25
+                        in: 10...1000,
+                        step: 10
                     )
                     .tint(accentColor)
-                }
-                .padding(.horizontal, 16).padding(.vertical, 10)
-
-                rowDivider
-
-                // Arriving / Leaving picker
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Trigger when")
-                        .font(.subheadline).foregroundStyle(.secondary)
-                    Picker(
-                        "Trigger when",
-                        selection: Binding(
-                            get: { geo.onEntry },
-                            set: { geofence?.onEntry = $0 }
-                        )
-                    ) {
-                        Label("Arriving", systemImage: "arrow.down.to.line").tag(true)
-                        Label("Leaving", systemImage: "arrow.up.to.line").tag(false)
-                    }
-                    .pickerStyle(.segmented)
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
             }
@@ -296,21 +321,7 @@ struct TimedTriggerSection: View {
         let request = MKLocalSearch.Request(completion: completion)
         MKLocalSearch(request: request).start { response, _ in
             guard let item = response?.mapItems.first else { return }
-
-            let coord: CLLocationCoordinate2D
-            #if swift(>=5.9)  // Xcode 15+ / macOS 14+ usually
-                if #available(macOS 14.0, iOS 17.0, *) {
-                    // If there's no way to avoid placemark without a specific API...
-                    // Actually `item.placemark.coordinate` warning is about `placemark` being deprecated in future.
-                    // Let's see if we can use it anyway. If we get a build error, we'll fix it.
-                    // Actually Swift allows us to suppress warnings via pragmas, but better to just use it.
-                    coord = item.placemark.coordinate
-                } else {
-                    coord = item.placemark.coordinate
-                }
-            #else
-                coord = item.placemark.coordinate
-            #endif
+            let coord = item.placemark.coordinate
 
             geofence = GeofenceTrigger(
                 latitude: coord.latitude, longitude: coord.longitude,
@@ -318,8 +329,10 @@ struct TimedTriggerSection: View {
                 name: completion.title,
                 onEntry: geofence?.onEntry ?? true
             )
+            isSearchingLocation = false
             searchText = ""
             completer.results = []
+            if let g = geofence { updateMapPosition(for: g) }
         }
     }
 

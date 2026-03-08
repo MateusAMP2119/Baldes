@@ -60,14 +60,12 @@ struct TimedRemindersCard: View {
 
                     Spacer()
 
-                    Picker("Minutes", selection: $config.preTriggerLeadMinutes) {
-                        Text("5 min").tag(5)
-                        Text("10 min").tag(10)
-                        Text("15 min").tag(15)
-                        Text("30 min").tag(30)
-                        Text("1 hour").tag(60)
+                    Stepper(value: $config.preTriggerLeadMinutes, in: 1...120) {
+                        Text("\(config.preTriggerLeadMinutes) min")
+                            .font(.subheadline)
+                            .monospacedDigit()
                     }
-                    .tint(accentColor)
+                    .fixedSize()
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
@@ -96,14 +94,12 @@ struct TimedRemindersCard: View {
 
                     Spacer()
 
-                    Picker("Interval", selection: $config.nagIntervalMinutes) {
-                        Text("3 min").tag(3)
-                        Text("5 min").tag(5)
-                        Text("10 min").tag(10)
-                        Text("15 min").tag(15)
-                        Text("30 min").tag(30)
+                    Stepper(value: $config.nagIntervalMinutes, in: 1...60) {
+                        Text("\(config.nagIntervalMinutes) min")
+                            .font(.subheadline)
+                            .monospacedDigit()
                     }
-                    .tint(accentColor)
+                    .fixedSize()
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
