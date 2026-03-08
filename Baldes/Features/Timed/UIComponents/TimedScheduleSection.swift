@@ -12,6 +12,10 @@ struct TimedScheduleSection: View {
     @Binding var endDateEnabled: Bool
     @Binding var endDate: Date
 
+    // MARK: - Linked Habit (for Specific Days)
+    @Binding var linkedScheduleHabitID: UUID?
+    let availableHabits: [HabitEntry]
+
     // MARK: - Time Window
     @Binding var timeWindow: TimedTimeWindow
     @Binding var windowStartTime: Date
@@ -43,6 +47,8 @@ struct TimedScheduleSection: View {
                         case .daily:
                             EmptyView()
                         case .specificDays:
+                            rowDivider
+                            linkedHabitPicker
                             rowDivider
                             dayCirclesRow
                         case .custom:
@@ -204,6 +210,54 @@ struct TimedScheduleSection: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private var linkedHabitPicker: some View {
+        let timedHabits = availableHabits.filter { $0.habitType == .timed }
+
+        return HStack {
+            Text("From habit")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Spacer()
+            if timedHabits.isEmpty {
+                Text("None available")
+                    .font(.subheadline)
+                    .foregroundStyle(.tertiary)
+            } else {
+                Menu {
+                    Button("Manual") {
+                        linkedScheduleHabitID = nil
+                    }
+                    Divider()
+                    ForEach(timedHabits, id: \.id) { habit in
+                        Button("\(habit.emoji) \(habit.name)") {
+                            linkedScheduleHabitID = habit.id
+                            // Import days from the linked habit
+                            selectedDays = Set(habit.selectedDays)
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        if let habitID = linkedScheduleHabitID,
+                           let habit = timedHabits.first(where: { $0.id == habitID })
+                        {
+                            Text("\(habit.emoji) \(habit.name)")
+                                .font(.subheadline)
+                        } else {
+                            Text("Manual")
+                                .font(.subheadline)
+                        }
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .foregroundStyle(accentColor)
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
     }
 
     private var dayCirclesRow: some View {

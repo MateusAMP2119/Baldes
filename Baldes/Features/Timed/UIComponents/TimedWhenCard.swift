@@ -47,6 +47,8 @@ struct TimedWhenCard: View {
                     startDate: $startDate,
                     endDateEnabled: $endDateEnabled,
                     endDate: $endDate,
+                    linkedScheduleHabitID: $linkedHabitID,
+                    availableHabits: availableHabits,
                     timeWindow: $timeWindow,
                     windowStartTime: $windowStartTime,
                     windowEndTime: $windowEndTime,
