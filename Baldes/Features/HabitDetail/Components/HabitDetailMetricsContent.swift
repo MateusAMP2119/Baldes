@@ -7,6 +7,7 @@ struct HabitDetailMetricsContent: View {
     let selectedDate: Date
 
     var onLogCompletion: () -> Void
+    var onLogMultiple: (Int) -> Void
     var onUndo: () -> Void
     var onAddNote: (GroupedActivity) -> Void
     var onDeleteMemory: ([ActivityLogEntry]) -> Void
@@ -17,72 +18,98 @@ struct HabitDetailMetricsContent: View {
 
     private let calendar = Calendar.current
 
+    @State private var isAddPressed = false
+    @State private var addTimer: Timer?
+
     var body: some View {
         let todayCount = habit.completionCount(on: selectedDate)
         let target = habit.metricTargetValue > 0 ? habit.metricTargetValue : 1
         let unit = habit.metricUnit.lowercased()
+        let progress = target > 0 ? min(Double(todayCount) / Double(target), 1.0) : 0
+        let goalReached = todayCount >= target
 
         return VStack(spacing: 16) {
 
-            HStack(spacing: 16) {
-                HabitCompletionRing(
-                    completionCount: todayCount,
-                    target: Double(target),
-                    accentColor: habit.habitType.color,
-                    allowMultipleCompletions: habit.allowMultipleCompletions,
-                    size: 64
-                )
-
-                VStack(alignment: .leading, spacing: 8) {
-                    let goalReached = todayCount >= target
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("\(todayCount) / \(target) \(unit)")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(Color.textPrimary)
-                            .contentTransition(.numericText())
-                            .offset(y: goalReached ? 0 : 10)
-                            .animation(.spring(duration: 0.4), value: goalReached)
-                        Text("Goal reached!")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(habit.habitType.color)
-                            .opacity(goalReached ? 1 : 0)
-                            .offset(y: goalReached ? 0 : 8)
-                            .animation(.spring(duration: 0.4), value: goalReached)
-                    }
-
-                    HStack(spacing: 8) {
-                        Button {
-                            onLogCompletion()
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.system(size: 13))
-                                Text("New Entry")
-                                    .font(.system(size: 13, weight: .semibold))
-                            }
+            // Metric control row
+            HStack(spacing: 12) {
+                // Count pill
+                HStack(spacing: 8) {
+                    // Plus button (tap = +1, long-press = repeat)
+                    Button {
+                        onLogCompletion()
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .background(Capsule().fill(habit.habitType.color))
-                        }
-
-                        Button {
-                            onUndo()
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "arrow.uturn.backward")
-                                    .font(.system(size: 13))
-                                Text("Undo")
-                                    .font(.system(size: 13, weight: .semibold))
-                            }
-                            .foregroundStyle(habit.habitType.color)
-                        }
-                        .disabled(todayCount == 0)
-                        .opacity(todayCount > 0 ? 1.0 : 0.4)
+                            .frame(width: 40, height: 40)
+                            .background(habit.habitType.color)
+                            .clipShape(Circle())
+                            .scaleEffect(isAddPressed ? 0.9 : 1.0)
+                            .animation(.spring(duration: 0.15), value: isAddPressed)
                     }
+                    .simultaneousGesture(
+                        LongPressGesture(minimumDuration: 0.35)
+                            .onEnded { _ in
+                                isAddPressed = true
+                                startAddRepeat()
+                            }
+                    )
+                    .onLongPressGesture(minimumDuration: .infinity, pressing: { pressing in
+                        if !pressing && isAddPressed {
+                            isAddPressed = false
+                            addTimer?.invalidate()
+                            addTimer = nil
+                        }
+                    }, perform: {})
+
+                    Text("\(todayCount)")
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.textPrimary)
+                        .contentTransition(.numericText())
+
+                    Text("/ \(target) \(unit)")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Color.textSecondary)
+                }
+                .padding(.trailing, 6)
+                .padding(4)
+                .background {
+                    Capsule()
+                        .fill(Color(UIColor.secondarySystemGroupedBackground))
+                }
+
+                Spacer()
+
+                // Minus button
+                if todayCount > 0 {
+                    Button {
+                        onUndo()
+                    } label: {
+                        Image(systemName: "minus")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(Color.textSecondary)
+                            .frame(width: 38, height: 38)
+                            .background(Color(UIColor.secondarySystemGroupedBackground))
+                            .clipShape(Circle())
+                    }
+                    .transition(.scale.combined(with: .opacity))
+                    .animation(.spring(duration: 0.3), value: todayCount)
                 }
             }
+
+            // Progress bar
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(habit.habitType.color.opacity(0.12))
+                    Capsule()
+                        .fill(habit.habitType.color)
+                        .frame(width: geo.size.width * progress)
+                        .animation(.spring(duration: 0.4), value: progress)
+                }
+            }
+            .frame(height: 6)
+            .clipShape(Capsule())
 
             MetricsTrendChart(
                 habit: habit,
@@ -94,6 +121,21 @@ struct HabitDetailMetricsContent: View {
         }
         .sensoryFeedback(.impact, trigger: todayCount)
     }
+
+    // MARK: - Long Press Repeat
+
+    private func startAddRepeat() {
+        addTimer?.invalidate()
+        var speed: TimeInterval = 0.25
+        addTimer = Timer.scheduledTimer(withTimeInterval: speed, repeats: false) { [self] _ in
+            guard isAddPressed else { return }
+            onLogCompletion()
+            if speed > 0.08 { speed *= 0.8 }
+            startAddRepeat()
+        }
+    }
+
+    // MARK: - Activity Log
 
     private func groupEntries(_ entries: [ActivityLogEntry]) -> [GroupedActivity] {
         guard !entries.isEmpty else { return [] }
@@ -168,7 +210,6 @@ struct HabitDetailMetricsContent: View {
                                         .filter { selectedLogIDs.contains($0.id) }
                                         .flatMap { $0.entryIDs }
 
-                                    // Stash before removing
                                     let deleted = habit.activityLog.filter {
                                         idsToRemove.contains($0.id)
                                     }
@@ -236,7 +277,6 @@ struct HabitDetailMetricsContent: View {
                 }
                 .foregroundStyle(Color.textTertiary)
             } else {
-                // Build the visible subset with global item cap
                 let visibleByDay: [(day: Date, groups: [GroupedActivity])] =
                     {
                         if !isCapped { return Array(allGroupedByDay) }
@@ -343,7 +383,6 @@ struct HabitDetailMetricsContent: View {
                 .frame(
                     minHeight: CGFloat(visibleEntryCount) * 60
                         + CGFloat(visibleByDay.count) * 40 + 20)
-
             }
         }
     }
@@ -366,7 +405,7 @@ struct HabitDetailMetricsContent: View {
                             .foregroundStyle(Color.textSecondary)
                     }
                 }
-                Text(activitySubtitle(entry, count: count))
+                Text(entry.subtitle(unit: habit.metricUnit, count: count))
                     .font(.system(size: 12))
                     .foregroundStyle(Color.textSecondary)
             }
@@ -390,10 +429,6 @@ struct HabitDetailMetricsContent: View {
         .padding(.vertical, 6)
     }
 
-    private func activitySubtitle(_ entry: ActivityLogEntry, count: Int) -> String {
-        return entry.subtitle(unit: habit.metricUnit, count: count)
-    }
-
     private func dayHeaderLabel(_ date: Date) -> String {
         if calendar.isDateInToday(date) {
             return "Today"
@@ -407,7 +442,6 @@ struct HabitDetailMetricsContent: View {
     }
 
     private func isManualLog(_ date: Date) -> Bool {
-        let calendar = Calendar.current
         if let noon = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date) {
             return date == noon
         }

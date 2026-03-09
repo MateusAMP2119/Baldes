@@ -436,3 +436,70 @@ import SwiftUI
 
     return PreviewWrapper()
 }
+
+#Preview("Daily Goals") {
+    struct PreviewWrapper: View {
+        @State private var habit: HabitEntry?
+        let container: ModelContainer
+
+        init() {
+            let config = ModelConfiguration(isStoredInMemoryOnly: true)
+            let c = try! ModelContainer(for: HabitEntry.self, configurations: config)
+            self.container = c
+        }
+
+        var body: some View {
+            NavigationStack {
+                if let habit {
+                    HabitDetailView(habit: habit, selectedDate: .now)
+                }
+            }
+            .modelContainer(container)
+            .onAppear { setupHabit() }
+        }
+
+        private func setupHabit() {
+            let cal = Calendar.current
+            let h = HabitEntry(
+                name: "Meditate",
+                emoji: "🧘",
+                habitTypeRaw: "dailyGoals",
+                motivationQuote: "Calm mind brings inner strength.",
+                hasTime: true,
+                scheduleTime: cal.date(
+                    bySettingHour: 8, minute: 0, second: 0, of: Date()),
+                frequency: 2,
+                selectedDays: [],
+                startDate: cal.date(byAdding: .month, value: -1, to: Date())!,
+                endDateEnabled: false,
+                endDate: nil,
+                reminderEnabled: false,
+                reminderTime: nil,
+                completionLogs: [
+                    Date(),
+                    cal.date(byAdding: .day, value: -1, to: Date())!,
+                    cal.date(byAdding: .day, value: -1, to: Date())!,
+                    cal.date(byAdding: .day, value: -2, to: Date())!,
+                ]
+            )
+            h.allowMultipleCompletions = true
+
+            h.activityLog = [
+                ActivityLogEntry(type: .created),
+                ActivityLogEntry(type: .completed, detail: "Morning session"),
+                ActivityLogEntry(type: .completed, detail: "Evening session"),
+            ]
+
+            let yesterday = cal.date(byAdding: .day, value: -1, to: Date())!
+            h.activityLog[1].date = cal.date(
+                byAdding: .hour, value: 8, to: cal.startOfDay(for: yesterday))!
+            h.activityLog[2].date = cal.date(
+                byAdding: .hour, value: 20, to: cal.startOfDay(for: yesterday))!
+
+            container.mainContext.insert(h)
+            habit = h
+        }
+    }
+
+    return PreviewWrapper()
+}

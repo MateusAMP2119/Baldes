@@ -147,6 +147,7 @@ struct HabitDetailView: View {
                         habit: habit,
                         selectedDate: selectedDate,
                         onLogCompletion: logCompletion,
+                        onLogMultiple: logMultipleCompletions,
                         onUndo: undoCompletion,
                         onLogPast: {
                             pastLogDate = selectedDate

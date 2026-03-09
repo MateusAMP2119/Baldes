@@ -16,6 +16,19 @@ extension HabitDetailView {
         impact.impactOccurred()
     }
 
+    func logMultipleCompletions(_ count: Int) {
+        withAnimation(.spring(duration: 0.3)) {
+            for _ in 0..<count {
+                habit.addCompletion(on: selectedDate)
+            }
+        }
+
+        NotificationManager.shared.scheduleNotifications(for: habit)
+
+        let impact = UIImpactFeedbackGenerator(style: .medium)
+        impact.impactOccurred()
+    }
+
     func undoCompletion() {
         withAnimation(.spring(duration: 0.3)) {
             habit.removeLastCompletion(on: selectedDate)

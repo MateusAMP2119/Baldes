@@ -9,78 +9,57 @@ struct HabitDetailDailyGoalsContent: View {
     private let calendar = Calendar.current
 
     var body: some View {
-        VStack(spacing: 12) {
-            let todayCount = habit.completionCount(on: selectedDate)
+        let todayCount = habit.completionCount(on: selectedDate)
+        let goalReached = todayCount > 0
 
-            HStack(spacing: 16) {
-                HabitCompletionRing(
-                    completionCount: todayCount,
-                    target: 1.0,
-                    accentColor: habit.habitType.color,
-                    allowMultipleCompletions: habit.allowMultipleCompletions,
-                    size: 64
-                )
+        VStack(spacing: 16) {
 
-                VStack(alignment: .leading, spacing: 8) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(todayCount > 0 ? dateLabel : "Not yet completed")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(Color.textPrimary)
-                        if todayCount > 0 {
-                            Text("\(todayCount)\u{00D7} completed")
-                                .font(.system(size: 12))
-                                .foregroundStyle(Color.textSecondary)
-                        }
-                    }
-
-                    HStack(spacing: 8) {
-                        Button {
-                            onLogCompletion()
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 13))
-                                Text(todayCount > 0 ? "Log Another" : "Complete")
-                                    .font(.system(size: 13, weight: .semibold))
-                            }
+            // Control row
+            HStack(spacing: 12) {
+                // Complete pill
+                HStack(spacing: 8) {
+                    Button {
+                        onLogCompletion()
+                    } label: {
+                        Image(systemName: goalReached ? "checkmark" : "plus")
+                            .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .background(Capsule().fill(habit.habitType.color))
-                        }
-
-                        undoButton(count: todayCount)
+                            .frame(width: 40, height: 40)
+                            .background(goalReached ? Color.green : habit.habitType.color)
+                            .clipShape(Circle())
                     }
+
+                    Text("\(todayCount)× done")
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.textPrimary)
+                        .contentTransition(.numericText())
+                }
+                .padding(.trailing, 6)
+                .padding(4)
+                .background {
+                    Capsule()
+                        .fill(Color(UIColor.secondarySystemGroupedBackground))
+                }
+
+                Spacer()
+
+                // Undo button
+                if todayCount > 0 {
+                    Button {
+                        onUndo()
+                    } label: {
+                        Image(systemName: "arrow.uturn.backward")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(Color.textSecondary)
+                            .frame(width: 38, height: 38)
+                            .background(Color(UIColor.secondarySystemGroupedBackground))
+                            .clipShape(Circle())
+                    }
+                    .transition(.scale.combined(with: .opacity))
+                    .animation(.spring(duration: 0.3), value: todayCount)
                 }
             }
         }
-    }
-
-    private func undoButton(count: Int) -> some View {
-        Button {
-            onUndo()
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "arrow.uturn.backward")
-                    .font(.system(size: 13))
-                Text("Undo")
-                    .font(.system(size: 13, weight: .semibold))
-            }
-            .foregroundStyle(habit.habitType.color)
-        }
-        .disabled(count == 0)
-        .opacity(count > 0 ? 1.0 : 0.4)
-    }
-
-    private var dateLabel: String {
-        if calendar.isDateInToday(selectedDate) {
-            return "Done Today"
-        } else if calendar.isDateInYesterday(selectedDate) {
-            return "Done Yesterday"
-        } else {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .medium
-            return "Done on \(formatter.string(from: selectedDate))"
-        }
+        .sensoryFeedback(.impact, trigger: todayCount)
     }
 }

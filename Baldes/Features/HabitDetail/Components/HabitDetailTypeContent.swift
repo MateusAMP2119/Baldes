@@ -6,6 +6,7 @@ struct HabitDetailTypeContent: View {
     let calendar = Calendar.current
 
     var onLogCompletion: () -> Void
+    var onLogMultiple: (Int) -> Void
     var onUndo: () -> Void
     var onLogPast: () -> Void
     var onStartCountdown: () -> Void
@@ -45,9 +46,12 @@ struct HabitDetailTypeContent: View {
         HabitDetailTimedContent(
             habit: habit,
             selectedDate: selectedDate,
-            onStartCountdown: onStartCountdown,
-            onStartStopwatch: onStartStopwatch,
-            onUndo: onUndo
+            onSaveSession: onLogCompletion,
+            onAddNote: onAddNote,
+            onDeleteMemory: onDeleteMemory,
+            isEditingLog: $isEditingLog,
+            selectedLogIDs: $selectedLogIDs,
+            showAllActivity: $showAllActivity
         )
     }
 
@@ -58,6 +62,7 @@ struct HabitDetailTypeContent: View {
             habit: habit,
             selectedDate: selectedDate,
             onLogCompletion: onLogCompletion,
+            onLogMultiple: onLogMultiple,
             onUndo: onUndo,
             onAddNote: onAddNote,
             onDeleteMemory: onDeleteMemory,
