@@ -14,28 +14,20 @@ struct TimedFrequencyCard: View {
                 .foregroundStyle(Color.textPrimary)
 
             VStack(spacing: 0) {
-                // MARK: - Mode Picker
                 modePicker
 
-                divider
+                ExpandableCardContent {
+                    if mode == .fixedMultiple {
+                        fixedCountRow
+                    }
 
-                // MARK: - Mode Description
-                modeDescription
-
-                // MARK: - Mode-Specific Fields
-                switch mode {
-                case .fixedMultiple:
-                    divider
-                    fixedCountRow
-
-                case .single, .unlimited:
-                    EmptyView()
+                    CardTipView(icon: "info.circle", message: mode.subtitle)
                 }
             }
             .background(Color(UIColor.secondarySystemGroupedBackground))
             .clipShape(RoundedRectangle(cornerRadius: 10))
         }
-        .animation(.default, value: mode)
+        .animation(.snappy(duration: 0.3), value: mode)
     }
 
     // MARK: - Mode Picker
@@ -49,23 +41,6 @@ struct TimedFrequencyCard: View {
         .pickerStyle(.segmented)
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
-    }
-
-    // MARK: - Mode Description
-
-    private var modeDescription: some View {
-        HStack(spacing: 10) {
-            Image(systemName: mode.iconName)
-                .font(.system(size: 15))
-                .foregroundStyle(accentColor)
-                .frame(width: 24)
-
-            Text(mode.subtitle)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
     }
 
     // MARK: - Fixed Count
@@ -87,13 +62,6 @@ struct TimedFrequencyCard: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-    }
-
-    // MARK: - Helpers
-
-    private var divider: some View {
-        Divider()
-            .padding(.horizontal, 16)
     }
 }
 

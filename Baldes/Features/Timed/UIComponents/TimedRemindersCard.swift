@@ -1,6 +1,33 @@
 import MapKit
 import SwiftUI
 
+// MARK: - Custom Input Target
+
+private enum CustomInputTarget: Identifiable {
+    case startReminderMinutes(UUID)
+    case nagInterval
+    case nagMax
+    case progressAlertValue(UUID)
+
+    var id: String {
+        switch self {
+        case .startReminderMinutes(let id): "start-\(id)"
+        case .nagInterval: "nag-interval"
+        case .nagMax: "nag-max"
+        case .progressAlertValue(let id): "progress-\(id)"
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .startReminderMinutes: "Minutes"
+        case .nagInterval: "Interval (minutes)"
+        case .nagMax: "Max Attempts"
+        case .progressAlertValue: "Value"
+        }
+    }
+}
+
 struct TimedRemindersCard: View {
     let accentColor: Color
     @Binding var config: TimedReminderConfig
@@ -10,6 +37,9 @@ struct TimedRemindersCard: View {
     private static let nagMaxPresets = [1, 2, 3, 5, 10]
     private static let percentPresets = [10, 25, 50, 75, 90]
 
+    @State private var customTarget: CustomInputTarget?
+    @State private var customText = ""
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Reminders")
@@ -18,23 +48,56 @@ struct TimedRemindersCard: View {
 
             VStack(spacing: 0) {
                 startRemindersSection
-                sectionDivider
                 locationReminderSection
-                sectionDivider
                 nagSection
-                sectionDivider
                 progressAlertsSection
-                sectionDivider
                 postCompletionSection
             }
             .background(Color(UIColor.secondarySystemGroupedBackground))
             .clipShape(RoundedRectangle(cornerRadius: 10))
         }
-        .animation(.default, value: config.startRemindersEnabled)
-        .animation(.default, value: config.locationReminderEnabled)
-        .animation(.default, value: config.nagEnabled)
-        .animation(.default, value: config.progressAlertsEnabled)
-        .animation(.default, value: config.postCompletionEnabled)
+        .animation(.snappy(duration: 0.3), value: config.startRemindersEnabled)
+        .animation(.snappy(duration: 0.3), value: config.locationReminderEnabled)
+        .animation(.snappy(duration: 0.3), value: config.nagEnabled)
+        .animation(.snappy(duration: 0.3), value: config.progressAlertsEnabled)
+        .animation(.snappy(duration: 0.3), value: config.postCompletionEnabled)
+        .alert(customTarget?.title ?? "Custom", isPresented: .init(
+            get: { customTarget != nil },
+            set: { if !$0 { customTarget = nil } }
+        )) {
+            TextField("Value", text: $customText)
+                .keyboardType(.numberPad)
+            Button("Cancel", role: .cancel) { customTarget = nil }
+            Button("Set", role: .none) { applyCustomValue() }
+                .keyboardShortcut(.defaultAction)
+        }
+    }
+
+    private func applyCustomValue() {
+        guard let value = Int(customText), value > 0, let target = customTarget else {
+            customTarget = nil
+            return
+        }
+        switch target {
+        case .startReminderMinutes(let id):
+            if let idx = config.startReminders.firstIndex(where: { $0.id == id }) {
+                config.startReminders[idx].minutes = value
+            }
+        case .nagInterval:
+            config.nagIntervalMinutes = value
+        case .nagMax:
+            config.nagMaxAttempts = max(1, value)
+        case .progressAlertValue(let id):
+            if let idx = config.progressAlerts.firstIndex(where: { $0.id == id }) {
+                config.progressAlerts[idx].value = value
+            }
+        }
+        customTarget = nil
+    }
+
+    private func showCustomInput(_ target: CustomInputTarget) {
+        customText = ""
+        customTarget = target
     }
 
     // MARK: - Start Reminders
@@ -49,15 +112,16 @@ struct TimedRemindersCard: View {
             )
 
             if config.startRemindersEnabled {
-                ForEach($config.startReminders) { $reminder in
-                    Divider().padding(.leading, 52)
-                    startReminderRow(reminder: $reminder)
-                }
+                ExpandableCardContent {
+                    ForEach($config.startReminders) { $reminder in
+                        startReminderRow(reminder: $reminder)
+                    }
 
-                Divider().padding(.leading, 52)
-                addButton("Add Reminder") {
-                    config.startReminders.append(StartReminder())
+                    addButton("Add Reminder") {
+                        config.startReminders.append(StartReminder())
+                    }
                 }
+                .transition(.opacity)
             }
         }
     }
@@ -70,9 +134,13 @@ struct TimedRemindersCard: View {
                         reminder.wrappedValue.minutes = preset
                     }
                 }
+                Button("Custom...") {
+                    showCustomInput(.startReminderMinutes(reminder.wrappedValue.id))
+                }
             } label: {
                 menuLabel(Self.formatMinutes(reminder.wrappedValue.minutes))
             }
+            .tint(.primary)
 
             Menu {
                 ForEach(ReminderTiming.allCases, id: \.rawValue) { timing in
@@ -83,6 +151,7 @@ struct TimedRemindersCard: View {
             } label: {
                 menuLabel(reminder.wrappedValue.timing.label)
             }
+            .tint(.primary)
 
             Spacer()
 
@@ -98,6 +167,7 @@ struct TimedRemindersCard: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+        .geometryGroup()
     }
 
     // MARK: - Location Reminder
@@ -112,11 +182,13 @@ struct TimedRemindersCard: View {
             )
 
             if config.locationReminderEnabled {
-                Divider().padding(.leading, 52)
-                LocationReminderPicker(
-                    accentColor: accentColor,
-                    reminder: $config.locationReminder
-                )
+                ExpandableCardContent {
+                    LocationReminderPicker(
+                        accentColor: accentColor,
+                        reminder: $config.locationReminder
+                    )
+                }
+                .transition(.opacity)
             }
         }
     }
@@ -133,43 +205,52 @@ struct TimedRemindersCard: View {
             )
 
             if config.nagEnabled {
-                Divider().padding(.leading, 52)
-
-                HStack {
-                    Text("Repeat every")
-                        .font(.subheadline).foregroundStyle(.secondary)
-                    Spacer()
-                    Menu {
-                        ForEach(Self.nagIntervalPresets, id: \.self) { preset in
-                            Button(Self.formatMinutes(preset)) {
-                                config.nagIntervalMinutes = preset
+                ExpandableCardContent {
+                    HStack {
+                        Text("Repeat every")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                        Spacer()
+                        Menu {
+                            ForEach(Self.nagIntervalPresets, id: \.self) { preset in
+                                Button(Self.formatMinutes(preset)) {
+                                    config.nagIntervalMinutes = preset
+                                }
                             }
-                        }
-                    } label: {
-                        menuLabel(Self.formatMinutes(config.nagIntervalMinutes))
-                    }
-                }
-                .padding(.horizontal, 16).padding(.vertical, 10)
-
-                Divider().padding(.leading, 52)
-
-                HStack {
-                    Text("Up to")
-                        .font(.subheadline).foregroundStyle(.secondary)
-                    Spacer()
-                    Menu {
-                        ForEach(Self.nagMaxPresets, id: \.self) { preset in
-                            Button("\(preset) \(preset == 1 ? "time" : "times")") {
-                                config.nagMaxAttempts = preset
+                            Button("Custom...") {
+                                showCustomInput(.nagInterval)
                             }
+                        } label: {
+                            menuLabel(Self.formatMinutes(config.nagIntervalMinutes))
                         }
-                    } label: {
-                        menuLabel(
-                            "\(config.nagMaxAttempts) \(config.nagMaxAttempts == 1 ? "time" : "times")"
-                        )
+                        .tint(.primary)
                     }
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                    .geometryGroup()
+
+                    HStack {
+                        Text("Up to")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                        Spacer()
+                        Menu {
+                            ForEach(Self.nagMaxPresets, id: \.self) { preset in
+                                Button("\(preset) \(preset == 1 ? "time" : "times")") {
+                                    config.nagMaxAttempts = preset
+                                }
+                            }
+                            Button("Custom...") {
+                                showCustomInput(.nagMax)
+                            }
+                        } label: {
+                            menuLabel(
+                                "\(config.nagMaxAttempts) \(config.nagMaxAttempts == 1 ? "time" : "times")"
+                            )
+                        }
+                        .tint(.primary)
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                    .geometryGroup()
                 }
-                .padding(.horizontal, 16).padding(.vertical, 10)
+                .transition(.opacity)
             }
         }
     }
@@ -186,15 +267,16 @@ struct TimedRemindersCard: View {
             )
 
             if config.progressAlertsEnabled {
-                ForEach($config.progressAlerts) { $alert in
-                    Divider().padding(.leading, 52)
-                    progressAlertRow(alert: $alert)
-                }
+                ExpandableCardContent {
+                    ForEach($config.progressAlerts) { $alert in
+                        progressAlertRow(alert: $alert)
+                    }
 
-                Divider().padding(.leading, 52)
-                addButton("Add Alert") {
-                    config.progressAlerts.append(ProgressAlert())
+                    addButton("Add Alert") {
+                        config.progressAlerts.append(ProgressAlert())
+                    }
                 }
+                .transition(.opacity)
             }
         }
     }
@@ -210,9 +292,13 @@ struct TimedRemindersCard: View {
                         alert.wrappedValue.value = preset
                     }
                 }
+                Button("Custom...") {
+                    showCustomInput(.progressAlertValue(alert.wrappedValue.id))
+                }
             } label: {
                 menuLabel(formatAlertValue(alert.wrappedValue.value, type: alert.wrappedValue.type))
             }
+            .tint(.primary)
 
             Menu {
                 ForEach(ProgressAlertType.allCases, id: \.rawValue) { type in
@@ -227,6 +313,7 @@ struct TimedRemindersCard: View {
             } label: {
                 menuLabel(alert.wrappedValue.type.label)
             }
+            .tint(.primary)
 
             Spacer()
 
@@ -241,6 +328,7 @@ struct TimedRemindersCard: View {
             }
         }
         .padding(.horizontal, 16).padding(.vertical, 10)
+        .geometryGroup()
     }
 
     private func valuePresets(for type: ProgressAlertType) -> [Int] {
@@ -309,31 +397,32 @@ struct TimedRemindersCard: View {
 
     private func menuLabel(_ text: String) -> some View {
         HStack(spacing: 4) {
-            Text(text).font(.subheadline)
+            Text(text)
+                .font(.subheadline)
+                .lineLimit(1)
             Image(systemName: "chevron.up.chevron.down")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }
-        .foregroundStyle(accentColor)
+        .foregroundStyle(.primary)
     }
 
     private func addButton(_ title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: "plus.circle.fill")
-                    .foregroundStyle(accentColor)
+                    .font(.system(size: 14))
+                    .foregroundStyle(.secondary)
                 Text(title)
                     .font(.subheadline)
-                    .foregroundStyle(accentColor)
+                    .foregroundStyle(.secondary)
+                Spacer()
             }
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-    }
-
-    private var sectionDivider: some View {
-        Divider().padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     static func formatMinutes(_ minutes: Int) -> String {
@@ -354,50 +443,12 @@ private struct LocationReminderPicker: View {
     @State private var searchText = ""
     @State private var completer = LocationCompleter()
     @State private var isSearching = false
+    @State private var mapPosition: MapCameraPosition = .automatic
 
     var body: some View {
         VStack(spacing: 0) {
-            if reminder.isSet && !isSearching {
-                // Selected location
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(reminder.name)
-                            .font(.subheadline.weight(.medium))
-                        Text("\(Int(reminder.radius))m radius")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button {
-                        isSearching = true
-                        searchText = ""
-                        completer.results = []
-                    } label: {
-                        Text("Change")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(accentColor)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, 16).padding(.vertical, 10)
-
-                Divider().padding(.leading, 52)
-
-                // Arriving / Leaving
-                HStack {
-                    Text("Trigger when")
-                        .font(.subheadline).foregroundStyle(.secondary)
-                    Spacer()
-                    Picker("Trigger when", selection: $reminder.onEntry) {
-                        Text("Arriving").tag(true)
-                        Text("Leaving").tag(false)
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(width: 200)
-                }
-                .padding(.horizontal, 16).padding(.vertical, 10)
-
-            } else {
-                // Search
+            if isSearching || !reminder.isSet {
+                // Search bar
                 HStack {
                     Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                     TextField("Search for a place", text: $searchText)
@@ -414,10 +465,15 @@ private struct LocationReminderPicker: View {
                     }
                     if reminder.isSet {
                         Button {
-                            isSearching = false
+                            withAnimation {
+                                isSearching = false
+                                searchText = ""
+                                completer.results = []
+                            }
                         } label: {
-                            Text("Cancel")
-                                .font(.subheadline).foregroundStyle(accentColor)
+                            Image(systemName: "xmark")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
                     }
@@ -429,13 +485,12 @@ private struct LocationReminderPicker: View {
 
                 if !completer.results.isEmpty {
                     ForEach(completer.results, id: \.self) { completion in
-                        Divider().padding(.leading, 52)
                         Button {
                             selectCompletion(completion)
                         } label: {
                             HStack(spacing: 12) {
                                 Image(systemName: "mappin.circle.fill")
-                                    .foregroundStyle(accentColor).frame(width: 24)
+                                    .foregroundStyle(.secondary).frame(width: 24)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(completion.title)
                                         .font(.subheadline).foregroundStyle(Color.primary)
@@ -452,7 +507,95 @@ private struct LocationReminderPicker: View {
                         .buttonStyle(.plain)
                     }
                 }
+            } else {
+                // Location set, not searching — show name + edit icon
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(reminder.name)
+                            .font(.subheadline.weight(.medium))
+                        Text("\(Int(reminder.radius))m radius")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button {
+                        withAnimation {
+                            isSearching = true
+                            searchText = ""
+                            completer.results = []
+                        }
+                    } label: {
+                        Image(systemName: "pencil")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 16).padding(.vertical, 10)
             }
+
+            // Arriving / Leaving + Map + Radius — always visible when location is set
+            if reminder.isSet {
+                HStack {
+                    Text("Trigger when")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                    Spacer()
+                    Picker("Trigger when", selection: $reminder.onEntry) {
+                        Text("Arriving").tag(true)
+                        Text("Leaving").tag(false)
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 200)
+                }
+                .padding(.horizontal, 16).padding(.vertical, 10)
+
+                Map(position: $mapPosition) {
+                    MapCircle(
+                        center: reminder.coordinate,
+                        radius: reminder.radius
+                    )
+                    .foregroundStyle(accentColor.opacity(0.15))
+                    .stroke(accentColor, lineWidth: 2)
+
+                    Annotation("", coordinate: reminder.coordinate) {
+                        Image(systemName: "mappin.circle.fill")
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(.white, accentColor)
+                            .font(.system(size: 30))
+                            .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+                    }
+                }
+                .frame(height: 140)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .onAppear { updateMapPosition() }
+
+                VStack(spacing: 6) {
+                    HStack {
+                        Text("Radius")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                        Spacer()
+                        Text("\(Int(reminder.radius)) m")
+                            .font(.subheadline).monospacedDigit()
+                    }
+                    Slider(value: $reminder.radius, in: 10...1000, step: 10)
+                        .tint(accentColor)
+                        .onChange(of: reminder.radius) { _, _ in updateMapPosition() }
+                }
+                .padding(.horizontal, 16).padding(.vertical, 10)
+            }
+        }
+    }
+
+    private func updateMapPosition() {
+        let span = reminder.radius * 3.5
+        let region = MKCoordinateRegion(
+            center: reminder.coordinate,
+            latitudinalMeters: span,
+            longitudinalMeters: span
+        )
+        withAnimation(.easeInOut(duration: 0.4)) {
+            mapPosition = .region(region)
         }
     }
 

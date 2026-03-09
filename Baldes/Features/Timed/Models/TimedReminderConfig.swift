@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 
 // MARK: - Start Reminders
@@ -30,6 +31,10 @@ struct LocationReminder: Codable, Equatable {
     var onEntry: Bool = true
 
     var isSet: Bool { !name.isEmpty }
+
+    var coordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
 }
 
 // MARK: - Progress Alerts

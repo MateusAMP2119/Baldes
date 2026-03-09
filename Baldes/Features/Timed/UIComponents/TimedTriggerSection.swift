@@ -46,32 +46,28 @@ struct TimedTriggerSection: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(TimedTriggerType.allCases) { type in
-                if type != TimedTriggerType.allCases.first {
-                    Divider().padding(.leading, 52)
+            // Trigger type picker
+            Picker("Trigger", selection: $triggerType) {
+                ForEach(TimedTriggerType.allCases) { type in
+                    Text(type.title).tag(type)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+
+            ExpandableCardContent {
+                // Type-specific config
+                switch triggerType {
+                case .manual:
+                    EmptyView()
+                case .afterHabit:
+                    afterHabitRow
+                case .location:
+                    locationRow
                 }
 
-                optionRow(
-                    icon: type.iconName,
-                    title: type.title,
-                    subtitle: type.subtitle,
-                    isSelected: triggerType == type
-                ) {
-                    triggerType = type
-                }
-
-                if triggerType == type {
-                    switch type {
-                    case .manual:
-                        EmptyView()
-                    case .afterHabit:
-                        rowDivider
-                        afterHabitRow
-                    case .location:
-                        rowDivider
-                        locationRow
-                    }
-                }
+                CardTipView(icon: triggerTipIcon, message: triggerTipMessage)
             }
         }
     }
@@ -88,9 +84,6 @@ struct TimedTriggerSection: View {
                 .padding(.horizontal, 16).padding(.vertical, 14)
             } else {
                 ForEach(timedHabits, id: \.id) { habit in
-                    if habit.id != timedHabits.first?.id {
-                        Divider().padding(.leading, 52)
-                    }
                     Button {
                         linkedHabitID = habit.id
                     } label: {
@@ -113,10 +106,6 @@ struct TimedTriggerSection: View {
         }
     }
 
-    private var showLocationSearch: Bool {
-        geofence == nil || isSearchingLocation
-    }
-
     private func updateMapPosition(for geo: GeofenceTrigger) {
         let span = geo.radius * 3.5
         let region = MKCoordinateRegion(
@@ -131,8 +120,8 @@ struct TimedTriggerSection: View {
 
     private var locationRow: some View {
         VStack(spacing: 0) {
-            // Search bar (when no geofence or tapped "Change")
-            if showLocationSearch {
+            if isSearchingLocation || geofence == nil {
+                // Search bar
                 HStack {
                     Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                     TextField("Search for a place", text: $searchText)
@@ -147,6 +136,20 @@ struct TimedTriggerSection: View {
                         }
                         .buttonStyle(.plain)
                     }
+                    if geofence != nil {
+                        Button {
+                            withAnimation {
+                                isSearchingLocation = false
+                                searchText = ""
+                                completer.results = []
+                            }
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
                 .padding(.horizontal, 16).padding(.vertical, 12)
                 .onChange(of: searchText) { _, newValue in
@@ -155,7 +158,6 @@ struct TimedTriggerSection: View {
 
                 // Live suggestions
                 if !completer.results.isEmpty {
-                    Divider().padding(.horizontal, 16)
                     ForEach(completer.results, id: \.self) { completion in
                         Button {
                             selectCompletion(completion)
@@ -179,13 +181,8 @@ struct TimedTriggerSection: View {
                         .buttonStyle(.plain)
                     }
                 }
-
-                rowDivider
-            }
-
-            // Location config (when geofence is set)
-            if let geo = geofence {
-                // Location name + change
+            } else if let geo = geofence {
+                // Location set, not searching — show name + edit icon
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(geo.name)
@@ -196,24 +193,22 @@ struct TimedTriggerSection: View {
                     Spacer()
                     Button {
                         withAnimation {
-                            isSearchingLocation.toggle()
-                            if isSearchingLocation {
-                                searchText = ""
-                                completer.results = []
-                            }
+                            isSearchingLocation = true
+                            searchText = ""
+                            completer.results = []
                         }
                     } label: {
-                        Text(isSearchingLocation ? "Cancel" : "Change")
+                        Image(systemName: "pencil")
                             .font(.subheadline.weight(.medium))
-                            .foregroundStyle(accentColor)
+                            .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
+            }
 
-                rowDivider
-
-                // Trigger when — arriving / leaving
+            // Trigger when + map + radius — always visible when geofence exists
+            if let geo = geofence {
                 HStack {
                     Text("Trigger when")
                         .font(.subheadline).foregroundStyle(.secondary)
@@ -232,11 +227,8 @@ struct TimedTriggerSection: View {
                     .frame(width: 200)
                 }
                 .padding(.horizontal, 16).padding(.vertical, 10)
-
-                rowDivider
             }
 
-            // Map — visible once a location is picked
             if let geo = geofence {
                 MapReader { proxy in
                     Map(position: $mapPosition) {
@@ -257,7 +249,7 @@ struct TimedTriggerSection: View {
                                     .offset(y: -8)
                             }
                             .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
-                            .offset(y: -19)  // offset so the tip is exactly at the coordinate
+                            .offset(y: -19)
                             .gesture(
                                 DragGesture(coordinateSpace: .global)
                                     .onChanged { value in
@@ -286,8 +278,6 @@ struct TimedTriggerSection: View {
                     .onAppear { updateMapPosition(for: geo) }
                 }
 
-                rowDivider
-
                 // Radius slider
                 VStack(spacing: 6) {
                     HStack {
@@ -315,6 +305,22 @@ struct TimedTriggerSection: View {
         }
     }
 
+    private var triggerTipIcon: String {
+        switch triggerType {
+        case .manual: "hand.tap"
+        case .afterHabit: "link"
+        case .location: "location.circle"
+        }
+    }
+
+    private var triggerTipMessage: String {
+        switch triggerType {
+        case .manual: "Start this session whenever you're ready from the library or a widget."
+        case .afterHabit: "Automatically starts when the linked habit's session finishes."
+        case .location: "Triggers when you arrive at or leave the configured place."
+        }
+    }
+
     // MARK: - Helpers
 
     private func selectCompletion(_ completion: MKLocalSearchCompletion) {
@@ -334,46 +340,5 @@ struct TimedTriggerSection: View {
             completer.results = []
             if let g = geofence { updateMapPosition(for: g) }
         }
-    }
-
-    private func optionRow(
-        icon: String, title: String, subtitle: String? = nil,
-        isSelected: Bool, action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.system(size: 16))
-                    .foregroundStyle(isSelected ? accentColor : .secondary)
-                    .frame(width: 24)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Color.primary)
-                    if let subtitle {
-                        Text(subtitle)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                Spacer()
-
-                if isSelected {
-                    Image(systemName: "checkmark")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(accentColor)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, subtitle != nil ? 10 : 12)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var rowDivider: some View {
-        Divider().padding(.horizontal, 16)
     }
 }

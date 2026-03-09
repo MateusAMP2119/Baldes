@@ -26,45 +26,33 @@ struct TimedScheduleSection: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(TimedRecurrenceType.allCases) { type in
-                if type != TimedRecurrenceType.allCases.first {
-                    Divider().padding(.leading, 52)
+            // Recurrence type picker
+            Picker("Schedule", selection: $recurrenceType) {
+                ForEach(TimedRecurrenceType.allCases) { type in
+                    Text(type.title).tag(type)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+
+            ExpandableCardContent {
+                // Type-specific config
+                switch recurrenceType {
+                case .daily:
+                    EmptyView()
+                case .specificDays:
+                    linkedHabitPicker
+                    dayCirclesRow
+                case .custom:
+                    customRecurrenceConfig
                 }
 
-                optionRow(
-                    icon: type.iconName,
-                    title: type.title,
-                    isSelected: recurrenceType == type
-                ) {
-                    recurrenceType = type
-                }
+                timeWindowInline
 
-                // Inline config below selected type
-                if recurrenceType == type {
-                    VStack(spacing: 0) {
-                        // Type-specific fields
-                        switch type {
-                        case .daily:
-                            EmptyView()
-                        case .specificDays:
-                            rowDivider
-                            linkedHabitPicker
-                            rowDivider
-                            dayCirclesRow
-                        case .custom:
-                            rowDivider
-                            customRecurrenceConfig
-                        }
+                datesRow
 
-                        // Time window (shared across all types)
-                        rowDivider
-                        timeWindowInline
-
-                        // Date range (shared across all types)
-                        rowDivider
-                        datesRow
-                    }
-                }
+                CardTipView(icon: scheduleTipIcon, message: scheduleTipMessage)
             }
         }
     }
@@ -80,8 +68,6 @@ struct TimedScheduleSection: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
 
-            rowDivider
-
             stepperRow(
                 label: "Every",
                 value: $recurrenceInterval,
@@ -90,7 +76,6 @@ struct TimedScheduleSection: View {
             )
 
             if recurrenceUnit == .weeks {
-                rowDivider
                 dayCirclesRow
             }
         }
@@ -112,12 +97,9 @@ struct TimedScheduleSection: View {
             case .allDay:
                 EmptyView()
             case .between:
-                rowDivider
                 timePickerRow(label: "From", time: $windowStartTime)
-                rowDivider
                 timePickerRow(label: "Until", time: $windowEndTime)
             case .exactTime:
-                rowDivider
                 timePickerRow(label: "At", time: $exactTime)
             }
         }
@@ -139,8 +121,6 @@ struct TimedScheduleSection: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
 
-            rowDivider
-
             HStack {
                 Text("End Date")
                     .font(.subheadline)
@@ -154,8 +134,6 @@ struct TimedScheduleSection: View {
             .padding(.vertical, 10)
 
             if endDateEnabled {
-                rowDivider
-
                 DatePicker(
                     selection: $endDate,
                     in: startDate...,
@@ -173,44 +151,23 @@ struct TimedScheduleSection: View {
         }
     }
 
-    // MARK: - Shared Components
-
-    private func optionRow(
-        icon: String, title: String, subtitle: String? = nil,
-        isSelected: Bool, action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.system(size: 16))
-                    .foregroundStyle(isSelected ? accentColor : .secondary)
-                    .frame(width: 24)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Color.primary)
-                    if let subtitle {
-                        Text(subtitle)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                Spacer()
-
-                if isSelected {
-                    Image(systemName: "checkmark")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(accentColor)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, subtitle != nil ? 10 : 12)
-            .contentShape(Rectangle())
+    private var scheduleTipIcon: String {
+        switch recurrenceType {
+        case .daily: "info.circle"
+        case .specificDays: "calendar.badge.checkmark"
+        case .custom: "slider.horizontal.3"
         }
-        .buttonStyle(.plain)
     }
+
+    private var scheduleTipMessage: String {
+        switch recurrenceType {
+        case .daily: "Runs every single day. Choose Specific Days or Custom for a tailored schedule."
+        case .specificDays: "Pick exactly which days this habit is active. Link a habit to inherit its days."
+        case .custom: "Set any repeating interval — every N days, weeks, months, or years."
+        }
+    }
+
+    // MARK: - Shared Components
 
     private var linkedHabitPicker: some View {
         let timedHabits = availableHabits.filter { $0.habitType == .timed }
@@ -229,11 +186,9 @@ struct TimedScheduleSection: View {
                     Button("Manual") {
                         linkedScheduleHabitID = nil
                     }
-                    Divider()
                     ForEach(timedHabits, id: \.id) { habit in
                         Button("\(habit.emoji) \(habit.name)") {
                             linkedScheduleHabitID = habit.id
-                            // Import days from the linked habit
                             selectedDays = Set(habit.selectedDays)
                         }
                     }
@@ -271,7 +226,7 @@ struct TimedScheduleSection: View {
                         Circle()
                             .fill(
                                 isSelected
-                                    ? accentColor : Color(UIColor.tertiarySystemGroupedBackground)
+                                    ? accentColor : Color(UIColor.secondarySystemGroupedBackground)
                             )
                             .frame(width: 36, height: 36)
                         Text(dayLabels[index])
@@ -322,9 +277,5 @@ struct TimedScheduleSection: View {
         .tint(accentColor)
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-    }
-
-    private var rowDivider: some View {
-        Divider().padding(.horizontal, 16)
     }
 }

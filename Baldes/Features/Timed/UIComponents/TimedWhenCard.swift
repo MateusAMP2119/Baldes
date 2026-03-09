@@ -27,17 +27,14 @@ struct TimedWhenCard: View {
     @Binding var windowEndTime: Date
     @Binding var exactTime: Date
 
-    private let dayLabels = ["M", "T", "W", "T", "F", "S", "S"]
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("When")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Color.textPrimary)
+        VStack(alignment: .leading, spacing: 16) {
+            // Schedule
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Schedule")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color.textPrimary)
 
-            VStack(spacing: 0) {
-                // SECTION 1: Schedule
-                sectionHeader("Schedule", icon: "calendar")
                 TimedScheduleSection(
                     accentColor: accentColor,
                     recurrenceType: $recurrenceType,
@@ -54,11 +51,16 @@ struct TimedWhenCard: View {
                     windowEndTime: $windowEndTime,
                     exactTime: $exactTime
                 )
+                .background(Color(UIColor.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
 
-                sectionDivider
+            // Trigger
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Trigger")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color.textPrimary)
 
-                // SECTION 2: Trigger
-                sectionHeader("Trigger", icon: "bolt.fill")
                 TimedTriggerSection(
                     accentColor: accentColor,
                     triggerType: $triggerType,
@@ -66,37 +68,15 @@ struct TimedWhenCard: View {
                     availableHabits: availableHabits,
                     geofence: $geofence
                 )
+                .background(Color(UIColor.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
             }
-            .background(Color(UIColor.secondarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
         }
-        .animation(.default, value: recurrenceType)
-        .animation(.default, value: triggerType)
-        .animation(.default, value: timeWindow)
-        .animation(.default, value: endDateEnabled)
-    }
-
-    // MARK: - Section Header
-
-    private func sectionHeader(_ title: String, icon: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(accentColor)
-            Text(title.uppercased())
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 14)
-        .padding(.bottom, 6)
-    }
-
-    private var sectionDivider: some View {
-        Rectangle()
-            .fill(Color(UIColor.separator))
-            .frame(height: 0.5)
-            .padding(.top, 4)
+        .animation(.snappy(duration: 0.3), value: recurrenceType)
+        .animation(.snappy(duration: 0.3), value: triggerType)
+        .animation(.snappy(duration: 0.3), value: timeWindow)
+        .animation(.snappy(duration: 0.3), value: endDateEnabled)
+        .animation(.snappy(duration: 0.3), value: recurrenceUnit)
     }
 }
 

@@ -18,6 +18,15 @@ enum TimedExecutionMode: Int, CaseIterable, Identifiable, Codable {
         }
     }
 
+    var shortTitle: String {
+        switch self {
+        case .stopwatch: "Stop."
+        case .countdown: "Count."
+        case .interval: "Interval"
+        case .fixedBlock: "Block"
+        }
+    }
+
     var subtitle: String {
         switch self {
         case .stopwatch: "Count up from zero"

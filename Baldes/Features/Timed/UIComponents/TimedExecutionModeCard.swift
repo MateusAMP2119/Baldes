@@ -29,74 +29,34 @@ struct TimedExecutionModeCard: View {
                 .foregroundStyle(Color.textPrimary)
 
             VStack(spacing: 0) {
-                ForEach(TimedExecutionMode.allCases) { executionMode in
-                    if executionMode != TimedExecutionMode.allCases.first {
-                        Divider().padding(.leading, 52)
+                Picker("Mode", selection: $mode) {
+                    ForEach(TimedExecutionMode.allCases) { m in
+                        Text(m.shortTitle).tag(m)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+
+                ExpandableCardContent {
+                    switch mode {
+                    case .stopwatch:
+                        EmptyView()
+                    case .countdown:
+                        countdownDurationRow
+                    case .interval:
+                        intervalConfigRows
+                    case .fixedBlock:
+                        fixedBlockRows
                     }
 
-                    modeRow(executionMode)
-
-                    // Inline config directly below the selected row
-                    if mode == executionMode {
-                        switch executionMode {
-                        case .countdown:
-                            divider
-                            countdownDurationRow
-
-                        case .interval:
-                            divider
-                            intervalConfigRows
-
-                        case .fixedBlock:
-                            divider
-                            fixedBlockRows
-
-                        case .stopwatch:
-                            EmptyView()
-                        }
-                    }
+                    CardTipView(icon: executionTipIcon, message: executionTipMessage)
                 }
             }
             .background(Color(UIColor.secondarySystemGroupedBackground))
             .clipShape(RoundedRectangle(cornerRadius: 10))
         }
-        .animation(.default, value: mode)
-    }
-
-    // MARK: - Mode Row
-
-    private func modeRow(_ executionMode: TimedExecutionMode) -> some View {
-        Button {
-            mode = executionMode
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: executionMode.iconName)
-                    .font(.system(size: 16))
-                    .foregroundStyle(mode == executionMode ? accentColor : .secondary)
-                    .frame(width: 24)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(executionMode.title)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Color.primary)
-                    Text(executionMode.subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                if mode == executionMode {
-                    Image(systemName: "checkmark")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(accentColor)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
+        .animation(.snappy(duration: 0.3), value: mode)
     }
 
     // MARK: - Countdown Duration
@@ -141,8 +101,6 @@ struct TimedExecutionModeCard: View {
                 .frame(height: 120)
             }
 
-            divider
-
             VStack(alignment: .leading, spacing: 8) {
                 Text("Rest")
                     .font(.subheadline)
@@ -158,8 +116,6 @@ struct TimedExecutionModeCard: View {
                 }
                 .frame(height: 120)
             }
-
-            divider
 
             HStack {
                 Text("Rounds")
@@ -196,8 +152,6 @@ struct TimedExecutionModeCard: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
 
-            divider
-
             DatePicker(
                 selection: $blockEndTime,
                 displayedComponents: .hourAndMinute
@@ -231,9 +185,22 @@ struct TimedExecutionModeCard: View {
         }
     }
 
-    private var divider: some View {
-        Divider()
-            .padding(.horizontal, 16)
+    private var executionTipIcon: String {
+        switch mode {
+        case .stopwatch: "info.circle"
+        case .countdown: "info.circle"
+        case .interval: "bolt.heart"
+        case .fixedBlock: "calendar.badge.clock"
+        }
+    }
+
+    private var executionTipMessage: String {
+        switch mode {
+        case .stopwatch: "Counts up from zero — stop whenever you're done. Great for open-ended sessions."
+        case .countdown: "Set a target duration. You'll get notified when time runs out."
+        case .interval: "Alternates work and rest periods. Perfect for Pomodoro or HIIT."
+        case .fixedBlock: "Runs between two fixed times. Ideal for scheduled deep work blocks."
+        }
     }
 }
 

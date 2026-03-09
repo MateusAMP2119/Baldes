@@ -69,14 +69,6 @@ struct AddHabitFormView: View {
                 }
                 .animation(.easeInOut(duration: 0.3), value: vm.habitType)
             }
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Done") {
-                    UIApplication.shared.sendAction(
-                        #selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                }
-                .fontWeight(.medium)
-            }
         }
         .alert("Notifications Disabled", isPresented: $vm.showNotificationDeniedAlert) {
             Button("Open Settings") {
