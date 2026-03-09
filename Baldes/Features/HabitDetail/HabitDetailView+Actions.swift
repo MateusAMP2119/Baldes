@@ -16,6 +16,17 @@ extension HabitDetailView {
         impact.impactOccurred()
     }
 
+    func logTimedCompletion(seconds: Int) {
+        withAnimation(.spring(duration: 0.3)) {
+            habit.addTimedCompletion(on: selectedDate, seconds: seconds)
+        }
+
+        NotificationManager.shared.scheduleNotifications(for: habit)
+
+        let impact = UIImpactFeedbackGenerator(style: .medium)
+        impact.impactOccurred()
+    }
+
     func logMultipleCompletions(_ count: Int) {
         withAnimation(.spring(duration: 0.3)) {
             for _ in 0..<count {

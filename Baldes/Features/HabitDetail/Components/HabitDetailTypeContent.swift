@@ -6,6 +6,7 @@ struct HabitDetailTypeContent: View {
     let calendar = Calendar.current
 
     var onLogCompletion: () -> Void
+    var onLogTimedCompletion: (Int) -> Void
     var onLogMultiple: (Int) -> Void
     var onUndo: () -> Void
     var onLogPast: () -> Void
@@ -46,7 +47,7 @@ struct HabitDetailTypeContent: View {
         HabitDetailTimedContent(
             habit: habit,
             selectedDate: selectedDate,
-            onSaveSession: onLogCompletion,
+            onSaveSession: onLogTimedCompletion,
             onAddNote: onAddNote,
             onDeleteMemory: onDeleteMemory,
             isEditingLog: $isEditingLog,

@@ -133,6 +133,8 @@ struct MetricsTrendChart: View {
         }
     }
 
+    private var isTimed: Bool { habit.habitType == .timed }
+
     private var dataPoints: [(date: Date, count: Int)] {
         let startDay = calendar.startOfDay(for: habit.startDate)
         let useDayCount = effectiveDayCount
@@ -142,7 +144,7 @@ struct MetricsTrendChart: View {
             }
             let day = calendar.startOfDay(for: date)
             guard day >= startDay else { return nil }
-            let count = habit.completionCount(on: date)
+            let count = isTimed ? habit.timedSeconds(on: date) : habit.completionCount(on: date)
             return (date: day, count: count)
         }
     }
@@ -193,70 +195,30 @@ struct MetricsTrendChart: View {
             
             Chart {
                 ForEach(points, id: \.date) { point in
-                    AreaMark(
+                    BarMark(
                         x: .value("Date", point.date, unit: .day),
                         y: .value("Count", point.count)
                     )
                     .foregroundStyle(
-                        LinearGradient(
-                            colors: [
-                                habit.habitType.color.opacity(0.2),
-                                habit.habitType.color.opacity(0.05),
-                                .clear,
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
+                        selectedDataPoint?.date == point.date
+                            ? habit.habitType.color
+                            : habit.habitType.color.opacity(0.4)
                     )
-                    .interpolationMethod(.linear)
-
-                    LineMark(
-                        x: .value("Date", point.date, unit: .day),
-                        y: .value("Count", point.count)
-                    )
-                    .foregroundStyle(habit.habitType.color)
-                    .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
-                    .interpolationMethod(.linear)
+                    .clipShape(RoundedRectangle(cornerRadius: 3))
                 }
 
-                // Interactive scrubber
+                // Interactive scrubber annotation
                 if let selected = selectedDataPoint {
                     RuleMark(x: .value("Date", selected.date, unit: .day))
-                        .foregroundStyle(Color.secondary.opacity(0.3))
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 2]))
-                        .zIndex(-1)
-
-                    PointMark(
-                        x: .value("Date", selected.date, unit: .day),
-                        y: .value("Count", selected.count)
-                    )
-                    .foregroundStyle(.white)
-                    .symbolSize(60)
-                    
-                    PointMark(
-                        x: .value("Date", selected.date, unit: .day),
-                        y: .value("Count", selected.count)
-                    )
-                    .foregroundStyle(habit.habitType.color)
-                    .symbolSize(40)
-                } else if let today = points.last {
-                    // Dot for today
-                    PointMark(
-                        x: .value("Date", today.date, unit: .day),
-                        y: .value("Count", today.count)
-                    )
-                    .foregroundStyle(.white)
-                    .symbolSize(48)
-                    
-                    PointMark(
-                        x: .value("Date", today.date, unit: .day),
-                        y: .value("Count", today.count)
-                    )
-                    .foregroundStyle(habit.habitType.color)
-                    .symbolSize(32)
+                        .foregroundStyle(Color.clear)
+                        .annotation(position: .top, spacing: 4) {
+                            Text(isTimed ? formatDuration(selected.count) : "\(selected.count)")
+                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                .foregroundStyle(habit.habitType.color)
+                        }
                 }
 
-                // Target line (optional)
+                // Target line
                 if target > 0 {
                     RuleMark(y: .value("Target", target))
                         .foregroundStyle(habit.habitType.color.opacity(0.25))
@@ -274,16 +236,24 @@ struct MetricsTrendChart: View {
                 }
             }
             .chartYAxis {
-                AxisMarks(position: .trailing) { _ in
+                AxisMarks(position: .trailing) { value in
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
                         .foregroundStyle(Color.secondary.opacity(0.1))
-                    AxisValueLabel()
-                        .font(.system(size: 11, weight: .regular))
-                        .foregroundStyle(Color.secondary)
+                    if isTimed, let seconds = value.as(Int.self) {
+                        AxisValueLabel {
+                            Text(formatDuration(seconds))
+                                .font(.system(size: 11, weight: .regular))
+                                .foregroundStyle(Color.secondary)
+                        }
+                    } else {
+                        AxisValueLabel()
+                            .font(.system(size: 11, weight: .regular))
+                            .foregroundStyle(Color.secondary)
+                    }
                 }
             }
             .chartYScale(domain: 0...(max((points.map(\.count).max() ?? 0) + 2, target + 2)))
-            .frame(height: 220)
+            .frame(height: 140)
 
             let daysWithEntries = points.filter { $0.count > 0 }.count
             if daysWithEntries < 4 {
@@ -296,6 +266,18 @@ struct MetricsTrendChart: View {
                 .foregroundStyle(Color.secondary)
                 .padding(.top, 4)
             }
+        }
+    }
+
+    private func formatDuration(_ totalSeconds: Int) -> String {
+        let h = totalSeconds / 3600
+        let m = (totalSeconds % 3600) / 60
+        if h > 0 {
+            return m > 0 ? "\(h)h \(m)m" : "\(h)h"
+        } else if m > 0 {
+            return "\(m)m"
+        } else {
+            return "\(totalSeconds)s"
         }
     }
 }

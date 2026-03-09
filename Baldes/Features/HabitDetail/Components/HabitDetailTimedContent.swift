@@ -6,7 +6,7 @@ import Combine
 struct HabitDetailTimedContent: View {
     let habit: HabitEntry
     let selectedDate: Date
-    let onSaveSession: () -> Void
+    let onSaveSession: (Int) -> Void
     var onAddNote: (GroupedActivity) -> Void
     var onDeleteMemory: ([ActivityLogEntry]) -> Void
 
@@ -24,6 +24,8 @@ struct HabitDetailTimedContent: View {
     @State private var isWorkPhase: Bool = true
     @State private var laps: [Int] = []
     @State private var lapStartSeconds: Int = 0
+    @State private var isFastForwarding: Bool = false
+    @State private var ffStartDate: Date?
 
     private enum TimerState: Equatable {
         case idle, running, paused, finished
@@ -76,7 +78,8 @@ struct HabitDetailTimedContent: View {
                     HStack(spacing: 8) {
                         // Save session
                         Button {
-                            onSaveSession()
+                            stopFastForward()
+                            onSaveSession(sessionSeconds)
                             withAnimation(.spring(duration: 0.3)) { timerState = .idle }
                         } label: {
                             Image(systemName: "checkmark")
@@ -103,8 +106,27 @@ struct HabitDetailTimedContent: View {
                             }
                         }
 
+                        // Fast-forward (countdown/interval only)
+                        if executionMode != .stopwatch {
+                            Image(systemName: "forward.fill")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(isFastForwarding ? habit.habitType.color : Color.textSecondary)
+                                .frame(width: 38, height: 38)
+                                .background(isFastForwarding ? habit.habitType.color.opacity(0.15) : Color(UIColor.secondarySystemGroupedBackground))
+                                .clipShape(Circle())
+                                .gesture(
+                                    LongPressGesture(minimumDuration: 0.15)
+                                        .onChanged { _ in startFastForward() }
+                                        .sequenced(before: DragGesture(minimumDistance: 0))
+                                        .onEnded { _ in stopFastForward() }
+                                )
+                                .scaleEffect(isFastForwarding ? 1.1 : 1.0)
+                                .animation(.easeInOut(duration: 0.15), value: isFastForwarding)
+                        }
+
                         // Discard session
                         Button {
+                            stopFastForward()
                             withAnimation(.spring(duration: 0.3)) {
                                 timerState = .idle
                             }
@@ -151,7 +173,7 @@ struct HabitDetailTimedContent: View {
 
                     HStack(spacing: 12) {
                         Button {
-                            onSaveSession()
+                            onSaveSession(sessionSeconds)
                             withAnimation(.spring(duration: 0.3)) { timerState = .idle }
                         } label: {
                             HStack(spacing: 6) {
@@ -193,8 +215,16 @@ struct HabitDetailTimedContent: View {
         }
         .sensoryFeedback(.impact, trigger: todayCount)
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
-            guard timerState == .running else { return }
+            guard timerState == .running, !isFastForwarding else { return }
             tickTimer()
+        }
+        .onReceive(Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()) { _ in
+            guard timerState == .running, isFastForwarding else { return }
+            let ticks = ffTicksPerFire
+            for _ in 0..<ticks {
+                tickTimer()
+                if timerState != .running { break }
+            }
         }
     }
 
@@ -318,6 +348,23 @@ struct HabitDetailTimedContent: View {
         }
     }
 
+    private var sessionSeconds: Int {
+        switch executionMode {
+        case .countdown, .fixedBlock:
+            return countdownDuration - timeRemaining
+        case .stopwatch:
+            return elapsedSeconds
+        case .interval:
+            let completedRounds = currentRound - 1
+            let perRound = habit.timedWorkSeconds + habit.timedRestSeconds
+            let completedTime = completedRounds * perRound
+            let currentPhaseElapsed = isWorkPhase
+                ? habit.timedWorkSeconds - timeRemaining
+                : habit.timedRestSeconds - timeRemaining
+            return completedTime + currentPhaseElapsed
+        }
+    }
+
     private var finishedSummary: String {
         switch executionMode {
         case .countdown, .fixedBlock:
@@ -388,9 +435,35 @@ struct HabitDetailTimedContent: View {
     }
 
     private func finishSession() {
+        stopFastForward()
         withAnimation(.spring(duration: 0.3)) { timerState = .finished }
         let notification = UINotificationFeedbackGenerator()
         notification.notificationOccurred(.success)
+    }
+
+    // MARK: - Fast Forward
+
+    /// Ticks per 0.1s fire — ramps up the longer you hold.
+    private var ffTicksPerFire: Int {
+        guard let start = ffStartDate else { return 1 }
+        let held = Date().timeIntervalSince(start)
+        switch held {
+        case ..<1:   return 1   // ~10x
+        case ..<2:   return 3   // ~30x
+        case ..<3.5: return 6   // ~60x
+        default:     return 12  // ~120x
+        }
+    }
+
+    private func startFastForward() {
+        guard !isFastForwarding, timerState == .running else { return }
+        ffStartDate = Date()
+        isFastForwarding = true
+    }
+
+    private func stopFastForward() {
+        isFastForwarding = false
+        ffStartDate = nil
     }
 
     // MARK: - Formatting

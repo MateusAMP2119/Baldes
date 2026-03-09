@@ -276,6 +276,31 @@ final class HabitEntry {
         logActivity(.completed, date: logDate)
     }
 
+    /// Add a timed completion storing the session duration in the activity log detail.
+    func addTimedCompletion(on date: Date, seconds: Int) {
+        let calendar = Calendar.current
+        let logDate: Date
+        if calendar.isDateInToday(date) {
+            logDate = Date()
+        } else {
+            logDate = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date) ?? date
+        }
+        completionLogs.append(logDate)
+        logActivity(.completed, date: logDate, detail: "\(seconds)")
+    }
+
+    /// Total timed seconds logged on a given day (reads duration from activity log detail).
+    func timedSeconds(on date: Date) -> Int {
+        let calendar = Calendar.current
+        return activityLog
+            .filter { $0.type == .completed && calendar.isDate($0.date, inSameDayAs: date) }
+            .compactMap { entry -> Int? in
+                guard let detail = entry.detail else { return nil }
+                return Int(detail)
+            }
+            .reduce(0, +)
+    }
+
     func removeLastCompletionToday() {
         let calendar = Calendar.current
         if let index = completionLogs.lastIndex(where: { calendar.isDateInToday($0) }) {
