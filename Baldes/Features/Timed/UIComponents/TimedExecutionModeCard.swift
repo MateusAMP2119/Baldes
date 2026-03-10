@@ -18,10 +18,6 @@ struct TimedExecutionModeCard: View {
     @Binding var restSeconds: Int
     @Binding var rounds: Int
 
-    // Fixed Block
-    @Binding var blockStartTime: Date
-    @Binding var blockEndTime: Date
-
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Execution Mode")
@@ -46,8 +42,6 @@ struct TimedExecutionModeCard: View {
                         countdownDurationRow
                     case .interval:
                         intervalConfigRows
-                    case .fixedBlock:
-                        fixedBlockRows
                     }
 
                     CardTipView(icon: executionTipIcon, message: executionTipMessage)
@@ -136,36 +130,6 @@ struct TimedExecutionModeCard: View {
         }
     }
 
-    // MARK: - Fixed Block
-
-    private var fixedBlockRows: some View {
-        VStack(spacing: 0) {
-            DatePicker(
-                selection: $blockStartTime,
-                displayedComponents: .hourAndMinute
-            ) {
-                Text("Start")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .tint(accentColor)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-
-            DatePicker(
-                selection: $blockEndTime,
-                displayedComponents: .hourAndMinute
-            ) {
-                Text("End")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .tint(accentColor)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-        }
-    }
-
     // MARK: - Helpers
 
     private func durationWheel(label: String, selection: Binding<Int>, range: Range<Int>) -> some View {
@@ -190,7 +154,6 @@ struct TimedExecutionModeCard: View {
         case .stopwatch: "info.circle"
         case .countdown: "info.circle"
         case .interval: "bolt.heart"
-        case .fixedBlock: "calendar.badge.clock"
         }
     }
 
@@ -199,7 +162,6 @@ struct TimedExecutionModeCard: View {
         case .stopwatch: "Counts up from zero — stop whenever you're done. Great for open-ended sessions."
         case .countdown: "Set a target duration. You'll get notified when time runs out."
         case .interval: "Alternates work and rest periods. Perfect for Pomodoro or HIIT."
-        case .fixedBlock: "Runs between two fixed times. Ideal for scheduled deep work blocks."
         }
     }
 }
@@ -218,9 +180,7 @@ struct TimedExecutionModeCard: View {
             workSeconds: .constant(0),
             restMinutes: .constant(5),
             restSeconds: .constant(0),
-            rounds: .constant(4),
-            blockStartTime: .constant(Date()),
-            blockEndTime: .constant(Date())
+            rounds: .constant(4)
         )
         .padding(.horizontal, 24)
     }
@@ -239,9 +199,7 @@ struct TimedExecutionModeCard: View {
             workSeconds: .constant(0),
             restMinutes: .constant(5),
             restSeconds: .constant(0),
-            rounds: .constant(4),
-            blockStartTime: .constant(Date()),
-            blockEndTime: .constant(Date())
+            rounds: .constant(4)
         )
         .padding(.horizontal, 24)
     }
@@ -260,30 +218,7 @@ struct TimedExecutionModeCard: View {
             workSeconds: .constant(0),
             restMinutes: .constant(5),
             restSeconds: .constant(0),
-            rounds: .constant(4),
-            blockStartTime: .constant(Date()),
-            blockEndTime: .constant(Date())
-        )
-        .padding(.horizontal, 24)
-    }
-    .background(Color(UIColor.systemGroupedBackground))
-}
-
-#Preview("Fixed Block") {
-    ScrollView {
-        TimedExecutionModeCard(
-            accentColor: .orange,
-            mode: .constant(.fixedBlock),
-            countdownHours: .constant(0),
-            countdownMinutes: .constant(0),
-            countdownSeconds: .constant(0),
-            workMinutes: .constant(25),
-            workSeconds: .constant(0),
-            restMinutes: .constant(5),
-            restSeconds: .constant(0),
-            rounds: .constant(4),
-            blockStartTime: .constant(Date()),
-            blockEndTime: .constant(Date())
+            rounds: .constant(4)
         )
         .padding(.horizontal, 24)
     }

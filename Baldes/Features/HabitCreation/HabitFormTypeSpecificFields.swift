@@ -26,9 +26,7 @@ struct HabitFormTypeSpecificFields: View {
                     workSeconds: $vm.workSeconds,
                     restMinutes: $vm.restMinutes,
                     restSeconds: $vm.restSeconds,
-                    rounds: $vm.intervalRounds,
-                    blockStartTime: $vm.blockStartTime,
-                    blockEndTime: $vm.blockEndTime
+                    rounds: $vm.intervalRounds
                 )
 
                 TimedWhenCard(

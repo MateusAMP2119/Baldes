@@ -151,9 +151,7 @@ struct QuickAddTypeFields: View {
                 workSeconds: $viewModel.workSeconds,
                 restMinutes: $viewModel.restMinutes,
                 restSeconds: $viewModel.restSeconds,
-                rounds: $viewModel.intervalRounds,
-                blockStartTime: $viewModel.blockStartTime,
-                blockEndTime: $viewModel.blockEndTime
+                rounds: $viewModel.intervalRounds
             )
 
         case .dailyGoals:

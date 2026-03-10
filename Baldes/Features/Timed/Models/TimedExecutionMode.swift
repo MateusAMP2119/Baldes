@@ -5,7 +5,6 @@ enum TimedExecutionMode: Int, CaseIterable, Identifiable, Codable {
     case stopwatch = 0
     case countdown = 1
     case interval = 2
-    case fixedBlock = 3
 
     var id: Int { rawValue }
 
@@ -14,7 +13,6 @@ enum TimedExecutionMode: Int, CaseIterable, Identifiable, Codable {
         case .stopwatch: "Stopwatch"
         case .countdown: "Countdown"
         case .interval: "Intervals"
-        case .fixedBlock: "Fixed Block"
         }
     }
 
@@ -23,7 +21,6 @@ enum TimedExecutionMode: Int, CaseIterable, Identifiable, Codable {
         case .stopwatch: "Stop."
         case .countdown: "Count."
         case .interval: "Interval"
-        case .fixedBlock: "Block"
         }
     }
 
@@ -32,7 +29,6 @@ enum TimedExecutionMode: Int, CaseIterable, Identifiable, Codable {
         case .stopwatch: "Count up from zero"
         case .countdown: "Count down from a set duration"
         case .interval: "Work/rest loops"
-        case .fixedBlock: "Active for a fixed time window"
         }
     }
 
@@ -41,7 +37,6 @@ enum TimedExecutionMode: Int, CaseIterable, Identifiable, Codable {
         case .stopwatch: "stopwatch"
         case .countdown: "timer"
         case .interval: "arrow.trianglehead.2.clockwise"
-        case .fixedBlock: "clock.badge.checkmark"
         }
     }
 }

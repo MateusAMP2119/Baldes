@@ -51,10 +51,7 @@ struct HabitDetailView: View {
         var checkDate = today
 
         while true {
-            let hasCompletion = habit.completionLogs.contains {
-                calendar.isDate($0, inSameDayAs: checkDate)
-            }
-            if hasCompletion {
+            if isDayCompleted(checkDate) {
                 streak += 1
                 checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
             } else {
@@ -62,6 +59,50 @@ struct HabitDetailView: View {
             }
         }
         return streak
+    }
+
+    /// Whether a given day meets the habit's completion criteria.
+    private func isDayCompleted(_ date: Date) -> Bool {
+        let hasAny = habit.completionLogs.contains { calendar.isDate($0, inSameDayAs: date) }
+        guard hasAny else { return false }
+
+        // For timed habits, check against daily target
+        if habit.habitType == .timed {
+            let mode = habit.timedExecutionMode
+            if mode == .stopwatch {
+                // Stopwatch: count-based
+                let count = habit.completionCount(on: date)
+                switch habit.timedFrequencyMode {
+                case .single: return count >= 1
+                case .fixedMultiple: return count >= habit.timedFixedCount
+                case .unlimited: return true
+                }
+            } else {
+                // Countdown/Interval: time-based
+                let sessionSeconds: Int = {
+                    switch mode {
+                    case .countdown:
+                        return habit.timedCountdownSeconds > 0 ? habit.timedCountdownSeconds : habit.timerDurationSeconds
+                    case .interval:
+                        return (habit.timedWorkSeconds + habit.timedRestSeconds) * habit.timedRounds - habit.timedRestSeconds
+                    case .stopwatch:
+                        return 0
+                    }
+                }()
+                let multiplier: Int = {
+                    switch habit.timedFrequencyMode {
+                    case .single: return 1
+                    case .fixedMultiple: return habit.timedFixedCount
+                    case .unlimited: return 1
+                    }
+                }()
+                let dailyTarget = sessionSeconds * multiplier
+                guard dailyTarget > 0 else { return true }
+                return habit.timedSeconds(on: date) >= dailyTarget
+            }
+        }
+
+        return true
     }
 
     private var dynamicTitle: String {

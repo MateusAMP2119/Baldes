@@ -211,10 +211,16 @@ struct MetricsTrendChart: View {
                 if let selected = selectedDataPoint {
                     RuleMark(x: .value("Date", selected.date, unit: .day))
                         .foregroundStyle(Color.clear)
-                        .annotation(position: .top, spacing: 4) {
+                        .annotation(position: .top, spacing: 4, overflowResolution: .init(x: .fit, y: .disabled)) {
                             Text(isTimed ? formatDuration(selected.count) : "\(selected.count)")
                                 .font(.system(size: 12, weight: .bold, design: .rounded))
                                 .foregroundStyle(habit.habitType.color)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(
+                                    Capsule()
+                                        .fill(Color(UIColor.secondarySystemGroupedBackground))
+                                )
                         }
                 }
 
@@ -253,7 +259,8 @@ struct MetricsTrendChart: View {
                 }
             }
             .chartYScale(domain: 0...(max((points.map(\.count).max() ?? 0) + 2, target + 2)))
-            .frame(height: 140)
+            .frame(height: 160)
+            .padding(.top, 20)
 
             let daysWithEntries = points.filter { $0.count > 0 }.count
             if daysWithEntries < 4 {

@@ -38,10 +38,57 @@ struct HabitDetailTimedContent: View {
         habit.timedCountdownSeconds > 0 ? habit.timedCountdownSeconds : habit.timerDurationSeconds
     }
 
+    // MARK: - Frequency & Goal helpers
+
+    /// Duration of one full session in seconds (countdown or interval total).
+    private var sessionDurationSeconds: Int {
+        switch executionMode {
+        case .countdown:
+            return countdownDuration
+        case .interval:
+            return (habit.timedWorkSeconds + habit.timedRestSeconds) * totalRounds - habit.timedRestSeconds
+        case .stopwatch:
+            return 0 // no fixed duration
+        }
+    }
+
+    /// Total seconds the user must accumulate today to hit the daily goal.
+    /// Returns nil for unlimited or stopwatch-without-target.
+    private var dailyTargetSeconds: Int? {
+        guard executionMode != .stopwatch else { return nil }
+        guard sessionDurationSeconds > 0 else { return nil }
+        switch habit.timedFrequencyMode {
+        case .single: return sessionDurationSeconds
+        case .fixedMultiple: return sessionDurationSeconds * habit.timedFixedCount
+        case .unlimited: return nil
+        }
+    }
+
+    /// For stopwatch mode: how many sessions are allowed today.
+    private var stopwatchSessionTarget: Int? {
+        guard executionMode == .stopwatch else { return nil }
+        switch habit.timedFrequencyMode {
+        case .single: return 1
+        case .fixedMultiple: return habit.timedFixedCount
+        case .unlimited: return nil
+        }
+    }
+
+    private func goalReached(on date: Date) -> Bool {
+        if let target = dailyTargetSeconds {
+            return habit.timedSeconds(on: date) >= target
+        }
+        if let target = stopwatchSessionTarget {
+            return habit.completionCount(on: date) >= target
+        }
+        return false
+    }
+
     var body: some View {
+        let todaySeconds = habit.timedSeconds(on: selectedDate)
         let todayCount = habit.completionCount(on: selectedDate)
-        let target = habit.frequency > 0 ? habit.frequency : 1
-        let goalReached = target > 0 && todayCount >= target
+        let isGoalReached = goalReached(on: selectedDate)
+        let canStartSession = !isGoalReached && timerState == .idle
 
         return VStack(spacing: 16) {
 
@@ -52,18 +99,50 @@ struct HabitDetailTimedContent: View {
                     Button {
                         handlePlayPause()
                     } label: {
-                        Image(systemName: timerState == .running ? "pause.fill" : "play.fill")
+                        Image(systemName: isGoalReached && timerState == .idle
+                              ? "checkmark"
+                              : timerState == .running ? "pause.fill" : "play.fill")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(.white)
                             .frame(width: 40, height: 40)
-                            .background(habit.habitType.color)
+                            .background(isGoalReached && timerState == .idle
+                                        ? Color(UIColor.tertiaryLabel)
+                                        : habit.habitType.color)
                             .clipShape(Circle())
                     }
+                    .disabled(!canStartSession && timerState == .idle)
 
-                    Text(timerState == .idle ? idleTimeDisplay : displayTime)
-                        .font(.system(size: 15, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(Color.textPrimary)
-                        .contentTransition(.numericText())
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(timerState == .idle ? idleTimeDisplay : displayTime)
+                            .font(.system(size: 15, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(Color.textPrimary)
+                            .contentTransition(.numericText())
+
+                        if timerState == .idle {
+                            HStack(spacing: 6) {
+                                if let target = dailyTargetSeconds {
+                                    // Time-based progress (countdown/interval)
+                                    Text("\(formatDurationCompact(todaySeconds))/\(formatDurationCompact(target))")
+                                        .foregroundStyle(isGoalReached ? habit.habitType.color : Color.textSecondary)
+                                } else if let target = stopwatchSessionTarget {
+                                    // Count-based progress (stopwatch)
+                                    if todayCount > 0 {
+                                        Text(formatDurationCompact(todaySeconds))
+                                            .foregroundStyle(Color.textSecondary)
+                                    }
+                                    Text("\(todayCount)/\(target)")
+                                        .foregroundStyle(isGoalReached ? habit.habitType.color : Color.textSecondary)
+                                } else if todayCount > 0 {
+                                    // Unlimited
+                                    Text(formatDurationCompact(todaySeconds))
+                                        .foregroundStyle(Color.textSecondary)
+                                    Text("\(todayCount) session\(todayCount == 1 ? "" : "s")")
+                                        .foregroundStyle(Color.textSecondary)
+                                }
+                            }
+                            .font(.system(size: 11, weight: .medium))
+                        }
+                    }
                 }
                 .padding(.trailing, 6)
                 .padding(4)
@@ -148,7 +227,7 @@ struct HabitDetailTimedContent: View {
             if timerState == .running || timerState == .paused {
                 VStack(spacing: 8) {
                     switch executionMode {
-                    case .countdown, .fixedBlock:
+                    case .countdown:
                         countdownProgressBar
                     case .stopwatch:
                         stopwatchLaps
@@ -214,6 +293,32 @@ struct HabitDetailTimedContent: View {
             timedActivityLog
         }
         .sensoryFeedback(.impact, trigger: todayCount)
+        .onChange(of: selectedDate) {
+            if timerState != .idle {
+                stopFastForward()
+                withAnimation(.spring(duration: 0.3)) { timerState = .idle }
+            }
+        }
+        .onChange(of: habit.timedExecutionModeRaw) {
+            stopFastForward()
+            withAnimation(.spring(duration: 0.3)) { timerState = .idle }
+        }
+        .onChange(of: habit.timedCountdownSeconds) {
+            stopFastForward()
+            withAnimation(.spring(duration: 0.3)) { timerState = .idle }
+        }
+        .onChange(of: habit.timedWorkSeconds) {
+            stopFastForward()
+            withAnimation(.spring(duration: 0.3)) { timerState = .idle }
+        }
+        .onChange(of: habit.timedRestSeconds) {
+            stopFastForward()
+            withAnimation(.spring(duration: 0.3)) { timerState = .idle }
+        }
+        .onChange(of: habit.timedRounds) {
+            stopFastForward()
+            withAnimation(.spring(duration: 0.3)) { timerState = .idle }
+        }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             guard timerState == .running, !isFastForwarding else { return }
             tickTimer()
@@ -264,23 +369,54 @@ struct HabitDetailTimedContent: View {
         .clipShape(Capsule())
     }
 
-    // MARK: - Stopwatch Laps
+    // MARK: - Stopwatch Laps & Target
 
     @ViewBuilder
     private var stopwatchLaps: some View {
-        if !laps.isEmpty {
-            VStack(spacing: 4) {
-                ForEach(Array(laps.enumerated().reversed()), id: \.offset) { index, lapTime in
-                    HStack {
-                        Text("Lap \(index + 1)")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(Color.textSecondary)
-                        Spacer()
-                        Text(formatTime(lapTime))
-                            .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(Color.textPrimary)
+        VStack(spacing: 6) {
+            // Soft target progress bar
+            if countdownDuration > 0 {
+                let progress = min(Double(elapsedSeconds) / Double(countdownDuration), 1.0)
+                let overTarget = elapsedSeconds >= countdownDuration
+
+                VStack(spacing: 4) {
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(habit.habitType.color.opacity(0.12))
+                            Capsule()
+                                .fill(overTarget ? habit.habitType.color : habit.habitType.color.opacity(0.6))
+                                .frame(width: geo.size.width * progress)
+                                .animation(.linear(duration: 1), value: progress)
+                        }
                     }
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .frame(height: 6)
+                    .clipShape(Capsule())
+
+                    HStack {
+                        Text(overTarget ? "Target reached" : "Target: \(formatDurationCompact(countdownDuration))")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(overTarget ? habit.habitType.color : Color.textTertiary)
+                        Spacer()
+                    }
+                }
+            }
+
+            // Laps
+            if !laps.isEmpty {
+                VStack(spacing: 4) {
+                    ForEach(Array(laps.enumerated().reversed()), id: \.offset) { index, lapTime in
+                        HStack {
+                            Text("Lap \(index + 1)")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(Color.textSecondary)
+                            Spacer()
+                            Text(formatTime(lapTime))
+                                .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                                .foregroundStyle(Color.textPrimary)
+                        }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
                 }
             }
         }
@@ -339,18 +475,19 @@ struct HabitDetailTimedContent: View {
 
     private var idleTimeDisplay: String {
         switch executionMode {
-        case .countdown, .fixedBlock:
+        case .countdown:
             return formatTime(countdownDuration)
         case .stopwatch:
             return "0:00:00"
         case .interval:
-            return formatTime(habit.timedWorkSeconds)
+            let totalSession = (habit.timedWorkSeconds + habit.timedRestSeconds) * totalRounds - habit.timedRestSeconds
+            return formatTime(totalSession)
         }
     }
 
     private var sessionSeconds: Int {
         switch executionMode {
-        case .countdown, .fixedBlock:
+        case .countdown:
             return countdownDuration - timeRemaining
         case .stopwatch:
             return elapsedSeconds
@@ -367,7 +504,7 @@ struct HabitDetailTimedContent: View {
 
     private var finishedSummary: String {
         switch executionMode {
-        case .countdown, .fixedBlock:
+        case .countdown:
             return formatDurationCompact(countdownDuration) + " completed"
         case .stopwatch:
             return formatDurationCompact(elapsedSeconds) + " recorded"
@@ -383,7 +520,7 @@ struct HabitDetailTimedContent: View {
         isWorkPhase = true
 
         switch executionMode {
-        case .countdown, .fixedBlock:
+        case .countdown:
             timeRemaining = countdownDuration
         case .stopwatch:
             elapsedSeconds = 0
@@ -398,7 +535,7 @@ struct HabitDetailTimedContent: View {
 
     private func tickTimer() {
         switch executionMode {
-        case .countdown, .fixedBlock:
+        case .countdown:
             if timeRemaining > 0 {
                 withAnimation { timeRemaining -= 1 }
             }

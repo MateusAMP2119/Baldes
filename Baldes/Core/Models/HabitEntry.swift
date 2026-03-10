@@ -53,8 +53,6 @@ final class HabitEntry {
     var timedWorkSeconds: Int = 1500
     var timedRestSeconds: Int = 300
     var timedRounds: Int = 4
-    var timedBlockStartTime: Date?
-    var timedBlockEndTime: Date?
 
     // Timed — When: Recurrence
     var timedRecurrenceTypeRaw: Int = 0

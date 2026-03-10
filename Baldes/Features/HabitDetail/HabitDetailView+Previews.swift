@@ -1,7 +1,7 @@
 import SwiftData
 import SwiftUI
 
-#Preview("Timed") {
+#Preview("Timed — Stopwatch") {
     struct PreviewWrapper: View {
         @State private var habit: HabitEntry?
         let container: ModelContainer
@@ -19,32 +19,218 @@ import SwiftUI
                 }
             }
             .modelContainer(container)
-            .onAppear {
-                let h = HabitEntry(
-                    name: "Morning Run",
-                    emoji: "\u{1F3C3}",
-                    habitTypeRaw: "timed",
-                    motivationQuote: "The only true wisdom is in knowing you know nothing.",
-                    hasTime: true,
-                    scheduleTime: Calendar.current.date(
-                        bySettingHour: 7, minute: 0, second: 0, of: Date()),
-                    frequency: 1,
-                    selectedDays: [],
-                    startDate: Calendar.current.date(byAdding: .month, value: -1, to: Date())!,
-                    endDateEnabled: false,
-                    endDate: nil,
-                    reminderEnabled: false,
-                    reminderTime: nil,
-                    completionLogs: [
-                        Date(),
-                        Date(),
-                        Calendar.current.date(byAdding: .day, value: -1, to: Date())!,
-                        Calendar.current.date(byAdding: .day, value: -2, to: Date())!,
-                    ]
-                )
-                container.mainContext.insert(h)
-                habit = h
+            .onAppear { setupHabit() }
+        }
+
+        private func setupHabit() {
+            let cal = Calendar.current
+            let h = HabitEntry(
+                name: "Morning Run",
+                emoji: "\u{1F3C3}",
+                habitTypeRaw: "timed",
+                motivationQuote: "The only bad workout is the one that didn't happen.",
+                hasTime: true,
+                scheduleTime: cal.date(bySettingHour: 7, minute: 0, second: 0, of: Date()),
+                frequency: 1,
+                selectedDays: [],
+                startDate: cal.date(byAdding: .month, value: -1, to: Date())!,
+                endDateEnabled: false,
+                endDate: nil,
+                reminderEnabled: false,
+                reminderTime: nil,
+                completionLogs: []
+            )
+
+            // Stopwatch mode with 30min soft target, unlimited frequency
+            h.timedExecutionModeRaw = TimedExecutionMode.stopwatch.rawValue
+            h.timedFrequencyModeRaw = TimedFrequencyMode.unlimited.rawValue
+            h.timedCountdownSeconds = 1800 // 30min soft target
+
+            // Activity log with timed sessions across several days
+            let today = Date()
+            let yesterday = cal.date(byAdding: .day, value: -1, to: today)!
+            let twoDaysAgo = cal.date(byAdding: .day, value: -2, to: today)!
+
+            var logs: [ActivityLogEntry] = [
+                ActivityLogEntry(type: .created)
+            ]
+
+            // Today: 1 session of 25min
+            var e1 = ActivityLogEntry(type: .completed, detail: "1500")
+            e1.date = cal.date(byAdding: .hour, value: 7, to: cal.startOfDay(for: today))!
+            logs.append(e1)
+            h.completionLogs.append(e1.date)
+
+            // Yesterday: 2 sessions
+            var e2 = ActivityLogEntry(type: .completed, detail: "1920")
+            e2.date = cal.date(byAdding: .hour, value: 7, to: cal.startOfDay(for: yesterday))!
+            logs.append(e2)
+            h.completionLogs.append(e2.date)
+
+            var e3 = ActivityLogEntry(type: .completed, detail: "900")
+            e3.date = cal.date(byAdding: .hour, value: 18, to: cal.startOfDay(for: yesterday))!
+            logs.append(e3)
+            h.completionLogs.append(e3.date)
+
+            // 2 days ago: 1 session of 35min
+            var e4 = ActivityLogEntry(type: .completed, detail: "2100")
+            e4.date = cal.date(byAdding: .hour, value: 6, to: cal.startOfDay(for: twoDaysAgo))!
+            logs.append(e4)
+            h.completionLogs.append(e4.date)
+
+            h.activityLog = logs
+            container.mainContext.insert(h)
+            habit = h
+        }
+    }
+
+    return PreviewWrapper()
+}
+
+#Preview("Timed — Countdown") {
+    struct PreviewWrapper: View {
+        @State private var habit: HabitEntry?
+        let container: ModelContainer
+
+        init() {
+            let config = ModelConfiguration(isStoredInMemoryOnly: true)
+            let c = try! ModelContainer(for: HabitEntry.self, configurations: config)
+            self.container = c
+        }
+
+        var body: some View {
+            NavigationStack {
+                if let habit {
+                    HabitDetailView(habit: habit, selectedDate: .now)
+                }
             }
+            .modelContainer(container)
+            .onAppear { setupHabit() }
+        }
+
+        private func setupHabit() {
+            let cal = Calendar.current
+            let h = HabitEntry(
+                name: "Deep Work",
+                emoji: "\u{1F9E0}",
+                habitTypeRaw: "timed",
+                motivationQuote: "Focus is the new superpower.",
+                hasTime: true,
+                scheduleTime: cal.date(bySettingHour: 9, minute: 0, second: 0, of: Date()),
+                frequency: 1,
+                selectedDays: [],
+                startDate: cal.date(byAdding: .month, value: -1, to: Date())!,
+                endDateEnabled: false,
+                endDate: nil,
+                reminderEnabled: false,
+                reminderTime: nil,
+                completionLogs: []
+            )
+
+            // Countdown mode, 45min, 3 sessions per day
+            h.timedExecutionModeRaw = TimedExecutionMode.countdown.rawValue
+            h.timedFrequencyModeRaw = TimedFrequencyMode.fixedMultiple.rawValue
+            h.timedFixedCount = 3
+            h.timedCountdownSeconds = 2700 // 45min
+
+            let today = Date()
+            let yesterday = cal.date(byAdding: .day, value: -1, to: today)!
+
+            var logs: [ActivityLogEntry] = [
+                ActivityLogEntry(type: .created)
+            ]
+
+            // Today: 2 of 3 sessions done
+            var e1 = ActivityLogEntry(type: .completed, detail: "2700")
+            e1.date = cal.date(byAdding: .hour, value: 9, to: cal.startOfDay(for: today))!
+            logs.append(e1)
+            h.completionLogs.append(e1.date)
+
+            var e2 = ActivityLogEntry(type: .completed, detail: "2700")
+            e2.date = cal.date(byAdding: .hour, value: 11, to: cal.startOfDay(for: today))!
+            logs.append(e2)
+            h.completionLogs.append(e2.date)
+
+            // Yesterday: 3 of 3 done
+            for i in 0..<3 {
+                var e = ActivityLogEntry(type: .completed, detail: "2700")
+                e.date = cal.date(byAdding: .hour, value: 9 + (i * 2), to: cal.startOfDay(for: yesterday))!
+                logs.append(e)
+                h.completionLogs.append(e.date)
+            }
+
+            h.activityLog = logs
+            container.mainContext.insert(h)
+            habit = h
+        }
+    }
+
+    return PreviewWrapper()
+}
+
+#Preview("Timed — Intervals") {
+    struct PreviewWrapper: View {
+        @State private var habit: HabitEntry?
+        let container: ModelContainer
+
+        init() {
+            let config = ModelConfiguration(isStoredInMemoryOnly: true)
+            let c = try! ModelContainer(for: HabitEntry.self, configurations: config)
+            self.container = c
+        }
+
+        var body: some View {
+            NavigationStack {
+                if let habit {
+                    HabitDetailView(habit: habit, selectedDate: .now)
+                }
+            }
+            .modelContainer(container)
+            .onAppear { setupHabit() }
+        }
+
+        private func setupHabit() {
+            let cal = Calendar.current
+            let h = HabitEntry(
+                name: "HIIT Training",
+                emoji: "\u{1F525}",
+                habitTypeRaw: "timed",
+                motivationQuote: "Push harder than yesterday.",
+                hasTime: true,
+                scheduleTime: cal.date(bySettingHour: 6, minute: 30, second: 0, of: Date()),
+                frequency: 1,
+                selectedDays: [],
+                startDate: cal.date(byAdding: .month, value: -1, to: Date())!,
+                endDateEnabled: false,
+                endDate: nil,
+                reminderEnabled: false,
+                reminderTime: nil,
+                completionLogs: []
+            )
+
+            // Interval mode: 30s work / 15s rest, 8 rounds, single session
+            h.timedExecutionModeRaw = TimedExecutionMode.interval.rawValue
+            h.timedFrequencyModeRaw = TimedFrequencyMode.single.rawValue
+            h.timedWorkSeconds = 30
+            h.timedRestSeconds = 15
+            h.timedRounds = 8
+
+            let today = Date()
+            let yesterday = cal.date(byAdding: .day, value: -1, to: today)!
+
+            var logs: [ActivityLogEntry] = [
+                ActivityLogEntry(type: .created)
+            ]
+
+            // Yesterday: completed 1 session (360s total = 8 rounds * 45s)
+            var e1 = ActivityLogEntry(type: .completed, detail: "360")
+            e1.date = cal.date(byAdding: .hour, value: 7, to: cal.startOfDay(for: yesterday))!
+            logs.append(e1)
+            h.completionLogs.append(e1.date)
+
+            h.activityLog = logs
+            container.mainContext.insert(h)
+            habit = h
         }
     }
 

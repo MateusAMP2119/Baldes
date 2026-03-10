@@ -77,20 +77,6 @@ final class AddHabitViewModel: Identifiable {
     var restMinutes = 5
     var restSeconds = 0
     var intervalRounds = 4
-    var blockStartTime: Date = {
-        let calendar = Calendar.current
-        var components = calendar.dateComponents([.year, .month, .day], from: Date())
-        components.hour = 9
-        components.minute = 0
-        return calendar.date(from: components) ?? Date()
-    }()
-    var blockEndTime: Date = {
-        let calendar = Calendar.current
-        var components = calendar.dateComponents([.year, .month, .day], from: Date())
-        components.hour = 10
-        components.minute = 0
-        return calendar.date(from: components) ?? Date()
-    }()
 
     // MARK: - Timed: When — Recurrence
     var timedRecurrenceType: TimedRecurrenceType = .daily
@@ -285,8 +271,6 @@ final class AddHabitViewModel: Identifiable {
             restMinutes = habit.timedRestSeconds / 60
             restSeconds = habit.timedRestSeconds % 60
             intervalRounds = habit.timedRounds
-            if let start = habit.timedBlockStartTime { blockStartTime = start }
-            if let end = habit.timedBlockEndTime { blockEndTime = end }
 
             // Trigger (pillar 2)
             timedTriggerType = habit.timedTriggerType
@@ -483,8 +467,6 @@ final class AddHabitViewModel: Identifiable {
             existing.timedWorkSeconds = workMinutes * 60 + workSeconds
             existing.timedRestSeconds = restMinutes * 60 + restSeconds
             existing.timedRounds = intervalRounds
-            existing.timedBlockStartTime = timedExecutionMode == .fixedBlock ? blockStartTime : nil
-            existing.timedBlockEndTime = timedExecutionMode == .fixedBlock ? blockEndTime : nil
 
             // Trigger (pillar 2)
             existing.timedTriggerTypeRaw = timedTriggerType.rawValue
@@ -563,8 +545,6 @@ final class AddHabitViewModel: Identifiable {
             entry.timedWorkSeconds = workMinutes * 60 + workSeconds
             entry.timedRestSeconds = restMinutes * 60 + restSeconds
             entry.timedRounds = intervalRounds
-            entry.timedBlockStartTime = timedExecutionMode == .fixedBlock ? blockStartTime : nil
-            entry.timedBlockEndTime = timedExecutionMode == .fixedBlock ? blockEndTime : nil
 
             // Trigger (pillar 2)
             entry.timedTriggerTypeRaw = timedTriggerType.rawValue
